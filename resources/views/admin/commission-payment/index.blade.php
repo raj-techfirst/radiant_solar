@@ -1,0 +1,599 @@
+@extends('layouts.app')
+@section('title', 'Commission Payments')
+@section('content')
+    <div class="row">
+        <div class="col-12 mb-1">
+            <h4 class="content-header-title float-start">Commission Payment List</h4>
+
+            @can('commission-payment-create')
+                <button type="button" data-bs-toggle="modal" data-bs-target="#inlineModal"
+                    class="btn btn-sm btn-primary float-end add-new"><i class="fa fa-plus me-25"></i>
+                    {{ __('message.Add New') }}</button>
+            @endcan
+        </div>
+
+        <div class="col-12">
+            <div class="card p-1">
+                <div class="row">
+                    <div class="col-12">
+                        <h3>Filter</h3>
+                    </div>
+                    <div class="col-sm-12 col-md-3 col-lg-2 custom-input-group">
+                        <label class="form-label" for="from_date">From Date</label>
+                        <input type="text" class="form-control" name="date" id="from_date" placeholder="dd-mm-yyyy">
+                    </div>
+                    <div class="col-sm-12 col-md-3 col-lg-2 custom-input-group">
+                        <label class="form-label" for="from_date">To Date</label>
+                        <input type="text" class="form-control" name="date" id="to_date" placeholder="dd-mm-yyyy">
+                    </div>
+                    <div class="col-sm-12 col-md-6 col-lg-2 custom-input-group">
+                        <label class="form-label" for="user">User</label>
+                        <input type="text" class="form-control" name="user" id="user"
+                            placeholder="Name / Email / Mobile">
+                    </div>
+
+                    <div class="col-sm-12 col-md-3 col-lg-2 custom-input-group">
+                        <label class="form-label" for="status">Status</label>
+                        <select class="form-select select2" name="status" id="status">
+                            <option value="" selected>ALL Status</option>
+                            <option value="0">Pending</option>
+                            <option value="1">Approved</option>
+                            <option value="2">Hold</option>
+                            <option value="3">Return</option>
+                        </select>
+                    </div>
+
+                    <div class="col-sm-12 col-md-3 col-lg-2 custom-input-group">
+                        <label class="form-label" for="payment_type">Payment Type</label>
+                        <select class="form-select select2" name="payment_types" id="payment_types">
+                            <option value="" selected>ALL Type</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Cheque">Cheque</option>
+                            <option value="NEFT">NEFT</option>
+                            <option value="UPI">UPI</option>
+                            <option value="RTGS">RTGS</option>
+                            <option value="IMPS">IMPS</option>
+                            <option value="Discount">Discount</option>
+                            <option value="Adjustment">Adjustment</option>
+                            <option value="TDS">TDS</option>
+                            <option value="Customer Return">Customer Return</option>
+                        </select>
+                    </div>
+
+                    <div class="col-sm-12 col-md-4 col-lg-2 custom-input-group pt-2">
+                        <div class="d-flex">
+                            <button class="btn btn-gradient-primary btn-sm filter" type="button" data-bs-toggle="tooltip"
+                                data-placement="top" title="Click to Filter">
+                                <i data-feather='search'></i>
+                            </button>
+                            <button class="btn btn-gradient-danger btn-sm reset ms-1" type="reset"
+                                data-bs-toggle="tooltip" data-placement="top" title=" Click to Reset Filter">
+                                <i data-feather='x'></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card p-1">
+                <table id="commission_payment" class="datatables-basic table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>{{ __('message.Action') }}</th>
+                            <th>Status</th>
+                            <th>User</th>
+                            <th>Amount</th>
+                            <th>Payment Date</th>
+                            <th>Payment Type</th>
+                            <th>Bank/Branch Name</th>
+                            <th>Cheque/UTR/UPI</th>
+                            <th>Remark</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="inlineModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-transparent border-bottom">
+                    <h4 class="text-center mb-0" id="exampleModalTitle">Add Commission Payment</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-1" id="body">
+                    <form id="form" class="form" action="javascript:void(0);" method="POST">
+                        @csrf
+                        <div class="row">
+                            <div class="col-12 col-md-12 mb-1 custom-input-group">
+                                <label class="form-label" for="user_id">User<span class="text-danger">*</span></label>
+                                <select class="form-control anlayst  form-select select2 custom-select2" name="user_id"
+                                    id="user_id">
+                                    <option selected disabled>{{ __('message.-- Select --') }}</option>
+                                    @foreach ($users as $value)
+                                        <option value="{{ $value->id }}">{{ $value->name }} {{ $value->last_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <span class="invalid-feedback d-block" id="error_user_id" role="alert"></span>
+                            </div>
+                            <div class="col-12 col-md-6 mb-1 custom-input-group">
+                                <input type="hidden" name="commission_payment_id" id="commission_payment_id"
+                                    value="">
+                                <label class="form-label" for="payment_type">Payment Type</label>
+                                <select class="form-control  form-select select2 custom-select2" name="payment_type"
+                                    id="payment_type">
+                                    <option selected disabled>-- Select --</option>
+                                    <option value="Cash">Cash</option>
+                                    <option value="Cheque">Cheque</option>
+                                    <option value="NEFT">NEFT</option>
+                                    <option value="UPI">UPI</option>
+                                    <option value="RTGS">RTGS</option>
+                                    <option value="IMPS">IMPS</option>
+                                    <option value="Discount">Discount</option>
+                                    <option value="Adjustment">Adjustment</option>
+                                    <option value="TDS">TDS</option>
+                                    <option value="Customer Return">Customer Return</option>
+                                </select>
+                                <span class="invalid-feedback d-block" id="error_payment_type" role="alert"></span>
+                            </div>
+                            <div class="col-12 col-md-6 mb-1 custom-input-group d-none" id="upiFields">
+                                <label class="form-label" for="upi_id">UPI ID</label>
+                                <input type="text" class="form-control" name="upi_id" id="upi_id"
+                                    placeholder="UPI ID*">
+                                <span class="invalid-feedback d-block" id="error_upi_id" role="alert"></span>
+                            </div>
+                            <div class="col-12 col-md-6 mb-1 custom-input-group d-none" id="chequeFields">
+                                <label class="form-label" for="cheque_number">Cheque Number</label>
+                                <input type="text" class="form-control" name="cheque_number" id="cheque_number"
+                                    placeholder="Cheque Number *">
+                                <span class="invalid-feedback d-block" id="error_cheque_number" role="alert"></span>
+                            </div>
+                            <div class="col-12 col-md-6 mb-1 custom-input-group d-none" id="bankFields">
+                                <label class="form-label" for="bank_name">Bank Name</label>
+                                <input type="text" class="form-control" name="bank_name" id="bank_name"
+                                    placeholder="Bank Name*">
+                                <span class="invalid-feedback d-block" id="error_bank_name" role="alert"></span>
+                            </div>
+                            <div class="col-12 col-md-6 mb-1 custom-input-group d-none" id="branchFields">
+                                <label class="form-label" for="branch_name">Branch Name</label>
+                                <input type="text" class="form-control" name="branch_name" id="branch_name"
+                                    placeholder="Branch Name *">
+                                <span class="invalid-feedback d-block" id="error_branch_name" role="alert"></span>
+                            </div>
+                            <div class="col-12 col-md-6 mb-1 custom-input-group d-none" id="utrFields">
+                                <label class="form-label utr-no" for="utr_number">UTR Number</label>
+                                <input type="text" class="form-control" name="utr_number" id="utr_number"
+                                    placeholder="UTR Number *">
+                                <span class="invalid-feedback d-block" id="error_utr_number" role="alert"></span>
+                            </div>
+                            <div class="col-12 col-md-6 mb-1 custom-input-group " id="amountFields">
+                                <label class="form-label" for="amount">Amount</label>
+                                <input type="number" class="form-control" name="amount" id="amount"
+                                    value="">
+                                <span class="invalid-feedback d-block" id="error_amount" role="alert"></span>
+                            </div>
+                            <div class="col-12 col-md-6 mb-1 custom-input-group " id="dateFields">
+                                <label class="form-label" for="payment_date">Payment Date</label>
+                                <input type="text" class="form-control flatpickr-date" name="payment_date"
+                                    id="payment_date" placeholder="Payment Date *">
+                                <span class="invalid-feedback d-block" id="error_payment_date" role="alert"></span>
+                            </div>
+                            <div class="col-12 col-md-6 mb-1 custom-input-group">
+                                <label class="form-label" for="remark">Remark</label>
+                                <input type="text" class="form-control " name="remark" id="remark"
+                                    placeholder="Remark (If Any)">
+                            </div>
+
+                            <div class="col-md-12 col-12">
+                                <button type="submit"
+                                    class="btn btn-sm btn-primary float-end save">{{ __('message.Submit') }}</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
+@section('pagescript')
+    <script type="application/javascript">
+    'use strict';
+    const URL = "{{route('commission-payment.index')}}";
+
+    $(document).on('show.bs.dropdown', '.dropdown', function() {
+            var $dropdownMenu = $(this).find('.dropdown-menu');
+            $('body').append($dropdownMenu.detach());
+        });
+        $(document).on('hide.bs.dropdown', '.dropdown', function() {
+            var $dropdownMenu = $(this).find('.dropdown-menu');
+            $(this).append($dropdownMenu.detach());
+            $dropdownMenu.hide();
+        });
+
+    $("#from_date").flatpickr({
+        altInput: true,
+        altFormat: 'd-m-Y',
+        dateFormat: 'Y-m-d'
+    });
+    $("#to_date").flatpickr({
+        altInput: true,
+        altFormat: 'd-m-Y',
+        dateFormat: 'Y-m-d'
+    });
+
+    flatpickr('.flatpickr-date', {
+        enableTime: false,
+        dateFormat: 'd-m-Y',
+        defaultDate: '',
+    });
+
+    var table = '';
+    $(function() {
+        table = $('#commission_payment').DataTable({
+            ajax: {
+                url: URL,
+                data: function(d) {
+                    d.from_date = $('#from_date').val();
+                    d.to_date = $('#to_date').val();
+                    d.user = $('#user').val();
+                    d.payment_type = $('#payment_types').val();
+                    d.status = $('#status').val();
+                }
+            },
+            processing: true,
+            serverSide: true,
+            fixedHeader: true,
+            scrollX: false,
+            aLengthMenu: [
+                [20, -1],
+                [20, "All"],
+            ],
+            columns: [{
+                    data: 'id',
+                    render: function(data, type, row, meta) {
+                        return meta.row + meta.settings._iDisplayStart + 1;
+                    }
+                },
+                {
+                    data: 'action',
+                    name: 'action',
+                    orderable: false,
+                    sortable: false
+                },
+                {
+                    data: 'status',
+                    name: 'status'
+                },
+                {
+                    data: 'user_name',
+                    name: 'user_name',
+                    className: 'text-nowrap'
+                },
+                {
+                    data: 'amount',
+                    name: 'amount',
+                    className: 'text-nowrap'
+                },
+                {
+                    data: 'payment_date',
+                    name: 'payment_date',
+                    className: 'text-nowrap'
+                },
+                {
+                    data: 'payment_type',
+                    name: 'payment_type'
+                },
+                {
+                    data: 'bank_name',
+                    name: 'bank_name'
+                },
+                {
+                    data: 'utr_number',
+                    name: 'utr_number'
+                },
+                {
+                    data: 'remark',
+                    name: 'remark'
+                }
+
+            ],
+            initComplete: function(settings, json) {
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl)
+                })
+            }
+        });
+    });
+
+    $(document).on('click', '.save', function() {
+        var formData = new FormData($("#form")[0]);
+        if ($("#payment_type").val() != "") {
+            $.ajax({
+                type: "POST",
+                url: "{{route('commission-payment.store')}}",
+                data: formData,
+                dataType: 'json',
+                cache: false,
+                contentType: false,
+                processData: false,
+                beforeSend: function() {
+                    $("#error_name").html(' ');
+                    $(".save").html(`<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{ __('message.Wait') }}`);
+                    $(".save").attr('disabled', true);
+                },
+                success: function(response) {
+                    $(".save").html("{{ __('message.Submit') }}");
+                    $(".save").attr('disabled', false);
+                    if (response.server_error && response.status == false) {
+                        toastr.error("{{ __('message.Something went wrong. Please try again.') }}", "{{ __('message.Error') }}");
+                    } else if (response.status == false) {
+                        $.each(response.errors, function(key, value) {
+                            $('#error_' + key).html('<p class="text-danger mb-0">' + value + '</p>');
+                        });
+                        toastr.warning("{{ __('message.Please input proper data.') }}", "{{ __('message.Warning') }}");
+                    } else {
+                        $('#form')[0].reset();
+                        toastr.success(response.message, "{{ __('message.Success') }}");
+                        setTimeout(function() {
+                            location.href = "{{ route('commission-payment.index') }}";
+                        }, 1000);
+                    }
+                }
+            });
+        } else {
+            $("#form").validate({
+                rules: {
+                    payment_type: {
+                        required: true,
+                    },
+                },
+                messages: {
+                    payment_type: {
+                        required: "payment Type"
+                    },
+                },
+                errorElement: "p",
+                errorClass: "text-danger mb-0",
+
+                highlight: function(element) {
+                    $(element).addClass('has-error');
+                },
+                unhighlight: function(element) {
+                    $(element).removeClass('has-error');
+                },
+                errorPlacement: function(error, element) {
+                    $(element).closest('.custom-input-group').append(error);
+                }
+            });
+        }
+    });
+
+    $("#inlineModal").on("hidden.bs.modal", function(e) {
+        $(this).find('form').trigger('reset');
+        $("#commission_payment_id").val("");
+        $("#name-error").html("");
+        $("#exampleModalTitle").html("Add Commission Payment");
+    });
+
+    $(document).on('click', '.edit', function() {
+        var id = $(this).data('id');
+        var url = "{{route('commission-payment.edit','id')}}".replace('id', id);
+        $.ajax({
+            type: "GET",
+            url: url,
+            dataType: 'json',
+            cache: false,
+            contentType: false,
+            processData: false,
+            beforeSend: function() {},
+            success: function(data) {
+                if (data.msg_type == "success") {
+                    $("#exampleModalTitle").html("Edit Commission Payment");
+                    $("#user_id").val(data.result.user_id).trigger('change');
+                    $("#payment_type").val(data.result.payment_type).trigger('change');
+                    $("#amount").val(data.result.amount);
+                    $("#payment_date").val(data.result.payment_date);
+                    $("#cheque_number").val(data.result.cheque_number);
+                    $("#bank_name").val(data.result.bank_name);
+                    $("#branch_name").val(data.result.branch_name);
+                    $("#utr_number").val(data.result.utr_number);
+                    $("#upi_id").val(data.result.upi_id);
+                    $("#remark").val(data.result.remark);
+                    $("#commission_payment_id").val(id);
+
+                    flatpickr('.flatpickr-date', {
+                        enableTime: false,
+                        dateFormat: 'd-m-Y',
+                        defaultDate: '',
+                    });
+
+                    $("#inlineModal").modal('show');
+                } else {
+                    swal(data.msg_content, {
+                        icon: "error",
+                    });
+                }
+            }
+        });
+    });
+
+    $(document).on('click', '.delete', function() {
+        var btn = $(this);
+        var id = btn.data('id');
+        Swal.fire({
+                title: "{{ __('message.Are you sure?') }}",
+                text: "{{ __('message.You won`t be able to revert this!') }}",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: "{{ __('message.Yes, delete it!') }}",
+                customClass: {
+                    confirmButton: 'btn btn-primary',
+                    cancelButton: 'btn btn-outline-danger ms-1'
+                },
+                buttonsStyling: false
+            })
+            .then(function(result) {
+                if (result.value) {
+                    axios.delete(URL + '/' + id)
+                        .then(function(response) {
+                            if (response.data.status == true) {
+                                table.ajax.reload(null, false);
+                                toastr.success("{{ __('message.Deleted successfully.') }}", "{{ __('message.Success') }}");
+                            } else if (response.data.status == false && response.data.server_error) {
+                                toastr.error("{{ __('message.Something went wrong. Please try again.') }}", "{{ __('message.Error') }}");
+                            } else {
+                                toastr.warning("{{ __('message.This Payment Collection has been used.') }}", "{{ __('message.Warning') }}");
+                            }
+                        })
+                        .catch(function() {
+                            toastr.error("{{ __('message.Something went wrong. Please try again.') }}", "{{ __('message.Error') }}");
+                        });
+                } else {
+                    Swal.fire({
+                        text: "{{ __('message.Your data is safe.') }}"
+                    });
+                }
+            });
+    });
+
+    $(document).on('change', '#payment_type', function() {
+        var paymentType = $(this).val();
+        if (paymentType == 'Cheque') {
+            $('#chequeFields').removeClass('d-none');
+            $('#bankFields').removeClass('d-none');
+            $('#branchFields').removeClass('d-none');
+            $('#upiFields').addClass('d-none');
+            $('#utrFields').addClass('d-none');
+            $('#upi_id').val('');
+            $('#utr_number').val('');
+        } else if (paymentType == 'UPI') {
+            $('#chequeFields').addClass('d-none');
+            $('#bankFields').addClass('d-none');
+            $('#branchFields').addClass('d-none');
+            $('#cheque_number').val('');
+            $('#bank_name').val('');
+            $('#branch_name').val('');
+            $('#upiFields').removeClass('d-none');
+            $('#utrFields').addClass('d-none');
+            $('#utr_number').val('');
+        } else if (paymentType == 'Cash' || paymentType == 'Discount' || paymentType == 'Adjustment') {
+            $('#chequeFields').addClass('d-none');
+            $('#bankFields').addClass('d-none');
+            $('#branchFields').addClass('d-none');
+            $('#upiFields').addClass('d-none');
+            $('#utrFields').addClass('d-none');
+            $('#cheque_number').val('');
+            $('#bank_name').val('');
+            $('#branch_name').val('');
+            $('#upi_id').val('');
+            $('#utr_number').val('');
+
+        } else if (paymentType == 'NEFT') {
+            $('#chequeFields').addClass('d-none');
+            $('#cheque_number').val('');
+            $('#bankFields').removeClass('d-none');
+            $('#branchFields').removeClass('d-none');
+            $('#upiFields').addClass('d-none');
+            $('#upi_id').val('');
+            $('#utrFields').removeClass('d-none');
+        } else if (paymentType == 'RTGS' || paymentType == 'IMPS') {
+
+            if (paymentType == 'IMPS') {
+
+                $('.utr-no').html('IMPS Ref. No.');
+                $('#utr_number').attr('placeholder', 'IMPS Reference Number *');
+            } else {
+                $('.utr-no').html('UTR Number');
+                $('#utr_number').attr('placeholder', 'UTR Number *');
+            }
+
+            $('#chequeFields').addClass('d-none');
+            $('#cheque_number').val('');
+            $('#bankFields').removeClass('d-none');
+            $('#branchFields').removeClass('d-none');
+            $('#upiFields').addClass('d-none');
+            $('#upi_id').val('');
+            $('#utrFields').removeClass('d-none');
+
+        }
+    });
+
+    $(document).on('click', '.change-status', function() {
+        let status = $(this).data('status');
+        let id = $(this).data('id');
+        var url = "{{route('change-commission-payment-status')}}";
+        Swal.fire({
+                title: "{{ __('message.Are you sure?') }}",
+                text: "{{ __('message.You won`t be able to revert this!') }}",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: "Yes, Change it!",
+                customClass: {
+                    confirmButton: 'btn btn-primary',
+                    cancelButton: 'btn btn-outline-danger ms-1'
+                },
+                buttonsStyling: false
+            })
+            .then(function(result) {
+                if (result.value) {
+                    $.ajax({
+                        url: url,
+                        type: 'POST',
+                        datatype: 'json',
+                        data: {
+                            "id": id,
+                            "status": status,
+                            "_token": "{{ csrf_token() }}",
+                        },
+                        success: function(response) {
+                            if (response.status) {
+                                table.ajax.reload(null, false);
+                                toastr.success(response.message, 'Success');
+                            } else {
+                                toastr.error(response.server_error, 'Opps!');
+
+                            }
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        text: "{{ __('message.Your data is safe.') }}"
+                    });
+                }
+            });
+    });
+
+    $(document).on('click', '.filter', function() {
+        table.draw();
+    });
+    $(document).on('click', '.reset', function() {
+        $('#from_date').val('');
+        $('#to_date').val('');
+        $('#user').val('');
+        $("#from_date").flatpickr({
+            altInput: true,
+            altFormat: 'd-m-Y',
+            dateFormat: 'Y-m-d'
+        });
+        $("#to_date").flatpickr({
+            altInput: true,
+            altFormat: 'd-m-Y',
+            dateFormat: 'Y-m-d'
+        });
+        $('#payment_types').val('');
+        $('#status').val('');
+        $('.select2').select2();
+        table.draw();
+    });
+</script>
+@endsection

@@ -1,0 +1,221 @@
+:root {
+     --bg-color: #fcf6f2;
+     --primary-color: #149AD8;
+     --dark-gray: #515A6D;
+     --light-gray: #71747E;
+}
+
+.expanded .navbar-header .navbar-nav .nav-item .navbar-brand .brand-logo {
+     display: none !important;
+}
+
+.expanded .navbar-header .navbar-nav .nav-item .navbar-brand .logo-admin {
+     display: block;
+}
+
+.navbar-header .navbar-nav .nav-item .navbar-brand .logo-admin {
+     display: none;
+}
+
+.input-group-merge .form-control:not(:last-child) {
+     padding-right: 0;
+     border-right: 1px solid #ea5455;
+     border-top-right-radius: 5px !important;
+     border-bottom-right-radius: 5px !important;
+}
+
+.pace .pace-progress {
+     background: #7367f0 !important;
+}
+
+.vertical-layout.vertical-menu-modern .main-menu .navigation .menu-content>li>a svg {
+     height: 1rem;
+     width: 1rem;
+}
+
+.navigation .nav-item {
+     margin-top: 7px;
+}
+
+.ck-editor,
+.ck-content {
+     height: 100px;
+}
+
+.accordion-item {
+     box-shadow: 0 4px 24px 0 rgba(34, 41, 47, 0.1) !important;
+}
+
+.card .card {
+     box-shadow: 0 4px 24px 0 rgba(34, 41, 47, 0.1) !important;
+}
+
+.accordion-button::after {
+     background-image: url(../images/svg/plus-svgrepo-com.svg);
+}
+
+.accordion-button:not(.collapsed)::after {
+     background-image: url(../images/svg/minus-svgrepo-com.svg);
+}
+
+.header-navbar .navbar-container ul.navbar-nav li.dropdown-user .dropdown-menu {
+     width: 14rem;
+     margin-top: 10px;
+}
+
+html .content.app-content {
+     padding: calc(0rem + 3.85rem + 0rem) 2rem 0 !important;
+}
+
+.header-navbar {
+     min-height: 3.45rem;
+}
+
+.navbar-floating .header-navbar-shadow {
+     height: 0px !important;
+}
+
+html .content .content-wrapper .content-header-title {
+     padding-top: 5px !important;
+     border-right: none !important;
+     margin-bottom: 0px !important;
+}
+
+table.dataTable td,
+table.dataTable th {
+     padding: 0rem 0.8rem;
+     /* font-size: 12px; */
+}
+
+.avatar {
+     font-size: 0.8rem;
+}
+
+table.dataTable thead .sorting:before,
+table.dataTable thead .sorting_asc:before,
+table.dataTable thead .sorting_desc:before {
+     right: 0.3rem;
+     top: 0rem;
+}
+
+table.dataTable thead .sorting:after,
+table.dataTable thead .sorting_asc:after,
+table.dataTable thead .sorting_desc:after {
+     right: 0.3rem;
+     top: 0.4rem;
+}
+
+div.dataTables_wrapper div.dataTables_filter label,
+div.dataTables_wrapper div.dataTables_length label {
+     margin-top: 0.1rem;
+     margin-bottom: 0.5rem;
+}
+
+table.dataTable>thead>tr>th:not(.sorting_disabled),
+table.dataTable>thead>tr>td:not(.sorting_disabled) {
+     padding-right: 10px;
+}
+
+div.dataTables_wrapper div.dataTables_paginate ul.pagination {
+     margin-top: 1rem;
+     margin-bottom: 0.1rem;
+}
+
+.mb-1 {
+     margin-bottom: 0.4rem !important;
+}
+
+.p-50 {
+     padding: 0.3rem !important;
+}
+
+.vertical-layout .header-navbar .navbar-container ul.navbar-nav li.dropdown .dropdown-menu {
+     top: 37px !important;
+     right: 0;
+}
+
+.status,
+.lang-change {
+     padding: 0.55rem 1.28rem !important;
+}
+
+.status {
+     padding: 0.45rem 1.28rem !important;
+}
+
+.form-select,
+.input-group-text {
+     padding: 0.371rem 1rem;
+}
+
+.form-control {
+     padding: 0.371rem 1rem;
+}
+.main-menu.menu-light .navigation > li ul .active,
+.main-menu.menu-light .navigation > li.active > a {
+     box-shadow: 0 0 10px 1px rgba(115, 103, 240, 0.3);
+ }
+
+ .notification-menu {
+     min-width: 24vw !important;
+ }
+
+ /* MAIN TIMELINE CONTAINER */
+.timeline-vertical {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    counter-reset: step-counter; /* auto numbering */
+}
+
+/* EACH ITEM */
+.timeline-vertical li {
+    position: relative;
+    padding-left: 55px;
+    margin-bottom: 30px;
+    font-size: 12px;
+    color: #333;
+    counter-increment: step-counter;
+}
+
+/* VERTICAL LINE (Stops before last circle automatically) */
+.timeline-vertical:before {
+    content: "";
+    position: absolute;
+    left: 25px;
+    top: 0;
+    bottom: calc(0px + 14px);
+    width: 2px;
+    background: #c8c8c8;
+}
+
+/* DEFAULT NUMBER CIRCLE (Inactive Step) */
+.timeline-vertical li:before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 12px;
+    top: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid #0b3c70;
+    color: #0b3c70;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    z-index: 2;
+}
+
+/* ACTIVE STEP — Filled Blue Circle */
+.timeline-vertical li.active-tl:before {
+    background: #0b3c70;
+    color: #fff;
+}
+
+.timeline-vertical li.active-tl-light:before {
+    background: #6288b1;
+    color: #fff;
+}
