@@ -902,6 +902,7 @@
                                         </ul>
                                     </div>
                                 </div>
+                                @if(!($salesMaster->ragistration_portal == 'GEDA' || ($salesMaster->ragistration_portal == 'National' && $salesMaster->subsidy_giveup)))
                                 <div class="col-lg-12 mt-50 mb-50">
                                     <h5 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);">
                                         <i class="fa fa-university pe-50"></i> Subsidy Details
@@ -952,6 +953,7 @@
                                         </ul>
                                     </div>
                                 </div>
+                                @endif
                                 <div class="col-lg-12 mt-50 mb-50">
                                     <h5 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);">
                                         <i class="fa fa-file pe-50"> </i> Uploaded Documents
@@ -1194,6 +1196,8 @@
                                                         $remove = $status['is_remove'];
                                                         $active = ($salesMaster->$value ?? '0') == '1';
                                                     @endphp
+                                                    @if (($value == 'subsidy_claimed' || $value == 'subsidy_receveid') && ($salesMaster->ragistration_portal == 'GEDA' || ($salesMaster->ragistration_portal == 'National' && $salesMaster->subsidy_giveup)))
+                                                    @else
                                                     @if ($value == 'disbursement' && $percentage > 0)
                                                         <li
                                                             class="{{ $percentage < 100 ? 'active-tl-light' : 'active-tl' }}">
@@ -1214,6 +1218,7 @@
                                                         </a>
                                                     @endif
                                                     </li>
+                                                    @endif
                                                 @endif
                                             @endif
                                         @endforeach

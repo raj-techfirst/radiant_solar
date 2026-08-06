@@ -237,9 +237,13 @@ class SalesMasterController extends Controller
                     $sdd = $row->subsidy_disbursement_date ? date('d-m-Y', strtotime($row->subsidy_disbursement_date)) : '';
                     $sdvd = $row->subsidy_disbursement_verify_date ? date('d-m-Y', strtotime($row->subsidy_disbursement_verify_date)) : '';
 
-                    $html .= '<a class="dropdown-item status application-view" href="javascript:void(0);" data-id="'.$row->id.'" data-date="'.$mid.'" data-img="'.$row->proforma_15.'" data-value="meter_installation">Meter Installation</a>
-                        <a class="dropdown-item status application-view" href="javascript:void(0);" data-id="'.$row->id.'" data-date="'.$srd.'" data-date2="'.$sdvd.'" data-remark="'.$row->subsidy_disbursal_remark.'" data-value="subsidy_claimed">Subsidy Request</a>
-                        <a class="dropdown-item status application-view" href="javascript:void(0);" data-id="'.$row->id.'" data-date="'.$sdd.'" data-value="subsidy_receveid">Subsidy Disbursal</a>';
+                    $html .= '<a class="dropdown-item status application-view" href="javascript:void(0);" data-id="'.$row->id.'" data-date="'.$mid.'" data-img="'.$row->proforma_15.'" data-value="meter_installation">Meter Installation</a>';
+
+                    $hideSubsidy = ($row->ragistration_portal == 'GEDA' || ($row->ragistration_portal == 'National' && $row->subsidy_giveup));
+                    if (! $hideSubsidy) {
+                        $html .= '<a class="dropdown-item status application-view" href="javascript:void(0);" data-id="'.$row->id.'" data-date="'.$srd.'" data-date2="'.$sdvd.'" data-remark="'.$row->subsidy_disbursal_remark.'" data-value="subsidy_claimed">Subsidy Request</a>
+                            <a class="dropdown-item status application-view" href="javascript:void(0);" data-id="'.$row->id.'" data-date="'.$sdd.'" data-value="subsidy_receveid">Subsidy Disbursal</a>';
+                    }
 
                     if ($user->roles[0]->name != 'Manager' && $user->roles[0]->name != 'Sales') {
                         $html .= '<a class="dropdown-item status application-view" href="javascript:void(0);" data-id="'.$row->id.'" data-value="hold_query" data-remark="'.$row->remark.'">Hold / Query</a>';
@@ -270,6 +274,9 @@ class SalesMasterController extends Controller
             $a = $request->status;
             if (toChangeStatus($request->status, $request->id)) {
                 $salesMaster = SalesMaster::where('id', $request->id)->first();
+                if ($request->has('subsidy_giveup')) {
+                    $salesMaster->subsidy_giveup = $request->subsidy_giveup ? 1 : 0;
+                }
                 if ($a != 'hold_query' && $a != 'file_cancel_order') {
                     $salesMaster->hold_query = '0';
                     $salesMaster->file_cancel_order = '0';
@@ -328,6 +335,7 @@ class SalesMasterController extends Controller
             $salesMaster->ragistration_portal = $request->ragistration_portal;
             $salesMaster->ragistration_number = $request->ragistration_number;
             $salesMaster->ragistration_date = ($request->ragistration_date != '') ? date('Y-m-d', strtotime($request->ragistration_date)) : '';
+            $salesMaster->subsidy_giveup = $request->subsidy_giveup ? 1 : 0;
             if (! empty($request->ragistration_portal) && ! empty($request->ragistration_number)) {
                 $salesMaster->pending_approvel = '1';
 

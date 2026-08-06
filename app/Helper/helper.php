@@ -136,14 +136,14 @@ function toChangeStatus($status, $id)
     /* /Meter Installation */
     /* Subsidy Claimed */
     if ($status == 'subsidy_claimed') {
-        if ($salesMaster->meter_installation == 1) {
+        if ($salesMaster->meter_installation == 1 && $salesMaster->ragistration_portal != 'GEDA' && ! ($salesMaster->ragistration_portal == 'National' && $salesMaster->subsidy_giveup == 1)) {
             return true;
         }
     }
     /* /Subsidy Claimed */
     /* Subsidy Receveid */
     if ($status == 'subsidy_receveid') {
-        if ($salesMaster->subsidy_claimed == 1) {
+        if ($salesMaster->subsidy_claimed == 1 && $salesMaster->ragistration_portal != 'GEDA' && ! ($salesMaster->ragistration_portal == 'National' && $salesMaster->subsidy_giveup == 1)) {
             return true;
         }
     }
@@ -233,6 +233,9 @@ function toGetSalesMasterLastStatus($id)
     }
     if ($salesMaster->meter_installation == 1) {
         $title = 'Meter Installation';
+    }
+    if ($salesMaster->meter_installation == 1 && ($salesMaster->ragistration_portal == 'GEDA' || ($salesMaster->ragistration_portal == 'National' && $salesMaster->subsidy_giveup == 1))) {
+        return $title;
     }
     if ($salesMaster->subsidy_claimed == 1) {
         $title = 'Subsidy Request';
@@ -876,6 +879,7 @@ function getInstallation()
 function toGetSalesMasterStatusForDashboard($id)
 {
     $salesMaster = SalesMaster::where('id', $id)->first();
+    $hideSubsidy = ($salesMaster->ragistration_portal == 'GEDA' || ($salesMaster->ragistration_portal == 'National' && $salesMaster->subsidy_giveup));
     $title = 'Application Pending';
     if ($salesMaster->application_pending == 1) {
         $title = 'Application Pending';
@@ -963,14 +967,14 @@ function toGetSalesMasterStatusForDashboard($id)
     if ($salesMaster->meter_installation == 1) {
         $title = 'Meter Installation';
         $value = 'meter_installation';
-        $next = 'subsidy_claimed';
+        $next = $hideSubsidy ? '' : 'subsidy_claimed';
     }
-    if ($salesMaster->subsidy_claimed == 1) {
+    if ($salesMaster->subsidy_claimed == 1 && ! $hideSubsidy) {
         $title = 'Subsidy Request';
         $value = 'subsidy_claimed';
         $next = 'subsidy_receveid';
     }
-    if ($salesMaster->subsidy_receveid == 1) {
+    if ($salesMaster->subsidy_receveid == 1 && ! $hideSubsidy) {
         $title = 'Subsidy Disbursal';
         $value = 'subsidy_receveid';
         $next = '';

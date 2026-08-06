@@ -23,6 +23,10 @@
                 <!-- <input type="text" class="form-control" name="ragistration_portal" id="ragistration_portal" placeholder="Ragistration Portal *">
             <span class="invalid-feedback d-block" id="error_ragistration_portal" role="alert"></span> -->
             </div>
+            <div class="form-check mt-1 subsidy-giveup-wrapper d-none">
+                <input class="form-check-input" type="checkbox" name="subsidy_giveup" id="subsidy_giveup" value="1" {{ $salesMaster->subsidy_giveup ? 'checked' : '' }}>
+                <label class="form-check-label" for="subsidy_giveup">Giveup Subsidy</label>
+            </div>
         </div>
         <div class="col-12 col-md-12 mb-1 custom-input-group">
             <label class="form-label" for="ragistration_numbar">Ragistration Numbar</label>
@@ -56,12 +60,11 @@
             <span class="invalid-feedback d-block" id="error_feasibility_amount" role="alert"></span>
         </div>
         <div class="col-md-12 col-12">
-            <button type="submit" class="btn btn-sm btn-primary float-end">{{ __('message.Submit') }}</button>
+            <button type="submit" class="btn btn-sm btn-primary float-end ">{{ __('message.Submit') }}</button>
         </div>
     </div>
 </form>
 @endif
-
 
 
 <!-- @if($salesMaster->payment_receveid == '1')
@@ -88,7 +91,7 @@
         <input type="hidden" id="sales_master_id" name="sales_master_id" value="{{ $salesMaster->id }}">
         @endif
         <div class="col-md-12 col-12">
-            <button type="submit" class="btn btn-sm btn-primary float-end ">Installation Pending</button>
+            <button type="submit" class="btn btn-sm btn-primary float-end ">{{ __('message.Submit') }}</button>
         </div>
     </div>
 </form>
@@ -203,6 +206,8 @@
 </form>
 @endif
 
+@php $hideSubsidy = ($salesMaster->ragistration_portal == 'GEDA' || ($salesMaster->ragistration_portal == 'National' && $salesMaster->subsidy_giveup)); @endphp
+@if(!$hideSubsidy)
 @if($salesMaster->meter_installation == '1')
 <form id="form" class="form" action="{{route('application-save',$salesMaster->id)}}" method="POST">
     @csrf
@@ -268,3 +273,18 @@
     </div>
 </form>
 @endif
+@endif
+
+<script>
+$(document).on('change', 'input[name="ragistration_portal"]', function() {
+    if ($(this).val() == 'National') {
+        $('.subsidy-giveup-wrapper').removeClass('d-none');
+    } else {
+        $('.subsidy-giveup-wrapper').addClass('d-none');
+        $('#subsidy_giveup').prop('checked', false);
+    }
+});
+@if ($salesMaster->ragistration_portal == 'National')
+$('.subsidy-giveup-wrapper').removeClass('d-none');
+@endif
+</script>

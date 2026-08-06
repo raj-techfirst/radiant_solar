@@ -120,6 +120,12 @@
                                     <label class="form-check-label" for="other">Other</label>
                                 </div>
                             </div>
+                            <div class="form-check mt-1 subsidy-giveup-wrapper d-none">
+                                <input class="form-check-input" type="checkbox" name="subsidy_giveup"
+                                    id="subsidy_giveup" value="1"
+                                    {{ $salesMaster->subsidy_giveup ? 'checked' : '' }}>
+                                <label class="form-check-label" for="subsidy_giveup">Giveup Subsidy</label>
+                            </div>
                         </div>
                     </div>
                     <div class="row">
@@ -544,3 +550,17 @@
         </div> -->
     </form>
 </section>
+
+<script>
+    $(document).on('change', 'input[name="ragistration_portal"]', function() {
+        if ($(this).val() == 'National') {
+            $('.subsidy-giveup-wrapper').removeClass('d-none');
+        } else {
+            $('.subsidy-giveup-wrapper').addClass('d-none');
+            $('#subsidy_giveup').prop('checked', false);
+        }
+    });
+    @if ($salesMaster->ragistration_portal == 'National')
+        $('.subsidy-giveup-wrapper').removeClass('d-none');
+    @endif
+</script>

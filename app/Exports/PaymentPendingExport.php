@@ -24,7 +24,7 @@ class PaymentPendingExport implements FromCollection, WithHeadings, WithMapping
      */
     public function collection()
     {
-        $query = SalesMaster::select('*','id as sid')->with('district', 'taluka', 'village', 'subDivision', 'salesquatationfull','paymetCollection');
+        $query = SalesMaster::select('*','id as sid')->with('district.state', 'taluka', 'village', 'subDivision', 'salesquatationfull','paymetCollection');
         $query->where('file_cancel_order', '0');
         $company = CompanyProfile::where('user_id', Auth::id())->first();
         if ($company->user_type == 'M') {
@@ -80,7 +80,10 @@ class PaymentPendingExport implements FromCollection, WithHeadings, WithMapping
         $data = $query->orderBy('id', 'DESC')->get();
         foreach ($data as $key => $value) {
             $value->id = $key + 1;
-           $value->agentsalesperson_name = $value->agentsalesperson->name;
+            $value->agentsalesperson_name = $value->agentsalesperson->name;
+            $value->state_name = $value->district->state->state_name ?? null;
+            $value->district_name = $value->district->name ?? null;
+            $value->taluka_name = $value->taluka->name ?? null;
             $value->status = toGetSalesMasterLastStatus($value->sid);
             $totalamount = ($value->salesquatationfull->total_amount != null) ? $value->salesquatationfull->total_amount : 0;
             $meter_charges = ($value->salesquatationfull->meter_charges != null) ? $value->salesquatationfull->meter_charges : 0;
@@ -136,6 +139,11 @@ class PaymentPendingExport implements FromCollection, WithHeadings, WithMapping
             'Consumer Name',
             'Contact Number',
             'Consumer Type',
+            'Address',
+            'State',
+            'District',
+            'Taluka',
+            'Pincode',
             'Registation Kw',
             'System Cost',
             'Meter Charges',
@@ -161,6 +169,11 @@ class PaymentPendingExport implements FromCollection, WithHeadings, WithMapping
             $row->consumer_name,
             $row->contact_number,
             $row->consumer_type,
+            $row->address,
+            $row->state_name,
+            $row->district_name,
+            $row->taluka_name,
+            $row->pin_code,
             $row->register_kw,
             number_format($row->system_cost,2),
             $row->meter_charges,
