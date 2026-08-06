@@ -45,6 +45,11 @@ class Installation extends Model
     }
     public function invater()
     {
-        return $this->hasMany(InstallationInvater::class, 'installation_id', 'id')->select('id', 'installation_id', 'invater_id', 'invater_kw', 'serial_no_of_inverter', 'voltage','model_number');
+        return $this->hasMany(InstallationInvater::class, 'installation_id', 'id')->select('id', 'installation_id', 'invater_id', 'invater_kw', 'serial_no_of_inverter', 'voltage', 'model_number', 'item_group_id');
+    }
+
+    public function installationItems()
+    {
+        return $this->hasMany(InstallationItems::class, 'installation_id', 'id')->with('product');
     }
 }

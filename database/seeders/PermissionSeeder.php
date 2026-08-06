@@ -176,7 +176,7 @@ class PermissionSeeder extends Seeder
             ['title_tag' => 'Goods Issue', 'title' => 'Edit', 'name' => 'delivery-challan-edit', 'type' => 'ERP'],
             ['title_tag' => 'Goods Issue', 'title' => 'Delete', 'name' => 'delivery-challan-delete', 'type' => 'ERP'],
 
-            ['title_tag' => 'Inquiry', 'title' => 'List', 'name' => 'inquiry-list', 'type' => 'ERP'],
+            ['title_tag' => 'Complaint Management', 'title' => 'List', 'name' => 'inquiry-list', 'type' => 'CRM'],
 
             ['title_tag' => 'Goods Return', 'title' => 'List', 'name' => 'delivery-challan-return-list', 'type' => 'ERP'],
             ['title_tag' => 'Goods Return', 'title' => 'Create', 'name' => 'delivery-challan-return-create', 'type' => 'ERP'],
@@ -205,19 +205,26 @@ class PermissionSeeder extends Seeder
             ['title_tag' => 'Commission Payment', 'title' => 'Edit', 'name' => 'commission-payment-edit', 'type' => 'CRM'],
             ['title_tag' => 'Commission Payment', 'title' => 'Delete', 'name' => 'commission-payment-delete', 'type' => 'CRM'],
 
-            ['title_tag' => 'Commission', 'title' => 'List', 'name' => 'commission-list', 'type' => 'CRM']
+            ['title_tag' => 'Commission', 'title' => 'List', 'name' => 'commission-list', 'type' => 'CRM'],
+
+            ['title_tag' => 'Lead Source', 'title' => 'List', 'name' => 'lead-source-list', 'type' => 'CRM'],
+            ['title_tag' => 'Lead Source', 'title' => 'Create', 'name' => 'lead-source-create', 'type' => 'CRM'],
+            ['title_tag' => 'Lead Source', 'title' => 'Edit', 'name' => 'lead-source-edit', 'type' => 'CRM'],
+            ['title_tag' => 'Lead Source', 'title' => 'Delete', 'name' => 'lead-source-delete', 'type' => 'CRM'],
+
+            ['title_tag' => 'Complaint Management', 'title' => 'Edit', 'name' => 'inquiry-edit', 'type' => 'CRM'],
+            ['title_tag' => 'Complaint Management', 'title' => 'Delete', 'name' => 'inquiry-delete', 'type' => 'CRM']
         ];
 
         foreach ($permissions as $permissionData) {
-            $existingPermission = Permission::where('name', $permissionData['name'])->first();
-            if (!$existingPermission) {
-                Permission::create([
-                    'name' => $permissionData['name'],
+            Permission::updateOrCreate(
+                ['name' => $permissionData['name']],
+                [
                     'title' => $permissionData['title'],
                     'title_tag' => $permissionData['title_tag'],
-                    'type' => $permissionData['type']
-                ]);
-            }
+                    'type' => $permissionData['type'],
+                ]
+            );
         }
     }
 }

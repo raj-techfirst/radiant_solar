@@ -184,9 +184,6 @@ database/migrations/       # 79+ migration files
 config/                    # Laravel config files
 ```
 
-## Developer
-
-Renish Kumbhani — Web Developer at TechFirst Technologies
 
 ## License
 

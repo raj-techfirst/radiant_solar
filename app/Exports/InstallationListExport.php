@@ -23,7 +23,7 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
      */
     public function collection()
     {
-        $query = SalesMaster::select('*', 'id as sid')->with('district','district.state', 'taluka',  'subDivision', 'salesquatationfull', 'installation', 'installation.panelwatt', 'installation.panelcompany', 'installation.paneltype', 'installation.installationPenals', 'installation.invater', 'installation.invater.company');
+        $query = SalesMaster::select('*', 'id as sid')->with('district','district.state', 'taluka',  'subDivision', 'salesquatationfull', 'installation', 'installation.panelwatt', 'installation.panelcompany', 'installation.paneltype', 'installation.installationPenals', 'installation.invater', 'installation.invater.company', 'installation.invater.itemGroup', 'installation.installationItems.product');
         $query->where('file_cancel_order', '0');
         $company = CompanyProfile::where('user_id', Auth::id())->first();
         if ($company->user_type == 'M') {
@@ -123,6 +123,9 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
             $penal_sr_no = implode(', ', $penal_sr_no_arr);
             $total_kw = (isset($value->installation) && $value->installation != null) ? $value->installation->total_kv : '';
             $type_of_inverter = (isset($value->installation) && $value->installation != null) ? $value->installation->type_of_inverter : '';
+            if ($value->installation != null && $value->installation->form_type == 'new') {
+                $type_of_inverter = ($type_of_inverter === null || $type_of_inverter === '') ? getInstallationInverterType($value->installation) : $type_of_inverter;
+            }
             $no_of_inverter = (isset($value->installation) && $value->installation != null) ? $value->installation->no_of_inverter : '';
             $make_of_inverter_arr = $inverter_model_no_arr = $inverter_kw_arr = $inverter_sr_no_arr = $inverter_voltage_arr = [];
             if (isset($value->installation) && $value->installation != null && isset($value->installation->invater) && count($value->installation->invater) > 0) {
@@ -146,6 +149,13 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
             $cable_ac = (isset($value->installation) && $value->installation != null) ? $value->installation->cable_ac : '';
             $cable_la = (isset($value->installation) && $value->installation != null) ? $value->installation->cable_la : '';
             $cable_earthing = (isset($value->installation) && $value->installation != null) ? $value->installation->cable_earthing : '';
+            if ($value->installation != null && $value->installation->form_type == 'new') {
+                $cableTotals = getInstallationCableTotals($value->installation);
+                $cable_dc = ($cable_dc === null || $cable_dc === '') ? $cableTotals['dc'] : $cable_dc;
+                $cable_ac = ($cable_ac === null || $cable_ac === '') ? $cableTotals['ac'] : $cable_ac;
+                $cable_la = ($cable_la === null || $cable_la === '') ? $cableTotals['la'] : $cable_la;
+                $cable_earthing = ($cable_earthing === null || $cable_earthing === '') ? $cableTotals['earthing'] : $cable_earthing;
+            }
             $dc_side = (isset($value->installation) && $value->installation != null) ? $value->installation->dc_side : '';
             $ac_Side = (isset($value->installation) && $value->installation != null) ? $value->installation->ac_side : '';
             $la_Earthing = (isset($value->installation) && $value->installation != null) ? $value->installation->la_earthing : '';
@@ -155,6 +165,13 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
             $structure_60_40_2_mm = (isset($value->installation) && $value->installation != null) ? $value->installation->structure_60_40_2mm : '';
             $structure_80_40_2_mm = (isset($value->installation) && $value->installation != null) ? $value->installation->structure_80_40_2mm : '';
             $structure_others = (isset($value->installation) && $value->installation != null) ? $value->installation->structure_others : '';
+            if ($value->installation != null && $value->installation->form_type == 'new') {
+                $structureTotals = getInstallationStructureTotals($value->installation);
+                $structure_40_40_2_mm = ($structure_40_40_2_mm === null || $structure_40_40_2_mm === '') ? $structureTotals['s40'] : $structure_40_40_2_mm;
+                $structure_60_40_2_mm = ($structure_60_40_2_mm === null || $structure_60_40_2_mm === '') ? $structureTotals['s60'] : $structure_60_40_2_mm;
+                $structure_80_40_2_mm = ($structure_80_40_2_mm === null || $structure_80_40_2_mm === '') ? $structureTotals['s80'] : $structure_80_40_2_mm;
+                $structure_others = ($structure_others === null || $structure_others === '') ? $structureTotals['others'] : $structure_others;
+            }
             $value->installation_date = $installation_date;
             $value->penal_company = $penal_company;
             $value->penal_model_no = $penal_model_no;
@@ -235,7 +252,7 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
             'Structure 80*40*2 mm',
             'Structure others',
 			"Commission Amount",
-			"Commission Amount",
+			"Sub Commission Amount",
 			"Installation Amount"
         ];
     }

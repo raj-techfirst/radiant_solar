@@ -22,4 +22,9 @@ class InstallationInvater extends Model
     {
         return $this->hasOne(InveterCompany::class, 'id', 'invater_id')->select('id', 'name');
     }
+
+    public function itemGroup()
+    {
+        return $this->hasOne(ItemGroup::class, 'id', 'item_group_id')->select('id', 'inverter_type');
+    }
 }

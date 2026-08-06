@@ -265,6 +265,92 @@ function installationAsignPerson($id)
     return '';
 }
 
+function getInstallationCableTotals($installation)
+{
+    $totals = ['dc' => '', 'ac' => '', 'la' => '', 'earthing' => ''];
+    if (is_null($installation) || is_null($installation->installationItems)) {
+        return $totals;
+    }
+    $dc = $ac = $la = $earthing = 0;
+    foreach ($installation->installationItems as $item) {
+        if ($item->product == null) {
+            continue;
+        }
+        $name = strtoupper($item->product->name);
+        if (strpos($name, 'CABLE') === false) {
+            continue;
+        }
+        $qty = (float) $item->use_stock;
+        if (preg_match('/\bDC\b/', $name)) {
+            $dc += $qty;
+        }
+        if (preg_match('/\bAC\b/', $name)) {
+            $ac += $qty;
+        }
+        if (preg_match('/\bLA\b/', $name)) {
+            $la += $qty;
+        }
+        if (preg_match('/\bEARTHING\b/', $name)) {
+            $earthing += $qty;
+        }
+    }
+    return [
+        'dc' => ($dc > 0) ? $dc : '',
+        'ac' => ($ac > 0) ? $ac : '',
+        'la' => ($la > 0) ? $la : '',
+        'earthing' => ($earthing > 0) ? $earthing : '',
+    ];
+}
+
+function getInstallationStructureTotals($installation)
+{
+    $totals = ['s40' => '', 's60' => '', 's80' => '', 'others' => ''];
+    if (is_null($installation) || is_null($installation->installationItems)) {
+        return $totals;
+    }
+    $s40 = $s60 = $s80 = $others = 0;
+    foreach ($installation->installationItems as $item) {
+        if ($item->product == null) {
+            continue;
+        }
+        $name = strtoupper($item->product->name);
+        if (strpos($name, '*') === false) {
+            continue;
+        }
+        $qty = (float) $item->use_stock;
+        if (strpos($name, '40*40*2') !== false) {
+            $s40 += $qty;
+        } elseif (strpos($name, '60*40*2') !== false) {
+            $s60 += $qty;
+        } elseif (strpos($name, '80*40*2') !== false) {
+            $s80 += $qty;
+        } elseif (preg_match('/\d+\*\d+\*\d+MM/', $name)) {
+            $others += $qty;
+        }
+    }
+    return [
+        's40' => ($s40 > 0) ? $s40 : '',
+        's60' => ($s60 > 0) ? $s60 : '',
+        's80' => ($s80 > 0) ? $s80 : '',
+        'others' => ($others > 0) ? $others : '',
+    ];
+}
+
+function getInstallationInverterType($installation)
+{
+    if (is_null($installation) || is_null($installation->invater)) {
+        return '';
+    }
+    $types = [];
+    foreach ($installation->invater as $inv) {
+        if (isset($inv->itemGroup) && $inv->itemGroup != null && ! empty($inv->itemGroup->inverter_type)) {
+            $types[$inv->itemGroup->inverter_type] = $inv->itemGroup->inverter_type;
+        }
+    }
+
+    return implode(', ', $types);
+}
+
 function getSubCommissionAgentName($salesMasterId)
 {
     if (empty($salesMasterId)) {
