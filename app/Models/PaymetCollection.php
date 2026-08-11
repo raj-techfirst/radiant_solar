@@ -17,7 +17,7 @@ class PaymetCollection extends Model
 
     public function salesMaster()
     {
-        return $this->hasOne(SalesMaster::class, 'id', 'sales_master_id')->select('id', 'consumer_number', 'consumer_type', 'consumer_name', 'agent_sales_person_id');
+        return $this->hasOne(SalesMaster::class, 'id', 'sales_master_id')->select('id', 'consumer_number', 'consumer_type', 'consumer_name', 'contact_number', 'address', 'pin_code', 'district_id', 'taluka_id', 'agent_sales_person_id');
     }
 
     public function bank()

@@ -25,7 +25,7 @@ class PaymentExport implements FromCollection, WithHeadings, WithMapping
      */
     public function collection()
     {
-        $paymets =  PaymetCollection::select('id', 'sales_master_id', 'payment_type', 'amount', 'payment_date', 'cheque_number', 'bank_name', 'branch_name', 'utr_number', 'upi_id', 'remark', 'status')->with('salesMaster', 'salesMaster.agentsalesperson');
+        $paymets =  PaymetCollection::select('id', 'sales_master_id', 'payment_type', 'amount', 'payment_date', 'cheque_number', 'bank_name', 'branch_name', 'utr_number', 'upi_id', 'remark', 'status')->with('salesMaster', 'salesMaster.agentsalesperson', 'salesMaster.district.state', 'salesMaster.taluka');
         
         $company = CompanyProfile::where('user_id', Auth::id())->first();
         if ($company->user_type == 'M') {
@@ -83,6 +83,11 @@ class PaymentExport implements FromCollection, WithHeadings, WithMapping
             $value->consumer_name = $value->salesMaster->consumer_name;
             $value->contact_number = $value->salesMaster->contact_number;
             $value->consumer_type = $value->salesMaster->consumer_type;
+            $value->address = $value->salesMaster->address;
+            $value->state_name = $value->salesMaster->district->state->state_name ?? null;
+            $value->district_name = $value->salesMaster->district->name ?? null;
+            $value->taluka_name = $value->salesMaster->taluka->name ?? null;
+            $value->pin_code = $value->salesMaster->pin_code;
             if (!is_null($value->payment_date)) {
                 $value->payment_date = date('d-m-Y', strtotime($value->payment_date));
             } else {
@@ -103,6 +108,11 @@ class PaymentExport implements FromCollection, WithHeadings, WithMapping
             'Consumer Name',
             'Contact Number',
             'Consumer Type',
+            'Address',
+            'State',
+            'District',
+            'Taluka',
+            'Pincode',
             'Payment Type',
             'Amount',
             'Payment Date',
@@ -123,6 +133,11 @@ class PaymentExport implements FromCollection, WithHeadings, WithMapping
             $row->consumer_name,
             $row->contact_number,
             $row->consumer_type,
+            $row->address,
+            $row->state_name,
+            $row->district_name,
+            $row->taluka_name,
+            $row->pin_code,
             $row->payment_type,
             number_format($row->amount, 2),
             $row->payment_date,
