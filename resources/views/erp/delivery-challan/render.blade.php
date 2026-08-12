@@ -18,7 +18,7 @@
             <select class="form-select product_id custom-select2" name="item_id" required>
                 <option value="" selected disabled>-- Select --</option>
                 @foreach ($warehouseStock as $k => $v)
-                <option value="{{ $v['id'] }}" data-price="{{ $v['price'] }}" data-unit="{{ $v['unit'] }}" data-gst="{{ $v['gst_rate'] }}" data-stock="{{ $v['stock'] + $item->quantity }}" {{ ($item->item_id == $v['id'] ) ? 'selected' : '' }}>{{ $v['name'] }}</option>
+                <option value="{{ $v['id'] }}" data-price="{{ $v['price'] }}" data-unit="{{ $v['unit'] }}" data-gst="{{ $v['gst_rate'] }}" data-stock="{{ $v['stock'] + (($item->item_id == $v['id']) ? $item->quantity : 0) }}" {{ ($item->item_id == $v['id'] ) ? 'selected' : '' }}>{{ $v['name'] }}</option>
                 @endforeach
             </select>
         </div>
@@ -28,7 +28,7 @@
             <select class="form-select item_group_id custom-select2" name="item_group_id" required>
                 <option value="" selected disabled>-- Select --</option>
                 @foreach ($warehouseStockItemGroup as $k => $v)
-                <option value="{{ $v['id'] }}"  data-price="{{ $v['price'] }}" data-unit="{{ $v['unit'] }}" data-gst="{{ $v['gst_rate'] }}" data-stock="{{ $v['stock'] + $item->quantity }}" {{ ($item->item_group_id == $v['id'] ) ? 'selected' : '' }}>{{ $v['name'] }}</option>
+                <option value="{{ $v['id'] }}"  data-price="{{ $v['price'] }}" data-unit="{{ $v['unit'] }}" data-gst="{{ $v['gst_rate'] }}" data-stock="{{ $v['stock'] + (($item->item_group_id == $v['id']) ? $item->quantity : 0) }}" {{ ($item->item_group_id == $v['id'] ) ? 'selected' : '' }}>{{ $v['name'] }}</option>
                 @endforeach
             </select>
         </div>

@@ -109,7 +109,7 @@
                             <select class="form-select select2" name="warehouse_id_from" id="warehouse_id_from">
                                 <option selected disabled>{{ __('message.-- Select --') }}</option>
                                 @foreach($warehouse as $value)
-                                <option value="{{ $value->id }}" {{ (isset($data) && ($data->warehouse_id == $value->id) ? 'selected' : '')}}>{{ $value->name }}</option>
+                                <option value="{{ $value->id }}" {{ (isset($data) && ($data->warehouse_from_id == $value->id) ? 'selected' : '')}}>{{ $value->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -297,8 +297,6 @@
     function clone() {
         $('.form-repeater, .repeater-default').repeater({
             show: function() {
-                $(this).slideDown();
-                var obj = $(this);
                 var obj = $(this);
                 var sr = $('.sr_no').length;
                 obj.find('.sr_no').text(sr);
@@ -307,6 +305,17 @@
                 obj.find('.product_id').next('.select2-container').remove();
                 obj.find('.type').val('Item').trigger('change');
                 obj.find('.required-item').html('-');
+                obj.find('.dc-meta-id, [name*="delivery_challan_meta_id"]').val('').attr('value', '');
+                obj.find('.quantity').val('').attr('value', '');
+                obj.find('.rate').val('').attr('value', '');
+                obj.find('.stock').val('');
+                obj.find('.stock-find').val('');
+                obj.find('.gst-amt').val('');
+                obj.find('.amount').val('');
+                obj.find('.unit_type').html('');
+                obj.find('.product_id').val('').trigger('change');
+                obj.find('.item_group_id').val('').trigger('change');
+                $(this).slideDown();
                 $('.item_group_id').select2({
                     placeholder: "--Select--",
                     allowClear: true,
@@ -487,7 +496,9 @@
             var btn = $(this);
             var id = $(this).data('id');
             var item_id = btn.closest('tr').find('.product_id').val();
+            var item_group_id = btn.closest('tr').find('.item_group_id').val();
             var warehouse_id = $('#warehouse_id').val();
+            var warehouse_from_id = $('#warehouse_id_from').val();
             var project_id = $('#project_id').val();
             if (id != undefined) {
                 Swal.fire({
@@ -509,8 +520,10 @@
                                 data: {
                                     'id': id,
                                     'warehouse_id': warehouse_id,
+                                    'warehouse_from_id': warehouse_from_id,
                                     'project_id': project_id,
                                     'item_id': item_id,
+                                    'item_group_id': item_group_id,
                                     "_token": "{{ csrf_token() }}",
                                 },
                                 dataType: 'json',

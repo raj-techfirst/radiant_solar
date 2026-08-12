@@ -10,7 +10,7 @@
         $type = 'Project';
         $dis_name = $qry->project->consumer_name;
         } else if ($qry->issue_type == "warehouse") {
-        $type = 'Warehouse From';
+        $type = 'Warehouse To';
         $dis_name = $qry->warehouse_from->name;
         } else if ($qry->issue_type == "trading") {
         $type = 'B2B';
@@ -24,7 +24,7 @@
         <table class="table table-sm">
             <tr>
                 <td><b>Challan No.</b> : {{$qry->challan_number}}</td>
-                <td><b>Warehouse To </b> : {{$qry->warehouse->name}}</td>
+                <td><b>Warehouse From </b> : {{$qry->warehouse->name}}</td>
             </tr>
             <tr>
                 <td><b>Challan Date.</b> : {{ date('d-m-Y',strtotime($qry->created_at))}}</td>

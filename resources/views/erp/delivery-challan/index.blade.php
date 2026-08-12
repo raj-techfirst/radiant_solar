@@ -16,7 +16,8 @@
                         <th>#</th>
                         <th>Action</th>
                         <th>Challan No.</th>
-                        <th>Warehouse</th>
+                        <th>Warehouse From</th>
+                        <th>Warehouse To</th>
                         <th>Project</th>
                         <!-- <th>Total Amt.</th> -->
                         <th>Date</th>
@@ -81,6 +82,14 @@
                         return row.warehouse && row.warehouse.name ? row.warehouse.name : '';
                     },
                     name: 'warehouse.name',
+                    orderable: false,
+                    sortable: false,
+                },
+                {
+                    data: function(row) {
+                        return row.warehouse_from && row.warehouse_from.name ? row.warehouse_from.name : '';
+                    },
+                    name: 'warehouse_from.name',
                     orderable: false,
                     sortable: false,
                 },

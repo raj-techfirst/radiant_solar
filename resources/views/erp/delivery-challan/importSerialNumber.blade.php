@@ -41,7 +41,7 @@
                         <h5><b>Challan No.</b> : {{ $data->challan_number  }}</h5>
                     </div>
                     <div class="col-12 col-sm-12 col-md-6 col-lg-6">
-                        <h5><b>Name : </b> {{ $data->salesQuatation->name }} </h5>
+                        <h5><b>Name : </b> {{ optional($data->salesQuatation)->name }} </h5>
                     </div>
                     <div class="col-12 col-sm-12 col-md-12 col-lg-12 form-group mt-1">
                         <div class="table-responsive">

@@ -79,6 +79,9 @@ class ReportsController extends Controller
                         case 'sold':
                             $status = '<span class="badge  bg-light-primary">Sold</span>';
                             break;
+                        case 'transfer':
+                            $status = '<span class="badge  bg-light-info">Transfer</span>';
+                            break;
                         case 'damaged':
                             $status = '<span class="badge  bg-light-warning">Damaged</span>';
                             break;

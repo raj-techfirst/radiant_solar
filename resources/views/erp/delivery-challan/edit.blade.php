@@ -17,85 +17,106 @@
 
                     <div class="row">
                         <input type="hidden" name="id" id="id" value="{{(isset($data) && isset($data->id)) ? $data->id : '' }}">
+                        <input type="hidden" name="warehouse_id" id="warehouse_id" value="{{(isset($data) && isset($data->warehouse_id)) ? $data->warehouse_id : '' }}">
+
+                        @if(isset($data))
+                            <input type="hidden" name="challan_date" value="{{ date('Y-m-d', strtotime($data->challan_date)) }}">
+                            @if($data->issue_type == 'project')
+                                <input type="hidden" name="project_id" value="{{ $data->sales_master_id }}">
+                            @elseif($data->issue_type == 'installer')
+                                <input type="hidden" name="installer_id" value="{{ $data->installer_id }}">
+                                @foreach(explode(',', $data->sales_master_id) as $pid)
+                                    @if($pid !== '' && $pid !== null)
+                                        <input type="hidden" name="project_ids[]" value="{{ $pid }}">
+                                    @endif
+                                @endforeach
+                            @elseif($data->issue_type == 'warehouse')
+                                <input type="hidden" name="warehouse_id_from" value="{{ $data->warehouse_from_id }}">
+                            @elseif($data->issue_type == 'trading')
+                                <input type="hidden" name="quotations_id" value="{{ $data->quotations_id }}">
+                            @endif
+                        @endif
 
                         <div class="col-12 col-sm-12 col-md-4 col-lg-4 form-group custom-input-group">
                             <label class="form-label" for="challan_date">Date</label>
-                            <input class="form-control" autocomplete="off" name="challan_date" id="challan_date" value="{{(isset($data)) ? date('d-m-Y',strtotime($data->challan_date)) : date('d-m-Y')}}">
+                            {{(isset($data)) ? date('d-m-Y',strtotime($data->challan_date)) : date('d-m-Y')}}
+                        </div>
+
+                        <div class="col-12 col-md-12 col-lg-8 mb-1 custom-input-group d-none">
+                            <label class="form-label w-100">Issue Type <span class="text-danger">*</span></label>
+                            <label class="form-label btn btn-outline-primary"><input type="radio"
+                                    name="issue_type" value="project"
+                                    {{ (!isset($data) || $data->issue_type == 'project') ? 'checked' : '' }}>
+                                Project Wise</label>
+                            <label class="form-label btn btn-outline-primary"><input type="radio"
+                                    name="issue_type" value="installer"
+                                    {{ isset($data) && $data->issue_type == 'installer' ? 'checked' : '' }}>
+                                Installer Wise</label>
+                            <label class="form-label btn btn-outline-primary"><input type="radio"
+                                    name="issue_type" value="warehouse"
+                                    {{ isset($data) && $data->issue_type == 'warehouse' ? 'checked' : '' }}>
+                                Warehouse Wise</label>
+                            <label class="form-label btn btn-outline-primary"><input type="radio"
+                                    name="issue_type" value="trading"
+                                    {{ isset($data) && $data->issue_type == 'trading' ? 'checked' : '' }}>
+                                B2B
+                            </label>
                         </div>
 
                         <div class="col-12 col-md-12 col-lg-8 mb-1 custom-input-group">
-                            <label class="form-label w-100">Issue Type <span class="text-danger">*</span></label>
-                            <label class="form-label btn btn-outline-primary"><input type="radio" name="issue_type" value="project" {{ (isset($data) && ($data->issue_type == 'project') ? 'checked' : 'checked')}}> Project Wise</label>
-                            <label class="form-label btn btn-outline-primary"><input type="radio" name="issue_type" value="installer" {{ (isset($data) && ($data->issue_type == 'installer') ? 'checked' : '')}}> Installer Wise</label>
-                            <label class="form-label btn btn-outline-primary"><input type="radio" name="issue_type" value="warehouse" {{ (isset($data) && ($data->issue_type == 'warehouse') ? 'checked' : '')}}> Warehouse Wise</label>
-                            <label class="form-label btn btn-outline-primary"><input type="radio" name="issue_type" value="trading" {{ (isset($data) && ($data->issue_type == 'trading') ? 'checked' : '')}}> B2B </label>
+                            <label class="form-label w-100">Issue Type</label>
+                            {{ (isset($data) && ($data->issue_type == 'project') ? 'Project Wise'  : '') }}
+                            {{ (isset($data) && ($data->issue_type == 'installer') ? 'Installer Wise' : '')}}
+                            {{ (isset($data) && ($data->issue_type == 'warehouse') ? 'Warehouse Wise' : '')}}
+                            {{ (isset($data) && ($data->issue_type == 'trading') ? 'B2B' : '')}}
                         </div>
 
                         <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
-                            <label class="form-label" for="warehouse_id">Warehouse To <span class="text-danger">*</span></label>
-                            <select class="form-select select2" name="warehouse_id" id="warehouse_id">
-                                <option selected disabled>{{ __('message.-- Select --') }}</option>
-                                @foreach($warehouse as $value)
-                                <option value="{{ $value->id }}" {{ (isset($data) && ($data->warehouse_id == $value->id) ? 'selected' : '')}}>{{ $value->name }}</option>
-                                @endforeach
-
-                            </select>
+                            <label class="form-label" for="warehouse_id">Warehouse From</label>
+                            @foreach($warehouse as $value)
+                            {{ (isset($data) && ($data->warehouse_id == $value->id) ? $value->name : '')}}
+                            @endforeach
                         </div>
 
                         <!-- Installer Wise -->
                         <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group installer-wise d-none ">
-                            <label class="form-label" for="installer_id">Installer <span class="text-danger">*</span></label>
-                            <select class="form-select select2" name="installer_id" id="installer_id">
-                                <option selected disabled>{{ __('message.-- Select --') }}</option>
-                                @foreach($installer as $value)
-                                <option value="{{ $value->user->id }}" {{ (isset($data) && ($data->installer_id == $value->user->id) ? 'selected' : '')}}>{{ $value->user->name.' '. $value->user->last_name   }}</option>
-                                @endforeach
-                            </select>
+                            <label class="form-label" for="installer_id">Installer</label>
+                            @foreach($installer as $value)
+                            {{ (isset($data) && ($data->installer_id == $value->user->id) ? $value->user->name.' '. $value->user->last_name : '')}}
+                            @endforeach
                         </div>
 
                         <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group trading-wise d-none">
                             <label class="form-label" for="quotations_id">Sales Quotation</label>
-                            <select class="form-select select2" name="quotations_id" id="quotations_id">
-                                <option disabled>{{ __('message.-- Select --') }}</option>
-                                @foreach($quotations as $value)
-                                <option value="{{ $value->id }}">{{ $value->name }}</option>
-                                @endforeach
-                            </select>
+                            @foreach($quotations as $value)
+                            {{ (isset($data) && ($data->quotations_id == $value->id) ? $value->name : '') }}
+                            @endforeach
                         </div>
 
                         <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group installer-wise d-none">
                             <label class="form-label" for="project_ids">Projects</label>
-                            <select class="form-select select2" name="project_ids[]" id="project_ids" multiple>
-                                <option disabled>{{ __('message.-- Select --') }}</option>
-                                @foreach($project as $value)
-                                <option value="{{ $value->id }}" {{ (isset($data) && (in_array($value->id,explode(',',$data->sales_master_id))) ? 'selected' : '')}}>{{ $value->consumer_name }} | {{ $value->consumer_number }}</option>
-                                @endforeach
-                            </select>
+                            @foreach($project as $value)
+                            {{ (isset($data) && (in_array($value->id,explode(',',$data->sales_master_id))) ? $value->consumer_name.' | '.$value->consumer_number : '')}}
+                            @endforeach
                         </div>
 
                         <!-- / Installer Wise -->
 
                         <!-- Project Wise -->
                         <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group project-wise d-none">
-                            <label class="form-label" for="project_id">Project <span class="text-danger">*</span></label>
-                            <select class="form-select select2" name="project_id" id="project_id">
-                                <option selected disabled>{{ __('message.-- Select --') }}</option>
-                                @foreach($project as $value)
-                                <option value="{{ $value->id }}" {{ (isset($data) && ($data->sales_master_id == $value->id) ? 'selected' : '')}}>{{ $value->consumer_name }} | {{ $value->consumer_number }}</option>
-                                @endforeach
-                            </select>
+                            <label class="form-label" for="project_id">Project </label>
+                            @foreach($project as $value)
+                            {{ (isset($data) && ($data->sales_master_id == $value->id) ? $value->consumer_name.' | '.$value->consumer_number : '')}}
+                            @endforeach
                         </div>
                         <!-- / Project Wise -->
 
                         <!-- Warehouse Wise -->
                         <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group warehouse-wise d-none">
-                            <label class="form-label" for="warehouse_id_from">Warehouse From <span class="text-danger">*</span></label>
-                            <select class="form-select select2" name="warehouse_id_from" id="warehouse_id_from">
-                                <option selected disabled>{{ __('message.-- Select --') }}</option>
-                                @foreach($warehouse as $value)
-                                <option value="{{ $value->id }}" {{ (isset($data) && ($data->warehouse_id == $value->id) ? 'selected' : '')}}>{{ $value->name }}</option>
-                                @endforeach
-                            </select>
+                            <label class="form-label" for="warehouse_id_from">Warehouse To </label>
+                            @foreach($warehouse as $value)
+                            {{ (isset($data) && ($data->warehouse_from_id == $value->id) ? $value->name : '')}}
+                            @endforeach
                         </div>
                         <!-- / Warehouse Wise -->
 
@@ -177,7 +198,7 @@
 
                         <div class="col-12 col-sm-12 col-md-4 col-lg-4 form-group custom-input-group">
                             <label class="form-label">Vehicle No.</label>
-                            <input type="text" class="form-control" name="vehicle_no" id="vehicle_no" placeholder="Vehicle no.">
+                            <input type="text" class="form-control" name="vehicle_no" id="vehicle_no" placeholder="Vehicle no." value="{{ (isset($data) && isset($data->vehicle_no)) ? $data->vehicle_no : '' }}">
                             <span class="invalid-feedback d-block" role="alert"></span>
                         </div>
                         <div class="col-12 col-sm-12 col-md-8 col-lg-8 form-group custom-input-group">
@@ -199,18 +220,48 @@
 
 @section('pagescript')
 <script type="application/javascript">
-    $("#challan_date").flatpickr({
-        altInput: true,
-        defaultDate: new Date(),
-        altFormat: 'd-m-Y',
-        dateFormat: 'Y-m-d',
-        maxDate: new Date(),
-    });
-
     $(document).ready(function() {
         $("input[name='issue_type']").trigger('change');
-        $('#warehouse_id').trigger('change');
-        
+        var delivery_challan_id = $('#id').val();
+        var warehouse_id = $('#warehouse_id').val();
+        $.ajax({
+            type: "get",
+            url: "{{route('get-warehouse-stock')}}",
+            data: {
+               'delivery_challan_id': delivery_challan_id,
+               'id': warehouse_id,
+               'type': 'Challan',
+                "_token": "{{ csrf_token() }}",
+            },
+            dataType: 'json',
+            cache: false,
+            success: function(response) {
+                if (response.status_code == 403) {
+                    $('#table_col').addClass('d-none');
+                    toastr.clear();
+                    toastr.warning(response.message, "Warning");
+                } else {
+                    $('#table_col').removeClass('d-none');
+                    $(".sub_data").html('');
+                    $(".sub_data").html(response.html);
+                    $('.product_id').select2();
+                    $('.sub_data tr').each(function() {
+                        if ($(this).find('.type').val() == "Item") {
+                            $(this).find('.product_id').trigger('change');
+                        } else {
+                            $(this).find('.item_group_id').trigger('change');
+                        }
+                    });
+                    clone();
+                    if (feather) {
+                        feather.replace({
+                            width: 14,
+                            height: 14
+                        });
+                    }
+                }
+            }
+        });
     });
     $(document).on('change', '#warehouse_id', function() {
         $('.product_id').select2();
@@ -280,8 +331,6 @@
     function clone() {
         $('.form-repeater, .repeater-default').repeater({
             show: function() {
-                $(this).slideDown();
-                var obj = $(this);
                 var obj = $(this);
                 var sr = $('.sr_no').length;
                 obj.find('.sr_no').text(sr);
@@ -290,6 +339,17 @@
                 obj.find('.product_id').next('.select2-container').remove();
                 obj.find('.type').val('Item').trigger('change');
                 obj.find('.required-item').html('-');
+                obj.find('.dc-meta-id, [name*="delivery_challan_meta_id"]').val('').attr('value', '');
+                obj.find('.quantity').val('').attr('value', '');
+                obj.find('.rate').val('').attr('value', '');
+                obj.find('.stock').val('');
+                obj.find('.stock-find').val('');
+                obj.find('.gst-amt').val('');
+                obj.find('.amount').val('');
+                obj.find('.unit_type').html('');
+                obj.find('.product_id').val('').trigger('change');
+                obj.find('.item_group_id').val('').trigger('change');
+                $(this).slideDown();
                 $('.item_group_id').select2({
                     placeholder: "--Select--",
                     allowClear: true,
@@ -419,7 +479,7 @@
 
         if ($("#form").valid()) {
 
-            $('select').attr('disabled', false);
+            $('select').prop('disabled', false);
             var formData = new FormData($("#form")[0]);
 
             $.ajax({
@@ -432,12 +492,12 @@
                 processData: false,
                 beforeSend: function() {
                     $(".save").html(`<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Wait`);
-                    $(".save").attr('disabled', true);
+                    $(".save").prop('disabled', true);
                 },
                 success: function(response) {
-                    $('select').attr('disabled', true);
+                    $('select').prop('disabled', true);
                     $(".save").html("Submit");
-                    $(".save").attr('disabled', false);
+                    $(".save").prop('disabled', false);
                     if (response.status_code == 500) {
                         toastr.clear();
                         toastr.error(response.message, "Error");
@@ -470,7 +530,9 @@
             var btn = $(this);
             var id = $(this).data('id');
             var item_id = btn.closest('tr').find('.product_id').val();
+            var item_group_id = btn.closest('tr').find('.item_group_id').val();
             var warehouse_id = $('#warehouse_id').val();
+            var warehouse_from_id = $('#warehouse_id_from').val();
             var project_id = $('#project_id').val();
             if (id != undefined) {
                 Swal.fire({
@@ -492,8 +554,10 @@
                                 data: {
                                     'id': id,
                                     'warehouse_id': warehouse_id,
+                                    'warehouse_from_id': warehouse_from_id,
                                     'project_id': project_id,
                                     'item_id': item_id,
+                                    'item_group_id': item_group_id,
                                     "_token": "{{ csrf_token() }}",
                                 },
                                 dataType: 'json',
@@ -641,18 +705,12 @@
     $("input[name='issue_type']").change(function() {
         var issue_type = $("input[name='issue_type']:checked").val();
 
-        $('select').attr('disabled', false);
+        $('select').prop('disabled', false);
         $(".sub_data").html('');
-        $('#warehouse_id').val('');
-        $('#project_id').val('');
-        $('#project_ids').val('');
-        $('#installer_id').val('');
-        $('#quotations_id').val('');
-        $('#warehouse_id').select2();
         $('select').select2();
+        $(".text-danger.mb-0.custom-error").remove();
 
         if (issue_type == "project") {
-            $(".text-danger.mb-0.custom-error").remove();
             $(".warehouse-wise").addClass('d-none');
             $(".installer-wise").addClass('d-none');
             $(".project-wise").removeClass('d-none');
@@ -662,7 +720,6 @@
         }
 
         if (issue_type == "installer") {
-            $(".text-danger.mb-0.custom-error").remove();
             $(".warehouse-wise").addClass('d-none');
             $(".installer-wise").removeClass('d-none');
             $(".project-wise").addClass('d-none');
@@ -672,7 +729,6 @@
         }
 
         if (issue_type == "warehouse") {
-            $(".text-danger.mb-0.custom-error").remove();
             $(".warehouse-wise").removeClass('d-none');
             $(".installer-wise").addClass('d-none');
             $(".project-wise").addClass('d-none');
@@ -682,7 +738,6 @@
         }
 
         if (issue_type == "trading") {
-            $(".text-danger.mb-0.custom-error").remove();
             $(".warehouse-wise").addClass('d-none');
             $(".installer-wise").addClass('d-none');
             $(".project-wise").addClass('d-none');

@@ -27,7 +27,8 @@ class ItemGroupSerialnumberDC implements ToModel, WithHeadingRow
                 $serialNumber->delivery_challan_meta_id = $this->request->id;
                 $serialNumber->save();
 
-                $checkSerialNumber->status = "sold";
+                $dc = $this->request->delivery_challan;
+                $checkSerialNumber->status = ($dc && $dc->issue_type === 'warehouse') ? 'transfer' : 'sold';
                 $checkSerialNumber->save();
             }
 
