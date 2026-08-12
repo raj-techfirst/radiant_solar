@@ -17,4 +17,9 @@ class InstallationPenal extends Model
     {
         return $this->hasMany(SalesMaster::class, 'id', 'sales_master_id');
     }
+
+    public function itemGroup()
+    {
+        return $this->hasOne(ItemGroup::class, 'id', 'item_group_id')->select('id', 'p_type');
+    }
 }

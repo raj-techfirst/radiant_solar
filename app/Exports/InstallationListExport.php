@@ -13,17 +13,19 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class InstallationListExport implements FromCollection, WithHeadings, WithMapping
 {
     private $request;
+    private $formType;
 
-    public function __construct($request)
+    public function __construct($request, $formType = 'old')
     {
         $this->request = $request;
+        $this->formType = $formType;
     }
     /**
      * @return \Illuminate\Support\Collection
      */
     public function collection()
     {
-        $query = SalesMaster::select('*', 'id as sid')->with('district','district.state', 'taluka',  'subDivision', 'salesquatationfull', 'installation', 'installation.panelwatt', 'installation.panelcompany', 'installation.paneltype', 'installation.installationPenals', 'installation.invater', 'installation.invater.company', 'installation.invater.itemGroup', 'installation.installationItems.product');
+        $query = SalesMaster::select('*', 'id as sid')->with('district','district.state', 'taluka',  'subDivision', 'salesquatationfull', 'installation', 'installation.panelwatt', 'installation.panelcompany', 'installation.paneltype', 'installation.installationPenals', 'installation.installationPenals.itemGroup', 'installation.invater', 'installation.invater.company', 'installation.invater.itemGroup', 'installation.installationItems.product');
         $query->where('file_cancel_order', '0');
         $company = CompanyProfile::where('user_id', Auth::id())->first();
         if ($company->user_type == 'M') {
@@ -50,6 +52,9 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
         $query->where(function ($q) {
             $q->where('installation_pending',  "1")
                 ->orWhere('installation_done', "1");
+        });
+        $query->whereHas('installation', function ($q) {
+            $q->where('form_type', $this->formType);
         });
         if ($this->request->input('from_date') != "" && $this->request->input('to_date') == '') {
             $query->where('master_create_date', '>=', date('Y-m-d 00:00:00', strtotime($this->request->input('from_date'))));
@@ -121,6 +126,11 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
                 endforeach;
             }
             $penal_sr_no = implode(', ', $penal_sr_no_arr);
+            $p_type = '';
+            if (isset($value->installation) && $value->installation != null && isset($value->installation->installationPenals) && count($value->installation->installationPenals) > 0 && isset($value->installation->installationPenals[0]->itemGroup) && $value->installation->installationPenals[0]->itemGroup != null) {
+                $p_type = $value->installation->installationPenals[0]->itemGroup->p_type;
+            }
+            $panel_detail = $penal_watt . 'W Solar Module (' . $penal_company . ' - ' . $penal_type . ' | ' . $p_type . ')';
             $total_kw = (isset($value->installation) && $value->installation != null) ? $value->installation->total_kv : '';
             $type_of_inverter = (isset($value->installation) && $value->installation != null) ? $value->installation->type_of_inverter : '';
             if ($value->installation != null && $value->installation->form_type == 'new') {
@@ -145,6 +155,15 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
             $inverter_sr_no = implode(', ', $inverter_sr_no_arr);
             $inverter_voltage = implode(', ', $inverter_voltage_arr);
             $inverter_kw = implode(', ', $inverter_kw_arr);
+            $inverter_detail_arr = [];
+            if (isset($value->installation) && $value->installation != null && isset($value->installation->invater) && count($value->installation->invater) > 0) {
+                foreach ($value->installation->invater as $ik => $iv) :
+                    $inv_company = (isset($iv->company) && $iv->company != null) ? $iv->company->name : 'N/A';
+                    $inv_type = (isset($iv->itemGroup) && $iv->itemGroup != null && $iv->itemGroup->inverter_type != null && $iv->itemGroup->inverter_type != '') ? $iv->itemGroup->inverter_type : 'N/A';
+                    $inverter_detail_arr[] = $iv->invater_kw . ' KW Inverter (' . $inv_company . ' | ' . $inv_type . ')';
+                endforeach;
+            }
+            $inverter_detail = implode(', ', $inverter_detail_arr);
             $cable_dc = (isset($value->installation) && $value->installation != null) ? $value->installation->cable_dc : '';
             $cable_ac = (isset($value->installation) && $value->installation != null) ? $value->installation->cable_ac : '';
             $cable_la = (isset($value->installation) && $value->installation != null) ? $value->installation->cable_la : '';
@@ -179,6 +198,7 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
             $value->penal_watt = $penal_watt;
             $value->penal_nos = $penal_nos;
             $value->penal_sr_no = $penal_sr_no;
+            $value->panel_detail = $panel_detail;
             $value->total_kw = $total_kw;
             $value->type_of_inverter = $type_of_inverter;
             $value->no_of_inverter = $no_of_inverter;
@@ -187,6 +207,7 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
             $value->inverter_kw = $inverter_kw;
             $value->inverter_sr_no = $inverter_sr_no;
             $value->inverter_voltage = $inverter_voltage;
+            $value->inverter_detail = $inverter_detail;
             $value->cable_dc = $cable_dc;
             $value->cable_ac = $cable_ac;
             $value->cable_la = $cable_la;
@@ -207,7 +228,7 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
 
     public function headings(): array
     {
-        return [
+        $headings = [
             'Consumer Number',
             'Consumer Name',
             'Contact Number',
@@ -224,20 +245,19 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
             'Installation Asign Person',
             'Application Status',
             'Installation Date',
-            'Panel Company',
-            'Panel Model no',
-            'Panel Type',
-            'Panel Watt',
-            'Panel Nos',
-            'Panel Sr No',
-            'Total KW',
-            'Type Of Inverter',
-            'No of Inverter',
-            'Make Of Inverter',
-            'Inverter Model no',
-            'Inverter KW',
-            'Inverter Sr No',
-            'Inverter Voltage',
+        ];
+        if ($this->formType == 'new') {
+            array_push($headings, 'Panel Detail', 'Panel Model no', 'Panel Nos', 'Panel Sr No');
+        } else {
+            array_push($headings, 'Panel Company', 'Panel Model no', 'Panel Type', 'Panel Watt', 'Panel Nos', 'Panel Sr No');
+        }
+        array_push($headings, 'Total KW');
+        if ($this->formType == 'new') {
+            array_push($headings, 'Inverter Detail');
+        } else {
+            array_push($headings, 'Type Of Inverter', 'No of Inverter', 'Make Of Inverter', 'Inverter Model no', 'Inverter KW', 'Inverter Sr No', 'Inverter Voltage');
+        }
+        array_push($headings,
             'Cable DC',
             'Cable AC',
             'Cable LA',
@@ -251,15 +271,16 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
             'Structure 60*40*2 mm',
             'Structure 80*40*2 mm',
             'Structure others',
-			"Commission Amount",
-			"Sub Commission Amount",
-			"Installation Amount"
-        ];
+            "Commission Amount",
+            "Sub Commission Amount",
+            "Installation Amount"
+        );
+        return $headings;
     }
 
     public function map($row): array
     {
-        return [
+        $data = [
             $row->consumer_number,
             $row->consumer_name,
             $row->contact_number,
@@ -276,20 +297,19 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
             $row->installer,
             $row->status,
             $row->installation_date,
-            $row->penal_company,
-            $row->penal_model_no,
-            $row->penal_type,
-            $row->penal_watt,
-            $row->penal_nos,
-            $row->penal_sr_no,
-            $row->total_kw,
-            $row->type_of_inverter,
-            $row->no_of_inverter,
-            $row->make_of_inverter,
-            $row->inverter_model_no,
-            $row->inverter_kw,
-            $row->inverter_sr_no,
-            $row->inverter_voltage,
+        ];
+        if ($this->formType == 'new') {
+            array_push($data, $row->panel_detail, $row->penal_model_no, $row->penal_nos, $row->penal_sr_no);
+        } else {
+            array_push($data, $row->penal_company, $row->penal_model_no, $row->penal_type, $row->penal_watt, $row->penal_nos, $row->penal_sr_no);
+        }
+        array_push($data, $row->total_kw);
+        if ($this->formType == 'new') {
+            array_push($data, $row->inverter_detail);
+        } else {
+            array_push($data, $row->type_of_inverter, $row->no_of_inverter, $row->make_of_inverter, $row->inverter_model_no, $row->inverter_kw, $row->inverter_sr_no, $row->inverter_voltage);
+        }
+        array_push($data,
             $row->cable_dc,
             $row->cable_ac,
             $row->cable_la,
@@ -303,9 +323,10 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
             $row->structure_60_40_2_mm,
             $row->structure_80_40_2_mm,
             $row->structure_others,
-			 $row->commission_amount,
-			 $row->sub_commission_amount,
-			 $row->installation_amount,
-        ];
+            $row->commission_amount,
+            $row->sub_commission_amount,
+            $row->installation_amount
+        );
+        return $data;
     }
 }

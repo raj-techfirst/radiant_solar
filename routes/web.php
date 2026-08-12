@@ -240,6 +240,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('installation-reports', [Reports::class, 'installation'])->name('installation-reports');
     Route::post('installation-download', [Reports::class, 'installationDownload'])->name('installation-download');
 
+    Route::get('installation-new-reports', [Reports::class, 'installationNew'])->name('installation-new-reports');
+    Route::post('installation-new-download', [Reports::class, 'installationNewDownload'])->name('installation-new-download');
+
     Route::get('meter-application-reports', [Reports::class, 'meterApplication'])->name('meter-application-reports');
     Route::post('meter-application-download', [Reports::class, 'meterApplicationDownload'])->name('meter-application-download');
 

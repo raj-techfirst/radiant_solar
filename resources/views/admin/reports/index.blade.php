@@ -117,7 +117,32 @@
                                 <span class="text-truncate fw-bolder h4">{{ number_format($installation[0]['kw'],3) }} <small>KW</small></span>
                             </div>
                             <div class=" mb-50">
-                                <h5>Installation List</h5>
+                                <h5>Installation List Old(Without ERP)</h5>
+                            </div>
+
+                            <div class="progress progress-bar-secondary progress-md mb-0" style="height: 5px">
+                                <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="30" aria-valuemax="100" style="width: 30%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            @endcan
+
+            @can('reports-installation')
+            <div class="col-lg-3 col-md-6 col-12">
+                <a href="{{ route('installation-new-reports') }}">
+                    <div class="card report-card border cursor-pointer">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <img src="{{ asset('img/icon/panel-installation.png') }}" alt="google drive" height="38">
+                                <span class="text-truncate fw-bolder h4">{{ $installationNew[0]['total'] }}</span>
+                            </div>
+                            <div class="my-1 mb-0 d-flex justify-content-between">
+                                <span class="text-truncate fw-bolder h4">{{ number_format($installationNew[0]['kw'],3) }} <small>KW</small></span>
+                            </div>
+                            <div class=" mb-50">
+                                <h5>Installation List (NEW)</h5>
                             </div>
 
                             <div class="progress progress-bar-secondary progress-md mb-0" style="height: 5px">
