@@ -9,6 +9,7 @@ use App\Exports\B2BRateExport;
 use App\Exports\ProjectWiseDispachExport;
 use App\Exports\ProjectWiseStockExport;
 use App\Exports\RequisitionExport;
+use App\Exports\SalesAgentWiseExport;
 use App\Exports\StockExport;
 use App\Http\Controllers\Controller;
 use App\Models\AgentSalesPerson;
@@ -20,8 +21,10 @@ use App\Models\InstallationInvater;
 use App\Models\InstallationPenal;
 use App\Models\ItemGroup;
 use App\Models\SalesMaster;
+use App\Models\SalesQuatation;
 use App\Models\SerialNumberLog;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\Auth;
@@ -41,6 +44,7 @@ class ReportsController extends Controller
         $this->middleware('permission:b2b-accept', ['only' => ['bbAccept']]);
         $this->middleware('permission:b2b-dispatch', ['only' => ['bbDispatch']]);
         $this->middleware('permission:b2b-rate', ['only' => ['bbRate']]);
+        $this->middleware('permission:sales-agent-wise-report', ['only' => ['salesAgentWise']]);
     }
     public function index()
     {
@@ -1189,5 +1193,94 @@ class ReportsController extends Controller
             $agentSalesPerson = $q->get();
             return view('erp.reports.b2b-rate', compact('agentSalesPerson'));
         }
+    }
+
+    public function salesAgentWise()
+    {
+        $from = request()->input('from', date('Y-m-01', strtotime('-11 months')));
+        $to = request()->input('to', date('Y-m-t'));
+        if ($to < $from) {
+            $to = $from;
+        }
+
+        $company = CompanyProfile::where('user_id', Auth::id())->first();
+        $agentIds = [];
+        if ($company->user_type == 'M') {
+            $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
+            $agentIds = [$agent->id];
+            $sales = CompanyProfile::select('company_profiles.id', 'company_profiles.user_id', 'agent_sales_people.id as agent_id')
+                ->leftJoin('agent_sales_people', 'agent_sales_people.user_id', 'company_profiles.user_id')
+                ->where('company_profiles.manager_id', $company->id)->get();
+            if ($sales->count() > 0) {
+                foreach ($sales as $k => $v) :
+                    array_push($agentIds, $v->agent_id);
+                endforeach;
+            }
+        }
+        if ($company->user_type == 'S') {
+            $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
+            $agentIds = [$agent->id];
+        }
+
+        $months = [];
+        $labels = [];
+        $start = Carbon::parse($from)->startOfMonth();
+        $end = Carbon::parse($to)->startOfMonth();
+        while ($start <= $end) {
+            $months[] = $start->format('M-y');
+            $labels[$start->format('M-y')] = $start->format('Y-m');
+            $start->addMonth();
+        }
+
+        $where = "sq.current_status = 'accepted' AND sq.deleted_at IS NULL AND DATE_FORMAT(sq.created_at, '%Y-%m') BETWEEN '" . date('Y-m', strtotime($from)) . "' AND '" . date('Y-m', strtotime($to)) . "'";
+        if (count($agentIds) > 0) {
+            $where .= " AND sq.agent_sales_person_id IN (" . implode(',', $agentIds) . ")";
+        }
+
+        $query = "SELECT sq.agent_sales_person_id, asp.name AS agent_name,
+                    DATE_FORMAT(sq.created_at, '%b-%y') AS month_label,
+                    DATE_FORMAT(sq.created_at, '%Y-%m') AS month_key,
+                    SUM(sq.total_amount) AS total_amount
+                FROM  sales_quatations AS sq
+                LEFT JOIN agent_sales_people AS asp ON asp.id = sq.agent_sales_person_id
+                WHERE " . $where . "
+                GROUP BY sq.agent_sales_person_id, month_key
+                ORDER BY asp.name;";
+
+        $rows = DB::select(DB::raw($query));
+
+        $agents = [];
+        $data = [];
+        foreach ($rows as $row) {
+            if (!isset($agents[$row->agent_sales_person_id])) {
+                $agents[$row->agent_sales_person_id] = [
+                    'id' => $row->agent_sales_person_id,
+                    'name' => $row->agent_name ?: 'Unknown',
+                ];
+            }
+            $data[$row->month_label . '|' . $row->agent_sales_person_id] = (float) $row->total_amount;
+        }
+
+        foreach ($agents as $agentId => $agent) {
+            $hasAmount = false;
+            foreach ($months as $month) {
+                if (isset($data[$month . '|' . $agentId]) && $data[$month . '|' . $agentId] > 0) {
+                    $hasAmount = true;
+                    break;
+                }
+            }
+            if (!$hasAmount) {
+                unset($agents[$agentId]);
+            }
+        }
+
+        $agents = array_values($agents);
+
+        if (request()->input('download') == 'excel') {
+            $fileName = 'DCR-Sales-AgentWise-' . date('Y-m', strtotime($from)) . '-to-' . date('Y-m', strtotime($to)) . '.xlsx';
+            return Excel::download(new SalesAgentWiseExport($months, $agents, $data, $from, $to), $fileName);
+        }
+
+        return view('erp.reports.sales-agent-wise', compact('months', 'agents', 'data', 'labels', 'from', 'to'));
     }
 }

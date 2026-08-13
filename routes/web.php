@@ -343,6 +343,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('reports/b2b-accept', [ReportsController::class, 'bbAccept'])->name('b2b-accept');
     Route::get('reports/b2b-dispatch', [ReportsController::class, 'bbDispatch'])->name('b2b-dispatch');
     Route::get('reports/b2b-rate', [ReportsController::class, 'bbRate'])->name('b2b-rate');
+    Route::get('reports/sales-agent-wise', [ReportsController::class, 'salesAgentWise'])->name('sales-agent-wise');
 
     Route::get('import-serial-number/{id}', [DeliveryChallanController::class, 'importSerialNumber'])->name('import-serial-number');
     Route::post('import-serial-number-store', [DeliveryChallanController::class, 'importSerialNumberStore'])->name('import-serial-number-store');

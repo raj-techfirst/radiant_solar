@@ -225,6 +225,7 @@
                 </a>
             </div>
             @endcan
+            @can('subsidy-claim-report')
             <div class="col-lg-3 col-md-6 col-12">
                 <div class="card report-card border cursor-pointer">
                     <a href="{{ route('subsidy-claim-reports') }}">
@@ -246,6 +247,7 @@
                     </a>
                 </div>
             </div>
+            @endcan
             @can('panels-required-reports')
             <div class="col-lg-3 col-md-6 col-12">
                 <div class="card report-card border cursor-pointer">
@@ -342,6 +344,27 @@
 
                             <div class="mt-1 mb-50">
                                 <h5>B2B Rate Report</h5>
+                            </div>
+                            <div class="progress progress-bar-secondary progress-md mb-0" style="height: 5px">
+                                <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="30" aria-valuemax="100" style="width: 30%"></div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            @endcan
+
+            @can('sales-agent-wise-report')
+            <div class="col-lg-3 col-md-6 col-12">
+                <div class="card report-card border cursor-pointer">
+                    <a href="{{ route('sales-agent-wise') }}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <img src="{{ asset('img/icon/report.png') }}" alt="sales" height="38">
+                            </div>
+
+                            <div class="mt-1 mb-50">
+                                <h5>Sales Agent Wise</h5>
                             </div>
                             <div class="progress progress-bar-secondary progress-md mb-0" style="height: 5px">
                                 <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="30" aria-valuemax="100" style="width: 30%"></div>

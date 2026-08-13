@@ -33,7 +33,7 @@ class Reports extends Controller
 {
     function __construct()
     {
-        $this->middleware('permission:reports-total-collection|reports-payment-pending|reports-meter-charges|reports-dispach|reports-installation|reports-meter-application|reports-final|reports-invoice|panels-required-reports|inverters-required-reports|b2b-accept|b2b-dispatch|b2b-rate', ['only' => ['index']]);
+        $this->middleware('permission:reports-total-collection|reports-payment-pending|reports-meter-charges|reports-dispach|reports-installation|reports-meter-application|reports-final|reports-invoice|panels-required-reports|inverters-required-reports|b2b-accept|b2b-dispatch|b2b-rate|sales-agent-wise-report|subsidy-claim-report', ['only' => ['index']]);
         $this->middleware('permission:reports-total-collection', ['only' => ['totalcollection']]);
         $this->middleware('permission:reports-payment-pending', ['only' => ['paymentPending']]);
         $this->middleware('permission:reports-meter-charges', ['only' => ['meterCharges']]);
@@ -41,6 +41,7 @@ class Reports extends Controller
         $this->middleware('permission:reports-installation', ['only' => ['installation', 'installationNew']]);
         $this->middleware('permission:reports-meter-application', ['only' => ['meterApplication']]);
         $this->middleware('permission:reports-final', ['only' => ['finalReport']]);
+        $this->middleware('permission:subsidy-claim-report', ['only' => ['subsidyClaimReports', 'subsidyClaimDownload']]);
     }
     public function index()
     {

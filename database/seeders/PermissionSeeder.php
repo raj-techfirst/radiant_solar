@@ -140,8 +140,13 @@ class PermissionSeeder extends Seeder
             ['name' => 'reports-meter-application', 'title' => 'Meter Application', 'title_tag' => 'Reports', 'type' => 'CRM'],
             ['name' => 'reports-final', 'title' => 'Final Report', 'title_tag' => 'Reports', 'type' => 'CRM'],
             ['name' => 'reports-invoice', 'title' => 'Invoice Report', 'title_tag' => 'Reports', 'type' => 'CRM'],
+            ['name' => 'subsidy-claim-report', 'title' => 'Subsidy Claim Report', 'title_tag' => 'Reports', 'type' => 'CRM'],
             ['name' => 'panels-required-reports', 'title' => 'Panel Required', 'title_tag' => 'Reports', 'type' => 'CRM'],
             ['name' => 'inverters-required-reports', 'title' => 'Inverters Required', 'title_tag' => 'Reports', 'type' => 'CRM'],
+            ['name' => 'b2b-accept', 'title' => 'B2B Accept', 'title_tag' => 'Reports', 'type' => 'CRM'],
+            ['name' => 'b2b-dispatch', 'title' => 'B2B Dispatch', 'title_tag' => 'Reports', 'type' => 'CRM'],
+            ['name' => 'b2b-rate', 'title' => 'B2B Rate', 'title_tag' => 'Reports', 'type' => 'CRM'],
+            ['name' => 'sales-agent-wise-report', 'title' => 'Sales Agent Wise', 'title_tag' => 'Reports', 'type' => 'CRM'],
 
             // DISCOM
             ['name' => 'discom-list', 'title' => 'List', 'title_tag' => 'DISCOM', 'type' => 'CRM'],
@@ -238,11 +243,6 @@ class PermissionSeeder extends Seeder
             ['name' => 'stock-report', 'title' => 'Stock Report', 'title_tag' => 'Report', 'type' => 'ERP'],
             ['name' => 'b2b-dispach', 'title' => 'B2B Dispach', 'title_tag' => 'Report', 'type' => 'ERP'],
 
-            // B2B Report (CRM)
-            ['name' => 'b2b-accept', 'title' => 'B2B Accept', 'title_tag' => 'B2B Report', 'type' => 'CRM'],
-            ['name' => 'b2b-dispatch', 'title' => 'B2B Dispatch', 'title_tag' => 'B2B Report', 'type' => 'CRM'],
-            ['name' => 'b2b-rate', 'title' => 'B2B Rate', 'title_tag' => 'B2B Report', 'type' => 'CRM'],
-
             // Rate Calculator
             ['name' => 'rate-calculator-list', 'title' => 'List', 'title_tag' => 'Rate Calculator', 'type' => 'CRM'],
             ['name' => 'rate-calculator-create', 'title' => 'Create', 'title_tag' => 'Rate Calculator', 'type' => 'CRM'],
@@ -276,10 +276,10 @@ class PermissionSeeder extends Seeder
             );
         }
 
-        $b2bPermissions = ['b2b-accept', 'b2b-dispatch', 'b2b-rate'];
+        $reportPermissions = ['b2b-accept', 'b2b-dispatch', 'b2b-rate', 'sales-agent-wise-report', 'subsidy-claim-report'];
         $roles = Role::whereIn('name', ['Owner', 'Accountant'])->get();
         foreach ($roles as $role) {
-            foreach ($b2bPermissions as $permissionName) {
+            foreach ($reportPermissions as $permissionName) {
                 if (!$role->hasPermissionTo($permissionName)) {
                     $role->givePermissionTo($permissionName);
                 }
