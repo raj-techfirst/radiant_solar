@@ -193,6 +193,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('search-lead', [LeadMasterController::class, 'searchlead'])->name('search-lead');
     Route::get('get-panel-watt', [SalesQuatationController::class, 'getPanelsAndWatts'])->name('get-panel-watt');
     Route::get('sales-quatation-pdf/{id}', [SalesQuatationController::class, 'salesQuatationPdf'])->name('sales-quatation-pdf');
+    Route::post('sales-quatation-export', [SalesQuatationController::class, 'export'])->name('sales-quatation-export');
     Route::resource('inveter-company', InveterCompanyController::class);
 
     Route::post('change-payment-status', [PaymetCollectionController::class, 'changeStatus'])->name('change-payment-status');
@@ -339,6 +340,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('purchase-direct-clone/{id}', [PurchaseDirectController::class, 'cloneData'])->name('purchase-direct-clone');
 
     Route::get('reports/b2b-dispach', [ReportsController::class, 'bbDispach'])->name('b2b-dispach');
+    Route::get('reports/b2b-accept', [ReportsController::class, 'bbAccept'])->name('b2b-accept');
+    Route::get('reports/b2b-dispatch', [ReportsController::class, 'bbDispatch'])->name('b2b-dispatch');
+    Route::get('reports/b2b-rate', [ReportsController::class, 'bbRate'])->name('b2b-rate');
 
     Route::get('import-serial-number/{id}', [DeliveryChallanController::class, 'importSerialNumber'])->name('import-serial-number');
     Route::post('import-serial-number-store', [DeliveryChallanController::class, 'importSerialNumberStore'])->name('import-serial-number-store');

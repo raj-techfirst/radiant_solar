@@ -28,7 +28,8 @@ class LeadMaster extends Model
         'lead_status_id',
         'remark',
         'branch_id',
-        'source_id'
+        'source_id',
+        'is_trading'
     ];
 
 

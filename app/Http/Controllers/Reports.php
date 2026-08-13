@@ -19,7 +19,9 @@ use App\Models\District;
 use App\Models\InveterCompany;
 use App\Models\PenalCompany;
 use App\Models\PenalWatt;
+use App\Models\LeadMaster;
 use App\Models\SalesMaster;
+use App\Models\SalesQuatation;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,7 +33,7 @@ class Reports extends Controller
 {
     function __construct()
     {
-        $this->middleware('permission:reports-total-collection|reports-payment-pending|reports-meter-charges|reports-dispach|reports-installation|reports-meter-application|reports-final', ['only' => ['index']]);
+        $this->middleware('permission:reports-total-collection|reports-payment-pending|reports-meter-charges|reports-dispach|reports-installation|reports-meter-application|reports-final|reports-invoice|panels-required-reports|inverters-required-reports|b2b-accept|b2b-dispatch|b2b-rate', ['only' => ['index']]);
         $this->middleware('permission:reports-total-collection', ['only' => ['totalcollection']]);
         $this->middleware('permission:reports-payment-pending', ['only' => ['paymentPending']]);
         $this->middleware('permission:reports-meter-charges', ['only' => ['meterCharges']]);
@@ -75,6 +77,16 @@ class Reports extends Controller
         });
         $meterApplicationquery = SalesMaster::selectRaw('sum(register_kw) as kw,count(id) as total')->where('meter_application_done', "1")->where('meter_installation', "0");
         $finalReportquery = SalesMaster::selectRaw('sum(register_kw) as kw,count(id) as total')->where('project_completion', "1");
+        $b2bAcceptCount = SalesQuatation::where('form_type', 'trading')->where('current_status', 'accepted');
+        $b2bDispatchCount = SalesQuatation::where('form_type', 'trading')->where('current_status', 'dispatch');
+        $b2bRateCount = LeadMaster::where('is_trading', '1')
+            ->whereNotExists(function ($q) {
+                $q->select(\Illuminate\Support\Facades\DB::raw(1))
+                    ->from('sales_quatations')
+                    ->whereColumn('sales_quatations.lead_master_id', 'lead_masters.id')
+                    ->whereNull('sales_quatations.deleted_at')
+                    ->where('sales_quatations.current_status', 'accepted');
+            });
         if ($company->user_type == 'M') {
             $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
             $agentIds = [$agent->id];
@@ -97,6 +109,9 @@ class Reports extends Controller
                 $meterApplicationquery->whereIn('agent_sales_person_id', $agentIds);
                 $finalReportquery->whereIn('agent_sales_person_id', $agentIds);
                 $subClaim->whereIn('agent_sales_person_id', $agentIds);
+                $b2bAcceptCount->whereIn('agent_sales_person_id', $agentIds);
+                $b2bDispatchCount->whereIn('agent_sales_person_id', $agentIds);
+                $b2bRateCount->whereIn('agent_sales_person_id', $agentIds);
             }
         }
         if ($company->user_type == 'S') {
@@ -112,6 +127,9 @@ class Reports extends Controller
             $meterApplicationquery->where('agent_sales_person_id', $id);
             $finalReportquery->where('agent_sales_person_id', $id);
             $subClaim->where('agent_sales_person_id', $id);
+            $b2bAcceptCount->where('agent_sales_person_id', $id);
+            $b2bDispatchCount->where('agent_sales_person_id', $id);
+            $b2bRateCount->where('agent_sales_person_id', $id);
         }
         $invoicequery->where('file_cancel_order', '0');
         $totalcollectionquery->where('file_cancel_order', '0');
@@ -132,8 +150,11 @@ class Reports extends Controller
         $meterApplication = $meterApplicationquery->get();
         $finalReport = $finalReportquery->get();
         $subClaim = $subClaim->get();
+        $b2bAccept = $b2bAcceptCount->count();
+        $b2bDispatch = $b2bDispatchCount->count();
+        $b2bRate = $b2bRateCount->count();
 
-        return view('admin.reports.index', compact('totalcollection', 'paymentpending', 'meterCharges', 'dispach', 'installation', 'installationNew', 'meterApplication', 'finalReport', 'invoice', 'subClaim'));
+        return view('admin.reports.index', compact('totalcollection', 'paymentpending', 'meterCharges', 'dispach', 'installation', 'installationNew', 'meterApplication', 'finalReport', 'invoice', 'subClaim', 'b2bAccept', 'b2bDispatch', 'b2bRate'));
     }
     public function totalcollection()
     {

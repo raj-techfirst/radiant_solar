@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\SalesQuatationExport;
 use App\Models\AgentSalesPerson;
 use App\Models\Bank;
 use App\Models\CompanyProfile;
@@ -24,6 +25,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
@@ -124,7 +126,7 @@ class SalesQuatationController extends Controller
                     }
                 })
                  ->editColumn('current_status', function ($row) {
-                    if (Gate::check('sales-quatation-edit')) {
+                    if (Gate::check('sales-quatation-edit') && $row->current_status != 'dispatch') {
 						
                         $payStatus = getSalesQuotationStatusClass($row->current_status);
 
@@ -179,6 +181,11 @@ class SalesQuatationController extends Controller
         }
     }
 
+    public function export(Request $request)
+    {
+        return Excel::download(new SalesQuatationExport($request), 'sales_quatation.xlsx');
+    }
+
     /**
      * Show the form for creating a new resource.
      *
@@ -216,6 +223,7 @@ class SalesQuatationController extends Controller
             $where .= ' AND ((agent_sales_person_id = ' . $id . ' OR assign_id = ' . $id . ') OR (assign_id = ' . $company->id . '))';
         }
         $lead_complete = LeadMaster::whereRaw($where)->orderBy('id', 'DESC')->get();
+        $trading_lead = LeadMaster::whereRaw($where)->where('is_trading', '1')->orderBy('id', 'DESC')->get();
 
         $companyFind = CompanyProfile::where('user_id', Auth::id())->first();
         $agentWhere = "";
@@ -239,7 +247,7 @@ class SalesQuatationController extends Controller
         $inveter_company = InveterCompany::get();
         $bank = Bank::get();
         $technicalSpecification = [];
-        return view('admin.sales-quatation.add_sales', compact('product', 'agentSalesPerson', 'penal_company', 'lead_complete', 'inveter_company', 'penal_type', 'penal_watt', 'bank', 'itemGroup','technicalSpecification'));
+        return view('admin.sales-quatation.add_sales', compact('product', 'agentSalesPerson', 'penal_company', 'lead_complete', 'inveter_company', 'penal_type', 'penal_watt', 'bank', 'itemGroup','technicalSpecification', 'trading_lead'));
     }
 
     /**
@@ -575,7 +583,8 @@ class SalesQuatationController extends Controller
                 $id = $agent->id;
                 $where .= ' AND ((agent_sales_person_id = ' . $id . ' OR assign_id = ' . $id . ') OR (assign_id = ' . $company->id . '))';
             }
-            $lead_complete = LeadMaster::whereRaw($where)->orderBy('id', 'DESC')->get();
+        $lead_complete = LeadMaster::whereRaw($where)->orderBy('id', 'DESC')->get();
+        $trading_lead = LeadMaster::whereRaw($where)->where('is_trading', '1')->orderBy('id', 'DESC')->get();
 
             $companyFind = CompanyProfile::where('user_id', Auth::id())->first();
             $agentWhere = "";
@@ -602,7 +611,7 @@ class SalesQuatationController extends Controller
             $itemGroup = ItemGroup::with('panel_company', 'panel_type', 'panel_watt', 'inveter_company')->get();
             $technicalSpecification = SalesQuatationTechnicalSpecification::where('sales_quatation_id', $id)->get()->toArray();
 
-            return view('admin.sales-quatation.add_sales', compact('product', 'sales_quatation', 'penal_company', 'penal_type', 'penal_watt', 'lead_complete', 'agentSalesPerson', 'inveter_company', 'meta', 'bank', 'itemGroup','technicalSpecification'));
+            return view('admin.sales-quatation.add_sales', compact('product', 'sales_quatation', 'penal_company', 'penal_type', 'penal_watt', 'lead_complete', 'agentSalesPerson', 'inveter_company', 'meta', 'bank', 'itemGroup','technicalSpecification', 'trading_lead'));
         } else {
             return abort(404);
         }
@@ -778,7 +787,14 @@ class SalesQuatationController extends Controller
     public function getDetails(Request $request)
     {
         try {
-            $salesQuatation = SalesQuatation::select('name', 'address', 'ship_to', 'gst_no')->where('mobile', $request->mobile)->first();
+            if ($request->lead_master_id != "") {
+                $salesQuatation = SalesQuatation::select('name', 'address', 'ship_to', 'gst_no')
+                    ->where('lead_master_id', $request->lead_master_id)
+                    ->orderBy('id', 'DESC')
+                    ->first();
+            } else {
+                $salesQuatation = SalesQuatation::select('name', 'address', 'ship_to', 'gst_no')->where('mobile', $request->mobile)->first();
+            }
             if (!is_null($salesQuatation)) {
                 $response = ['status' => true, 'salesQuatation' => $salesQuatation];
             } else {

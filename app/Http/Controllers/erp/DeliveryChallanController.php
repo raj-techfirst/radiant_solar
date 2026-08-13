@@ -141,7 +141,7 @@ class DeliveryChallanController extends Controller
         $project = SalesMaster::where('dispach_pending_list', '1')->get();
         $warehouse = Warehouse::select('id', 'name')->get();
         $installer = CompanyProfile::with('user')->get();
-        $quotations = SalesQuatation::where('form_type', 'trading')->orderBy('id', 'desc')->get();
+        $quotations = SalesQuatation::where('form_type', 'trading')->where('current_status', 'accepted')->orderBy('id', 'desc')->get();
         $boms = BOM::get();
         return view('erp.delivery-challan.create', compact('warehouse', 'project', 'installer', 'boms', 'quotations'));
     }
@@ -192,6 +192,22 @@ class DeliveryChallanController extends Controller
             $qry->remark = $request->remark;
             $qry->vehicle_no = $request->vehicle_no;
             $qry->save();
+
+            if ($request->issue_type == "trading" && !empty($qry->quotations_id)) {
+                $tradingQuatation = SalesQuatation::where('id', $qry->quotations_id)->first();
+                if (!is_null($tradingQuatation)) {
+                    $tradingQuatation->current_status = 'dispatch';
+                    $tradingQuatation->save();
+                }
+            }
+
+            if (!is_null($oldDeliveryChallan) && $oldDeliveryChallan->issue_type == "trading" && !empty($oldDeliveryChallan->quotations_id) && $oldDeliveryChallan->quotations_id != $qry->quotations_id) {
+                $oldTradingQuatation = SalesQuatation::where('id', $oldDeliveryChallan->quotations_id)->first();
+                if (!is_null($oldTradingQuatation)) {
+                    $oldTradingQuatation->current_status = 'accepted';
+                    $oldTradingQuatation->save();
+                }
+            }
 
             if (!is_null($request->id) && $oldDeliveryChallan) {
                 $submittedMetaIds = [];
@@ -553,8 +569,13 @@ class DeliveryChallanController extends Controller
         $warehouse = Warehouse::select('id', 'name')->get();
         $installer = CompanyProfile::with('user')->get();
         $boms = BOM::get();
-        $quotations = SalesQuatation::where('form_type', 'trading')->orderBy('id', 'desc')->get();
-
+        $quotations = SalesQuatation::where('form_type', 'trading')->where('current_status', 'accepted')->orderBy('id', 'desc')->get();
+        if (!is_null($data->quotations_id) && !$quotations->contains('id', $data->quotations_id)) {
+            $currentQuotation = SalesQuatation::where('id', $data->quotations_id)->first();
+            if (!is_null($currentQuotation)) {
+                $quotations->push($currentQuotation);
+            }
+        }
         return view('erp.delivery-challan.edit', compact('warehouse', 'project', 'data', 'installer', 'boms', 'quotations'));
     }
 
@@ -718,6 +739,13 @@ class DeliveryChallanController extends Controller
                         }
                     }
                     DB::commit();
+                    if ($query->issue_type == "trading" && !empty($query->quotations_id)) {
+                        $tradingQuatation = SalesQuatation::where('id', $query->quotations_id)->first();
+                        if (!is_null($tradingQuatation)) {
+                            $tradingQuatation->current_status = 'accepted';
+                            $tradingQuatation->save();
+                        }
+                    }
                     $query->delete();
                     return response()->json(['status_code' => 200, 'message' => 'Deleted successfully.']);
                 } else {

@@ -56,7 +56,7 @@
                         <label class="form-label" for="lead_master_id">{{ __('message.Lead') }} <span class="text-danger">*</span></label>
                         <select class="form-control anlayst form-select select2 custom-select2" name="lead_master_id" id="lead_master_id">
                             <option selected disabled value="">{{ __('message.-- Select --') }}</option>
-                            @foreach($lead_complete as $value)
+                            @foreach($trading_lead as $value)
                             <option value="{{$value->id}}" data-mobile="{{$value->mobile}}" data-name="{{$value->name}}" data-reference="{{$value->reference}}" data-agent_sales_person_id="{{$value->agent_sales_person_id}}" {{ (isset($sales_quatation) && ($sales_quatation->lead_master_id == $value->id) ? 'selected' : '')}}>{{$value->name}} - {{$value->mobile}}</option>
                             @endforeach
                         </select>
@@ -1234,6 +1234,7 @@
 
         $('#lead_master_id').change(function() {
             var selectedOption = $(this).find('option:selected');
+            var leadId = $(this).val();
             var mobile = selectedOption.data('mobile');
             var name = selectedOption.data('name');
             var reference = selectedOption.data('reference');
@@ -1243,6 +1244,28 @@
             $('#name').val(name);
             $('#reference').val(reference);
             $('#agent_sales_person_id').val(agent_sales_person_id).trigger('change');
+
+            $.ajax({
+                type: "post",
+                url: "{{route('sales-quatation-get-details')}}",
+                data: {
+                    "_token": "{{ csrf_token() }}",
+                    "lead_master_id": leadId
+                },
+                dataType: 'json',
+                beforeSend: function() {
+                    $("#address").val('');
+                    $("#ship_to").val('');
+                    $("#gst_no").val('');
+                },
+                success: function(response) {
+                    if (response.status) {
+                        $("#address").val(response.salesQuatation.address);
+                        $("#ship_to").val(response.salesQuatation.ship_to);
+                        $("#gst_no").val(response.salesQuatation.gst_no);
+                    }
+                }
+            });
         });
         $('#res_lead_master_id').change(function() {
             var selectedOption = $(this).find('option:selected');

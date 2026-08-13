@@ -4,216 +4,265 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class PermissionSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     *
+     * Idempotent: creates or updates every permission, and grants the
+     * B2B report permissions to the Owner and Accountant roles.
      */
     public function run(): void
     {
         $permissions = [
+            // Role
+            ['name' => 'role-list', 'title' => 'List', 'title_tag' => 'Role', 'type' => 'CRM'],
+            ['name' => 'role-create', 'title' => 'Create', 'title_tag' => 'Role', 'type' => 'CRM'],
+            ['name' => 'role-edit', 'title' => 'Edit', 'title_tag' => 'Role', 'type' => 'CRM'],
+            ['name' => 'role-delete', 'title' => 'Delete', 'title_tag' => 'Role', 'type' => 'CRM'],
 
-            ['title_tag' => 'Role', 'title' => 'List', 'name' => 'role-list', 'type' => 'CRM'],
-            ['title_tag' => 'Role', 'title' => 'Create', 'name' => 'role-create', 'type' => 'CRM'],
-            ['title_tag' => 'Role', 'title' => 'Edit', 'name' => 'role-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Role', 'title' => 'Delete', 'name' => 'role-delete', 'type' => 'CRM'],
+            // Permission
+            ['name' => 'permission-list', 'title' => 'List', 'title_tag' => 'Permission', 'type' => 'CRM'],
+            ['name' => 'permission-create', 'title' => 'Create', 'title_tag' => 'Permission', 'type' => 'CRM'],
+            ['name' => 'permission-edit', 'title' => 'Edit', 'title_tag' => 'Permission', 'type' => 'CRM'],
+            ['name' => 'permission-delete', 'title' => 'Delete', 'title_tag' => 'Permission', 'type' => 'CRM'],
 
-            ['title_tag' => 'Permission', 'title' => 'List', 'name' => 'permission-list', 'type' => 'CRM'],
-            ['title_tag' => 'Permission', 'title' => 'Create', 'name' => 'permission-create', 'type' => 'CRM'],
-            ['title_tag' => 'Permission', 'title' => 'Edit', 'name' => 'permission-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Permission', 'title' => 'Delete', 'name' => 'permission-delete', 'type' => 'CRM'],
+            // Category
+            ['name' => 'category-list', 'title' => 'List', 'title_tag' => 'Category', 'type' => 'CRM'],
+            ['name' => 'category-create', 'title' => 'Create', 'title_tag' => 'Category', 'type' => 'CRM'],
+            ['name' => 'category-edit', 'title' => 'Edit', 'title_tag' => 'Category', 'type' => 'CRM'],
+            ['name' => 'category-delete', 'title' => 'Delete', 'title_tag' => 'Category', 'type' => 'CRM'],
 
-            ['title_tag' => 'Category', 'title' => 'List', 'name' => 'category-list', 'type' => 'CRM'],
-            ['title_tag' => 'Category', 'title' => 'Create', 'name' => 'category-create', 'type' => 'CRM'],
-            ['title_tag' => 'Category', 'title' => 'Edit', 'name' => 'category-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Category', 'title' => 'Delete', 'name' => 'category-delete', 'type' => 'CRM'],
+            // Lead
+            ['name' => 'lead-list', 'title' => 'List', 'title_tag' => 'Lead', 'type' => 'CRM'],
+            ['name' => 'lead-create', 'title' => 'Create', 'title_tag' => 'Lead', 'type' => 'CRM'],
+            ['name' => 'lead-edit', 'title' => 'Edit', 'title_tag' => 'Lead', 'type' => 'CRM'],
+            ['name' => 'lead-delete', 'title' => 'Delete', 'title_tag' => 'Lead', 'type' => 'CRM'],
 
-            ['title_tag' => 'Lead', 'title' => 'List', 'name' => 'lead-list', 'type' => 'CRM'],
-            ['title_tag' => 'Lead', 'title' => 'Create', 'name' => 'lead-create', 'type' => 'CRM'],
-            ['title_tag' => 'Lead', 'title' => 'Edit', 'name' => 'lead-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Lead', 'title' => 'Delete', 'name' => 'lead-delete', 'type' => 'CRM'],
+            // Bill of Supply
+            ['name' => 'product-list', 'title' => 'List', 'title_tag' => 'Bill of Supply', 'type' => 'ERP'],
+            ['name' => 'product-create', 'title' => 'Create', 'title_tag' => 'Bill of Supply', 'type' => 'ERP'],
+            ['name' => 'product-edit', 'title' => 'Edit', 'title_tag' => 'Bill of Supply', 'type' => 'ERP'],
+            ['name' => 'product-delete', 'title' => 'Delete', 'title_tag' => 'Bill of Supply', 'type' => 'ERP'],
 
-            ['title_tag' => 'Bill of Supply', 'title' => 'List', 'name' => 'product-list', 'type' => 'ERP'],
-            ['title_tag' => 'Bill of Supply', 'title' => 'Create', 'name' => 'product-create', 'type' => 'ERP'],
-            ['title_tag' => 'Bill of Supply', 'title' => 'Edit', 'name' => 'product-edit', 'type' => 'ERP'],
-            ['title_tag' => 'Bill of Supply', 'title' => 'Delete', 'name' => 'product-delete', 'type' => 'ERP'],
+            // Panel Company
+            ['name' => 'penal-company-list', 'title' => 'List', 'title_tag' => 'Panel Company', 'type' => 'CRM'],
+            ['name' => 'penal-company-create', 'title' => 'Create', 'title_tag' => 'Panel Company', 'type' => 'CRM'],
+            ['name' => 'penal-company-edit', 'title' => 'Edit', 'title_tag' => 'Panel Company', 'type' => 'CRM'],
+            ['name' => 'penal-company-delete', 'title' => 'Delete', 'title_tag' => 'Panel Company', 'type' => 'CRM'],
 
-            ['title_tag' => 'Panel Company', 'title' => 'List', 'name' => 'penal-company-list', 'type' => 'CRM'],
-            ['title_tag' => 'Panel Company', 'title' => 'Create', 'name' => 'penal-company-create', 'type' => 'CRM'],
-            ['title_tag' => 'Panel Company', 'title' => 'Edit', 'name' => 'penal-company-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Panel Company', 'title' => 'Delete', 'name' => 'penal-company-delete', 'type' => 'CRM'],
+            // Panel Type
+            ['name' => 'penal-type-list', 'title' => 'List', 'title_tag' => 'Panel Type', 'type' => 'CRM'],
+            ['name' => 'penal-type-create', 'title' => 'Create', 'title_tag' => 'Panel Type', 'type' => 'CRM'],
+            ['name' => 'penal-type-edit', 'title' => 'Edit', 'title_tag' => 'Panel Type', 'type' => 'CRM'],
+            ['name' => 'penal-type-delete', 'title' => 'Delete', 'title_tag' => 'Panel Type', 'type' => 'CRM'],
 
-            ['title_tag' => 'Panel Type', 'title' => 'List', 'name' => 'penal-type-list', 'type' => 'CRM'],
-            ['title_tag' => 'Panel Type', 'title' => 'Create', 'name' => 'penal-type-create', 'type' => 'CRM'],
-            ['title_tag' => 'Panel Type', 'title' => 'Edit', 'name' => 'penal-type-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Panel Type', 'title' => 'Delete', 'name' => 'penal-type-delete', 'type' => 'CRM'],
+            // Panel Watt
+            ['name' => 'penal-watt-list', 'title' => 'List', 'title_tag' => 'Panel Watt', 'type' => 'CRM'],
+            ['name' => 'penal-watt-create', 'title' => 'Create', 'title_tag' => 'Panel Watt', 'type' => 'CRM'],
+            ['name' => 'penal-watt-edit', 'title' => 'Edit', 'title_tag' => 'Panel Watt', 'type' => 'CRM'],
+            ['name' => 'penal-watt-delete', 'title' => 'Delete', 'title_tag' => 'Panel Watt', 'type' => 'CRM'],
 
-            ['title_tag' => 'Panel Watt', 'title' => 'List', 'name' => 'penal-watt-list', 'type' => 'CRM'],
-            ['title_tag' => 'Panel Watt', 'title' => 'Create', 'name' => 'penal-watt-create', 'type' => 'CRM'],
-            ['title_tag' => 'Panel Watt', 'title' => 'Edit', 'name' => 'penal-watt-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Panel Watt', 'title' => 'Delete', 'name' => 'penal-watt-delete', 'type' => 'CRM'],
+            // Sales Order
+            ['name' => 'sales-master-list', 'title' => 'List', 'title_tag' => 'Sales Order', 'type' => 'CRM'],
+            ['name' => 'sales-master-create', 'title' => 'Create', 'title_tag' => 'Sales Order', 'type' => 'CRM'],
+            ['name' => 'sales-master-edit', 'title' => 'Edit', 'title_tag' => 'Sales Order', 'type' => 'CRM'],
+            ['name' => 'sales-master-delete', 'title' => 'Delete', 'title_tag' => 'Sales Order', 'type' => 'CRM'],
 
-            ['title_tag' => 'Sales Order', 'title' => 'List', 'name' => 'sales-master-list', 'type' => 'CRM'],
-            ['title_tag' => 'Sales Order', 'title' => 'Create', 'name' => 'sales-master-create', 'type' => 'CRM'],
-            ['title_tag' => 'Sales Order', 'title' => 'Edit', 'name' => 'sales-master-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Sales Order', 'title' => 'Delete', 'name' => 'sales-master-delete', 'type' => 'CRM'],
+            // District
+            ['name' => 'district-list', 'title' => 'List', 'title_tag' => 'District', 'type' => 'CRM'],
+            ['name' => 'district-create', 'title' => 'Create', 'title_tag' => 'District', 'type' => 'CRM'],
+            ['name' => 'district-edit', 'title' => 'Edit', 'title_tag' => 'District', 'type' => 'CRM'],
+            ['name' => 'district-delete', 'title' => 'Delete', 'title_tag' => 'District', 'type' => 'CRM'],
 
-            ['title_tag' => 'District', 'title' => 'List', 'name' => 'district-list', 'type' => 'CRM'],
-            ['title_tag' => 'District', 'title' => 'Create', 'name' => 'district-create', 'type' => 'CRM'],
-            ['title_tag' => 'District', 'title' => 'Edit', 'name' => 'district-edit', 'type' => 'CRM'],
-            ['title_tag' => 'District', 'title' => 'Delete', 'name' => 'district-delete', 'type' => 'CRM'],
+            // Taluka
+            ['name' => 'taluka-list', 'title' => 'List', 'title_tag' => 'Taluka', 'type' => 'CRM'],
+            ['name' => 'taluka-create', 'title' => 'Create', 'title_tag' => 'Taluka', 'type' => 'CRM'],
+            ['name' => 'taluka-edit', 'title' => 'Edit', 'title_tag' => 'Taluka', 'type' => 'CRM'],
+            ['name' => 'taluka-delete', 'title' => 'Delete', 'title_tag' => 'Taluka', 'type' => 'CRM'],
 
-            ['title_tag' => 'Taluka', 'title' => 'List', 'name' => 'taluka-list', 'type' => 'CRM'],
-            ['title_tag' => 'Taluka', 'title' => 'Create', 'name' => 'taluka-create', 'type' => 'CRM'],
-            ['title_tag' => 'Taluka', 'title' => 'Edit', 'name' => 'taluka-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Taluka', 'title' => 'Delete', 'name' => 'taluka-delete', 'type' => 'CRM'],
+            // Employee
+            ['name' => 'employee-list', 'title' => 'List', 'title_tag' => 'Employee', 'type' => 'CRM'],
+            ['name' => 'employee-create', 'title' => 'Create', 'title_tag' => 'Employee', 'type' => 'CRM'],
+            ['name' => 'employee-edit', 'title' => 'Edit', 'title_tag' => 'Employee', 'type' => 'CRM'],
+            ['name' => 'employee-delete', 'title' => 'Delete', 'title_tag' => 'Employee', 'type' => 'CRM'],
 
-            ['title_tag' => 'Employee', 'title' => 'List', 'name' => 'employee-list', 'type' => 'CRM'],
-            ['title_tag' => 'Employee', 'title' => 'Create', 'name' => 'employee-create', 'type' => 'CRM'],
-            ['title_tag' => 'Employee', 'title' => 'Edit', 'name' => 'employee-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Employee', 'title' => 'Delete', 'name' => 'employee-delete', 'type' => 'CRM'],
+            // Sales Quotation
+            ['name' => 'sales-quatation-list', 'title' => 'List', 'title_tag' => 'Sales Quotation', 'type' => 'CRM'],
+            ['name' => 'sales-quatation-create', 'title' => 'Create', 'title_tag' => 'Sales Quotation', 'type' => 'CRM'],
+            ['name' => 'sales-quatation-edit', 'title' => 'Edit', 'title_tag' => 'Sales Quotation', 'type' => 'CRM'],
+            ['name' => 'sales-quatation-delete', 'title' => 'Delete', 'title_tag' => 'Sales Quotation', 'type' => 'CRM'],
 
-            ['title_tag' => 'Sales Quotation', 'title' => 'List', 'name' => 'sales-quatation-list', 'type' => 'CRM'],
-            ['title_tag' => 'Sales Quotation', 'title' => 'Create', 'name' => 'sales-quatation-create', 'type' => 'CRM'],
-            ['title_tag' => 'Sales Quotation', 'title' => 'Edit', 'name' => 'sales-quatation-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Sales Quotation', 'title' => 'Delete', 'name' => 'sales-quatation-delete', 'type' => 'CRM'],
+            // Sub Division
+            ['name' => 'sub-division-list', 'title' => 'List', 'title_tag' => 'Sub Division', 'type' => 'CRM'],
+            ['name' => 'sub-division-create', 'title' => 'Create', 'title_tag' => 'Sub Division', 'type' => 'CRM'],
+            ['name' => 'sub-division-edit', 'title' => 'Edit', 'title_tag' => 'Sub Division', 'type' => 'CRM'],
+            ['name' => 'sub-division-delete', 'title' => 'Delete', 'title_tag' => 'Sub Division', 'type' => 'CRM'],
 
-            ['title_tag' => 'Sub Division', 'title' => 'List', 'name' => 'sub-division-list', 'type' => 'CRM'],
-            ['title_tag' => 'Sub Division', 'title' => 'Create', 'name' => 'sub-division-create', 'type' => 'CRM'],
-            ['title_tag' => 'Sub Division', 'title' => 'Edit', 'name' => 'sub-division-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Sub Division', 'title' => 'Delete', 'name' => 'sub-division-delete', 'type' => 'CRM'],
+            // Payment Collection
+            ['name' => 'payment-collection-list', 'title' => 'List', 'title_tag' => 'Payment Collection', 'type' => 'CRM'],
+            ['name' => 'payment-collection-create', 'title' => 'Create', 'title_tag' => 'Payment Collection', 'type' => 'CRM'],
+            ['name' => 'payment-collection-edit', 'title' => 'Edit', 'title_tag' => 'Payment Collection', 'type' => 'CRM'],
+            ['name' => 'payment-collection-delete', 'title' => 'Delete', 'title_tag' => 'Payment Collection', 'type' => 'CRM'],
 
-            ['title_tag' => 'Payment Collection', 'title' => 'List', 'name' => 'payment-collection-list', 'type' => 'CRM'],
-            ['title_tag' => 'Payment Collection', 'title' => 'Create', 'name' => 'payment-collection-create', 'type' => 'CRM'],
-            ['title_tag' => 'Payment Collection', 'title' => 'Edit', 'name' => 'payment-collection-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Payment Collection', 'title' => 'Delete', 'name' => 'payment-collection-delete', 'type' => 'CRM'],
+            // Inverter Company
+            ['name' => 'inveter-company-list', 'title' => 'List', 'title_tag' => 'Inverter Company', 'type' => 'CRM'],
+            ['name' => 'inveter-company-create', 'title' => 'Create', 'title_tag' => 'Inverter Company', 'type' => 'CRM'],
+            ['name' => 'inveter-company-edit', 'title' => 'Edit', 'title_tag' => 'Inverter Company', 'type' => 'CRM'],
+            ['name' => 'inveter-company-delete', 'title' => 'Delete', 'title_tag' => 'Inverter Company', 'type' => 'CRM'],
 
-            ['title_tag' => 'Inverter Company', 'title' => 'List', 'name' => 'inveter-company-list', 'type' => 'CRM'],
-            ['title_tag' => 'Inverter Company', 'title' => 'Create', 'name' => 'inveter-company-create', 'type' => 'CRM'],
-            ['title_tag' => 'Inverter Company', 'title' => 'Edit', 'name' => 'inveter-company-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Inverter Company', 'title' => 'Delete', 'name' => 'inveter-company-delete', 'type' => 'CRM'],
+            // Follow Up
+            ['name' => 'follow-up-list', 'title' => 'List', 'title_tag' => 'Follow Up', 'type' => 'CRM'],
+            ['name' => 'follow-up-create', 'title' => 'Create', 'title_tag' => 'Follow Up', 'type' => 'CRM'],
 
-            ['title_tag' => 'Follow Up', 'title' => 'List', 'name' => 'follow-up-list', 'type' => 'CRM'],
-            ['title_tag' => 'Follow Up', 'title' => 'Create', 'name' => 'follow-up-create', 'type' => 'CRM'],
+            // Bank
+            ['name' => 'bank-list', 'title' => 'List', 'title_tag' => 'Bank', 'type' => 'CRM'],
+            ['name' => 'bank-create', 'title' => 'Create', 'title_tag' => 'Bank', 'type' => 'CRM'],
+            ['name' => 'bank-edit', 'title' => 'Edit', 'title_tag' => 'Bank', 'type' => 'CRM'],
+            ['name' => 'bank-delete', 'title' => 'Delete', 'title_tag' => 'Bank', 'type' => 'CRM'],
 
-            ['title_tag' => 'Bank', 'title' => 'List', 'name' => 'bank-list', 'type' => 'CRM'],
-            ['title_tag' => 'Bank', 'title' => 'Create', 'name' => 'bank-create', 'type' => 'CRM'],
-            ['title_tag' => 'Bank', 'title' => 'Edit', 'name' => 'bank-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Bank', 'title' => 'Delete', 'name' => 'bank-delete', 'type' => 'CRM'],
+            // Terms Conditions
+            ['name' => 'policy-list', 'title' => 'List', 'title_tag' => 'Terms Conditions', 'type' => 'CRM'],
+            ['name' => 'policy-create', 'title' => 'Create', 'title_tag' => 'Terms Conditions', 'type' => 'CRM'],
+            ['name' => 'policy-edit', 'title' => 'Edit', 'title_tag' => 'Terms Conditions', 'type' => 'CRM'],
 
-            ['title_tag' => 'Terms Conditions', 'title' => 'List', 'name' => 'policy-list', 'type' => 'CRM'],
-            ['title_tag' => 'Terms Conditions', 'title' => 'Create', 'name' => 'policy-create', 'type' => 'CRM'],
-            ['title_tag' => 'Terms Conditions', 'title' => 'Edit', 'name' => 'policy-edit', 'type' => 'CRM'],
+            // Employee Status
+            ['name' => 'employee-status', 'title' => 'Employee Status', 'title_tag' => 'Employee Status', 'type' => 'CRM'],
 
-            ['title_tag' => 'Employee Status', 'title' => 'Employee Status', 'name' => 'employee-status', 'type' => 'CRM'],
+            // Reports (CRM)
+            ['name' => 'reports-total-collection', 'title' => 'Total Collection', 'title_tag' => 'Reports', 'type' => 'CRM'],
+            ['name' => 'reports-payment-pending', 'title' => 'Payment Pending', 'title_tag' => 'Reports', 'type' => 'CRM'],
+            ['name' => 'reports-meter-charges', 'title' => 'Meter Charges', 'title_tag' => 'Reports', 'type' => 'CRM'],
+            ['name' => 'reports-dispach', 'title' => 'Dispach', 'title_tag' => 'Reports', 'type' => 'CRM'],
+            ['name' => 'reports-installation', 'title' => 'Installation', 'title_tag' => 'Reports', 'type' => 'CRM'],
+            ['name' => 'reports-meter-application', 'title' => 'Meter Application', 'title_tag' => 'Reports', 'type' => 'CRM'],
+            ['name' => 'reports-final', 'title' => 'Final Report', 'title_tag' => 'Reports', 'type' => 'CRM'],
+            ['name' => 'reports-invoice', 'title' => 'Invoice Report', 'title_tag' => 'Reports', 'type' => 'CRM'],
+            ['name' => 'panels-required-reports', 'title' => 'Panel Required', 'title_tag' => 'Reports', 'type' => 'CRM'],
+            ['name' => 'inverters-required-reports', 'title' => 'Inverters Required', 'title_tag' => 'Reports', 'type' => 'CRM'],
 
-            ['title_tag' => 'Reports', 'title' => 'Total Collection', 'name' => 'reports-total-collection', 'type' => 'CRM'],
-            ['title_tag' => 'Reports', 'title' => 'Payment Pending', 'name' => 'reports-payment-pending', 'type' => 'CRM'],
-            ['title_tag' => 'Reports', 'title' => 'Meter Charges', 'name' => 'reports-meter-charges', 'type' => 'CRM'],
-            ['title_tag' => 'Reports', 'title' => 'Dispach', 'name' => 'reports-dispach', 'type' => 'CRM'],
-            ['title_tag' => 'Reports', 'title' => 'Installation', 'name' => 'reports-installation', 'type' => 'CRM'],
-            ['title_tag' => 'Reports', 'title' => 'Meter Application', 'name' => 'reports-meter-application', 'type' => 'CRM'],
-            ['title_tag' => 'Reports', 'title' => 'Final Report', 'name' => 'reports-final', 'type' => 'CRM'],
-            ['title_tag' => 'Reports', 'title' => 'Invoice Report', 'name' => 'reports-invoice', 'type' => 'CRM'],
-            ['title_tag' => 'Reports', 'title' => 'Panel Required', 'name' => 'panels-required-reports', 'type' => 'CRM'],
-            ['title_tag' => 'Reports', 'title' => 'Inverters Required', 'name' => 'inverters-required-reports', 'type' => 'CRM'],
+            // DISCOM
+            ['name' => 'discom-list', 'title' => 'List', 'title_tag' => 'DISCOM', 'type' => 'CRM'],
+            ['name' => 'discom-create', 'title' => 'Create', 'title_tag' => 'DISCOM', 'type' => 'CRM'],
+            ['name' => 'discom-edit', 'title' => 'Edit', 'title_tag' => 'DISCOM', 'type' => 'CRM'],
+            ['name' => 'discom-delete', 'title' => 'Delete', 'title_tag' => 'DISCOM', 'type' => 'CRM'],
 
-            ['title_tag' => 'DISCOM', 'title' => 'List', 'name' => 'discom-list', 'type' => 'CRM'],
-            ['title_tag' => 'DISCOM', 'title' => 'Create', 'name' => 'discom-create', 'type' => 'CRM'],
-            ['title_tag' => 'DISCOM', 'title' => 'Edit', 'name' => 'discom-edit', 'type' => 'CRM'],
-            ['title_tag' => 'DISCOM', 'title' => 'Delete', 'name' => 'discom-delete', 'type' => 'CRM'],
+            // Year
+            ['name' => 'year-list', 'title' => 'List', 'title_tag' => 'Year', 'type' => 'ERP'],
+            ['name' => 'year-create', 'title' => 'Create', 'title_tag' => 'Year', 'type' => 'ERP'],
+            ['name' => 'year-edit', 'title' => 'Edit', 'title_tag' => 'Year', 'type' => 'ERP'],
+            ['name' => 'year-delete', 'title' => 'Delete', 'title_tag' => 'Year', 'type' => 'ERP'],
 
-            ['title_tag' => 'Year', 'title' => 'List', 'name' => 'year-list', 'type' => 'ERP'],
-            ['title_tag' => 'Year', 'title' => 'Create', 'name' => 'year-create', 'type' => 'ERP'],
-            ['title_tag' => 'Year', 'title' => 'Edit', 'name' => 'year-edit', 'type' => 'ERP'],
-            ['title_tag' => 'Year', 'title' => 'Delete', 'name' => 'year-delete', 'type' => 'ERP'],
+            // Panel/Inverter
+            ['name' => 'item-group-list', 'title' => 'List', 'title_tag' => 'Panel/Inverter', 'type' => 'ERP'],
+            ['name' => 'item-group-create', 'title' => 'Create', 'title_tag' => 'Panel/Inverter', 'type' => 'ERP'],
+            ['name' => 'item-group-edit', 'title' => 'Edit', 'title_tag' => 'Panel/Inverter', 'type' => 'ERP'],
+            ['name' => 'item-group-delete', 'title' => 'Delete', 'title_tag' => 'Panel/Inverter', 'type' => 'ERP'],
 
-            ['title_tag' => 'Panel/Inverter', 'title' => 'List', 'name' => 'item-group-list', 'type' => 'ERP'],
-            ['title_tag' => 'Panel/Inverter', 'title' => 'Create', 'name' => 'item-group-create', 'type' => 'ERP'],
-            ['title_tag' => 'Panel/Inverter', 'title' => 'Edit', 'name' => 'item-group-edit', 'type' => 'ERP'],
-            ['title_tag' => 'Panel/Inverter', 'title' => 'Delete', 'name' => 'item-group-delete', 'type' => 'ERP'],
+            // Supplier
+            ['name' => 'supplier-list', 'title' => 'List', 'title_tag' => 'Supplier', 'type' => 'ERP'],
+            ['name' => 'supplier-create', 'title' => 'Create', 'title_tag' => 'Supplier', 'type' => 'ERP'],
+            ['name' => 'supplier-edit', 'title' => 'Edit', 'title_tag' => 'Supplier', 'type' => 'ERP'],
+            ['name' => 'supplier-delete', 'title' => 'Delete', 'title_tag' => 'Supplier', 'type' => 'ERP'],
 
-            ['title_tag' => 'Supplier', 'title' => 'List', 'name' => 'supplier-list', 'type' => 'ERP'],
-            ['title_tag' => 'Supplier', 'title' => 'Create', 'name' => 'supplier-create', 'type' => 'ERP'],
-            ['title_tag' => 'Supplier', 'title' => 'Edit', 'name' => 'supplier-edit', 'type' => 'ERP'],
-            ['title_tag' => 'Supplier', 'title' => 'Delete', 'name' => 'supplier-delete', 'type' => 'ERP'],
+            // Purchase Order
+            ['name' => 'purchase-order-list', 'title' => 'List', 'title_tag' => 'Purchase Order', 'type' => 'ERP'],
+            ['name' => 'purchase-order-create', 'title' => 'Create', 'title_tag' => 'Purchase Order', 'type' => 'ERP'],
+            ['name' => 'purchase-order-edit', 'title' => 'Edit', 'title_tag' => 'Purchase Order', 'type' => 'ERP'],
+            ['name' => 'purchase-order-delete', 'title' => 'Delete', 'title_tag' => 'Purchase Order', 'type' => 'ERP'],
 
-            ['title_tag' => 'Purchase Order', 'title' => 'List', 'name' => 'purchase-order-list', 'type' => 'ERP'],
-            ['title_tag' => 'Purchase Order', 'title' => 'Create', 'name' => 'purchase-order-create', 'type' => 'ERP'],
-            ['title_tag' => 'Purchase Order', 'title' => 'Edit', 'name' => 'purchase-order-edit', 'type' => 'ERP'],
-            ['title_tag' => 'Purchase Order', 'title' => 'Delete', 'name' => 'purchase-order-delete', 'type' => 'ERP'],
+            // Unit
+            ['name' => 'unit-list', 'title' => 'List', 'title_tag' => 'Unit', 'type' => 'ERP'],
+            ['name' => 'unit-create', 'title' => 'Create', 'title_tag' => 'Unit', 'type' => 'ERP'],
+            ['name' => 'unit-edit', 'title' => 'Edit', 'title_tag' => 'Unit', 'type' => 'ERP'],
+            ['name' => 'unit-delete', 'title' => 'Delete', 'title_tag' => 'Unit', 'type' => 'ERP'],
 
-            ['title_tag' => 'Unit', 'title' => 'List', 'name' => 'unit-list', 'type' => 'ERP'],
-            ['title_tag' => 'Unit', 'title' => 'Create', 'name' => 'unit-create', 'type' => 'ERP'],
-            ['title_tag' => 'Unit', 'title' => 'Edit', 'name' => 'unit-edit', 'type' => 'ERP'],
-            ['title_tag' => 'Unit', 'title' => 'Delete', 'name' => 'unit-delete', 'type' => 'ERP'],
+            // Warehouse
+            ['name' => 'warehouse-list', 'title' => 'List', 'title_tag' => 'Warehouse', 'type' => 'ERP'],
+            ['name' => 'warehouse-create', 'title' => 'Create', 'title_tag' => 'Warehouse', 'type' => 'ERP'],
+            ['name' => 'warehouse-edit', 'title' => 'Edit', 'title_tag' => 'Warehouse', 'type' => 'ERP'],
+            ['name' => 'warehouse-delete', 'title' => 'Delete', 'title_tag' => 'Warehouse', 'type' => 'ERP'],
 
-            ['title_tag' => 'Warehouse', 'title' => 'List', 'name' => 'warehouse-list', 'type' => 'ERP'],
-            ['title_tag' => 'Warehouse', 'title' => 'Create', 'name' => 'warehouse-create', 'type' => 'ERP'],
-            ['title_tag' => 'Warehouse', 'title' => 'Edit', 'name' => 'warehouse-edit', 'type' => 'ERP'],
-            ['title_tag' => 'Warehouse', 'title' => 'Delete', 'name' => 'warehouse-delete', 'type' => 'ERP'],
+            // Warehouse Stock
+            ['name' => 'warehouse-stock-list', 'title' => 'List', 'title_tag' => 'Warehouse Stock', 'type' => 'ERP'],
+            ['name' => 'warehouse-stock-create', 'title' => 'Create', 'title_tag' => 'Warehouse Stock', 'type' => 'ERP'],
 
-            ['title_tag' => 'Warehouse Stock', 'title' => 'List', 'name' => 'warehouse-stock-list', 'type' => 'ERP'],
-            ['title_tag' => 'Warehouse Stock', 'title' => 'Create', 'name' => 'warehouse-stock-create', 'type' => 'ERP'],
+            // Goods Receipt
+            ['name' => 'purchase-direct-list', 'title' => 'List', 'title_tag' => 'Goods Receipt', 'type' => 'ERP'],
+            ['name' => 'purchase-direct-create', 'title' => 'Create', 'title_tag' => 'Goods Receipt', 'type' => 'ERP'],
+            ['name' => 'purchase-direct-edit', 'title' => 'Edit', 'title_tag' => 'Goods Receipt', 'type' => 'ERP'],
+            ['name' => 'purchase-direct-delete', 'title' => 'Delete', 'title_tag' => 'Goods Receipt', 'type' => 'ERP'],
 
-            ['title_tag' => 'Goods Receipt', 'title' => 'List', 'name' => 'purchase-direct-list', 'type' => 'ERP'],
-            ['title_tag' => 'Goods Receipt', 'title' => 'Create', 'name' => 'purchase-direct-create', 'type' => 'ERP'],
-            ['title_tag' => 'Goods Receipt', 'title' => 'Edit', 'name' => 'purchase-direct-edit', 'type' => 'ERP'],
-            ['title_tag' => 'Goods Receipt', 'title' => 'Delete', 'name' => 'purchase-direct-delete', 'type' => 'ERP'],
+            // Warehouse Stock Adjust
+            ['name' => 'warehouse-stock-adjust-list', 'title' => 'List', 'title_tag' => 'Warehouse Stock Adjust', 'type' => 'ERP'],
+            ['name' => 'warehouse-stock-adjust-create', 'title' => 'Create', 'title_tag' => 'Warehouse Stock Adjust', 'type' => 'ERP'],
 
-            ['title_tag' => 'Warehouse Stock Adjust', 'title' => 'List', 'name' => 'warehouse-stock-adjust-list', 'type' => 'ERP'],
-            ['title_tag' => 'Warehouse Stock Adjust', 'title' => 'Create', 'name' => 'warehouse-stock-adjust-create', 'type' => 'ERP'],
+            // Project Wise Stock
+            ['name' => 'project-wise-stock-list', 'title' => 'List', 'title_tag' => 'Project Wise Stock', 'type' => 'ERP'],
+            ['name' => 'project-wise-stock-create', 'title' => 'Create', 'title_tag' => 'Project Wise Stock', 'type' => 'ERP'],
 
-            ['title_tag' => 'Project Wise Stock', 'title' => 'List', 'name' => 'project-wise-stock-list', 'type' => 'ERP'],
-            ['title_tag' => 'Project Wise Stock', 'title' => 'Create', 'name' => 'project-wise-stock-create', 'type' => 'ERP'],
+            // Project Stock Adjust
+            ['name' => 'project-stock-adjust-list', 'title' => 'List', 'title_tag' => 'Project Stock Adjust', 'type' => 'ERP'],
+            ['name' => 'project-stock-adjust-create', 'title' => 'Create', 'title_tag' => 'Project Stock Adjust', 'type' => 'ERP'],
 
-            ['title_tag' => 'Project Stock Adjust', 'title' => 'List', 'name' => 'project-stock-adjust-list', 'type' => 'ERP'],
-            ['title_tag' => 'Project Stock Adjust', 'title' => 'Create', 'name' => 'project-stock-adjust-create', 'type' => 'ERP'],
+            // Goods Issue (Delivery Challan)
+            ['name' => 'delivery-challan-list', 'title' => 'List', 'title_tag' => 'Goods Issue', 'type' => 'ERP'],
+            ['name' => 'delivery-challan-create', 'title' => 'Create', 'title_tag' => 'Goods Issue', 'type' => 'ERP'],
+            ['name' => 'delivery-challan-edit', 'title' => 'Edit', 'title_tag' => 'Goods Issue', 'type' => 'ERP'],
+            ['name' => 'delivery-challan-delete', 'title' => 'Delete', 'title_tag' => 'Goods Issue', 'type' => 'ERP'],
 
-            ['title_tag' => 'Goods Issue', 'title' => 'List', 'name' => 'delivery-challan-list', 'type' => 'ERP'],
-            ['title_tag' => 'Goods Issue', 'title' => 'Create', 'name' => 'delivery-challan-create', 'type' => 'ERP'],
-            ['title_tag' => 'Goods Issue', 'title' => 'Edit', 'name' => 'delivery-challan-edit', 'type' => 'ERP'],
-            ['title_tag' => 'Goods Issue', 'title' => 'Delete', 'name' => 'delivery-challan-delete', 'type' => 'ERP'],
+            // Complaint Management
+            ['name' => 'inquiry-list', 'title' => 'List', 'title_tag' => 'Complaint Management', 'type' => 'CRM'],
+            ['name' => 'inquiry-edit', 'title' => 'Edit', 'title_tag' => 'Complaint Management', 'type' => 'CRM'],
+            ['name' => 'inquiry-delete', 'title' => 'Delete', 'title_tag' => 'Complaint Management', 'type' => 'CRM'],
 
-            ['title_tag' => 'Complaint Management', 'title' => 'List', 'name' => 'inquiry-list', 'type' => 'CRM'],
+            // Goods Return
+            ['name' => 'delivery-challan-return-list', 'title' => 'List', 'title_tag' => 'Goods Return', 'type' => 'ERP'],
+            ['name' => 'delivery-challan-return-create', 'title' => 'Create', 'title_tag' => 'Goods Return', 'type' => 'ERP'],
+            ['name' => 'delivery-challan-return-edit', 'title' => 'Edit', 'title_tag' => 'Goods Return', 'type' => 'ERP'],
+            ['name' => 'delivery-challan-return-delete', 'title' => 'Delete', 'title_tag' => 'Goods Return', 'type' => 'ERP'],
 
-            ['title_tag' => 'Goods Return', 'title' => 'List', 'name' => 'delivery-challan-return-list', 'type' => 'ERP'],
-            ['title_tag' => 'Goods Return', 'title' => 'Create', 'name' => 'delivery-challan-return-create', 'type' => 'ERP'],
-            ['title_tag' => 'Goods Return', 'title' => 'Edit', 'name' => 'delivery-challan-return-edit', 'type' => 'ERP'],
-            ['title_tag' => 'Goods Return', 'title' => 'Delete', 'name' => 'delivery-challan-return-delete', 'type' => 'ERP'],
+            // BOM
+            ['name' => 'bom-list', 'title' => 'List', 'title_tag' => 'BOM', 'type' => 'ERP'],
+            ['name' => 'bom-create', 'title' => 'Create', 'title_tag' => 'BOM', 'type' => 'ERP'],
+            ['name' => 'bom-edit', 'title' => 'Edit', 'title_tag' => 'BOM', 'type' => 'ERP'],
+            ['name' => 'bom-delete', 'title' => 'Delete', 'title_tag' => 'BOM', 'type' => 'ERP'],
 
-            ['title_tag' => 'BOM', 'title' => 'List', 'name' => 'bom-list', 'type' => 'ERP'],
-            ['title_tag' => 'BOM', 'title' => 'Create', 'name' => 'bom-create', 'type' => 'ERP'],
-            ['title_tag' => 'BOM', 'title' => 'Edit', 'name' => 'bom-edit', 'type' => 'ERP'],
-            ['title_tag' => 'BOM', 'title' => 'Delete', 'name' => 'bom-delete', 'type' => 'ERP'],
+            // Report (ERP)
+            ['name' => 'get-serial-numbers', 'title' => 'Serial Number Report', 'title_tag' => 'Report', 'type' => 'ERP'],
+            ['name' => 'project-wise-dispach', 'title' => 'Project Wise Dispach', 'title_tag' => 'Report', 'type' => 'ERP'],
+            ['name' => 'project-wise-stock-report', 'title' => 'Project Wise Stock Report', 'title_tag' => 'Report', 'type' => 'ERP'],
+            ['name' => 'required-stock-report', 'title' => 'Requisition Report', 'title_tag' => 'Report', 'type' => 'ERP'],
+            ['name' => 'stock-report', 'title' => 'Stock Report', 'title_tag' => 'Report', 'type' => 'ERP'],
+            ['name' => 'b2b-dispach', 'title' => 'B2B Dispach', 'title_tag' => 'Report', 'type' => 'ERP'],
 
-            ['title_tag' => 'Report', 'title' => 'Serial Number Report', 'name' => 'get-serial-numbers', 'type' => 'ERP'],
-            ['title_tag' => 'Report', 'title' => 'Project Wise Dispach', 'name' => 'project-wise-dispach', 'type' => 'ERP'],
-            ['title_tag' => 'Report', 'title' => 'Project Wise Stock Report', 'name' => 'project-wise-stock-report', 'type' => 'ERP'],
-            ['title_tag' => 'Report', 'title' => 'Requisition Report', 'name' => 'required-stock-report', 'type' => 'ERP'],
-            ['title_tag' => 'Report', 'title' => 'Stock Report', 'name' => 'stock-report', 'type' => 'ERP'],
-            ['title_tag' => 'Report', 'title' => 'B2B Dispach', 'name' => 'b2b-dispach', 'type' => 'ERP'],
+            // B2B Report (CRM)
+            ['name' => 'b2b-accept', 'title' => 'B2B Accept', 'title_tag' => 'B2B Report', 'type' => 'CRM'],
+            ['name' => 'b2b-dispatch', 'title' => 'B2B Dispatch', 'title_tag' => 'B2B Report', 'type' => 'CRM'],
+            ['name' => 'b2b-rate', 'title' => 'B2B Rate', 'title_tag' => 'B2B Report', 'type' => 'CRM'],
 
-            ['title_tag' => 'Rate Calculator', 'title' => 'List', 'name' => 'rate-calculator-list', 'type' => 'CRM'],
-            ['title_tag' => 'Rate Calculator', 'title' => 'Create', 'name' => 'rate-calculator-create', 'type' => 'CRM'],
-            ['title_tag' => 'Rate Calculator', 'title' => 'Edit', 'name' => 'rate-calculator-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Rate Calculator', 'title' => 'Delete', 'name' => 'rate-calculator-delete', 'type' => 'CRM'],
+            // Rate Calculator
+            ['name' => 'rate-calculator-list', 'title' => 'List', 'title_tag' => 'Rate Calculator', 'type' => 'CRM'],
+            ['name' => 'rate-calculator-create', 'title' => 'Create', 'title_tag' => 'Rate Calculator', 'type' => 'CRM'],
+            ['name' => 'rate-calculator-edit', 'title' => 'Edit', 'title_tag' => 'Rate Calculator', 'type' => 'CRM'],
+            ['name' => 'rate-calculator-delete', 'title' => 'Delete', 'title_tag' => 'Rate Calculator', 'type' => 'CRM'],
 
-            ['title_tag' => 'Commission Payment', 'title' => 'List', 'name' => 'commission-payment-list', 'type' => 'CRM'],
-            ['title_tag' => 'Commission Payment', 'title' => 'Create', 'name' => 'commission-payment-create', 'type' => 'CRM'],
-            ['title_tag' => 'Commission Payment', 'title' => 'Edit', 'name' => 'commission-payment-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Commission Payment', 'title' => 'Delete', 'name' => 'commission-payment-delete', 'type' => 'CRM'],
+            // Commission Payment
+            ['name' => 'commission-payment-list', 'title' => 'List', 'title_tag' => 'Commission Payment', 'type' => 'CRM'],
+            ['name' => 'commission-payment-create', 'title' => 'Create', 'title_tag' => 'Commission Payment', 'type' => 'CRM'],
+            ['name' => 'commission-payment-edit', 'title' => 'Edit', 'title_tag' => 'Commission Payment', 'type' => 'CRM'],
+            ['name' => 'commission-payment-delete', 'title' => 'Delete', 'title_tag' => 'Commission Payment', 'type' => 'CRM'],
 
-            ['title_tag' => 'Commission', 'title' => 'List', 'name' => 'commission-list', 'type' => 'CRM'],
+            // Commission
+            ['name' => 'commission-list', 'title' => 'List', 'title_tag' => 'Commission', 'type' => 'CRM'],
 
-            ['title_tag' => 'Lead Source', 'title' => 'List', 'name' => 'lead-source-list', 'type' => 'CRM'],
-            ['title_tag' => 'Lead Source', 'title' => 'Create', 'name' => 'lead-source-create', 'type' => 'CRM'],
-            ['title_tag' => 'Lead Source', 'title' => 'Edit', 'name' => 'lead-source-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Lead Source', 'title' => 'Delete', 'name' => 'lead-source-delete', 'type' => 'CRM'],
-
-            ['title_tag' => 'Complaint Management', 'title' => 'Edit', 'name' => 'inquiry-edit', 'type' => 'CRM'],
-            ['title_tag' => 'Complaint Management', 'title' => 'Delete', 'name' => 'inquiry-delete', 'type' => 'CRM']
+            // Lead Source
+            ['name' => 'lead-source-list', 'title' => 'List', 'title_tag' => 'Lead Source', 'type' => 'CRM'],
+            ['name' => 'lead-source-create', 'title' => 'Create', 'title_tag' => 'Lead Source', 'type' => 'CRM'],
+            ['name' => 'lead-source-edit', 'title' => 'Edit', 'title_tag' => 'Lead Source', 'type' => 'CRM'],
+            ['name' => 'lead-source-delete', 'title' => 'Delete', 'title_tag' => 'Lead Source', 'type' => 'CRM'],
         ];
 
         foreach ($permissions as $permissionData) {
@@ -225,6 +274,16 @@ class PermissionSeeder extends Seeder
                     'type' => $permissionData['type'],
                 ]
             );
+        }
+
+        $b2bPermissions = ['b2b-accept', 'b2b-dispatch', 'b2b-rate'];
+        $roles = Role::whereIn('name', ['Owner', 'Accountant'])->get();
+        foreach ($roles as $role) {
+            foreach ($b2bPermissions as $permissionName) {
+                if (!$role->hasPermissionTo($permissionName)) {
+                    $role->givePermissionTo($permissionName);
+                }
+            }
         }
     }
 }

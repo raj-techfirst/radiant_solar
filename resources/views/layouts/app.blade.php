@@ -581,7 +581,7 @@
                     </a>
                 </li>
                 @endcan
-                @canany(['reports-total-collection','reports-payment-pending','reports-meter-charges','reports-dispach','reports-installation','reports-meter-application','reports-final','reports-invoice','inverters-required-reports','panels-required-reports'])
+                @canany(['reports-total-collection','reports-payment-pending','reports-meter-charges','reports-dispach','reports-installation','reports-meter-application','reports-final','reports-invoice','inverters-required-reports','panels-required-reports','b2b-accept','b2b-dispatch','b2b-rate'])
                 <li class="nav-item @if(Request::segment(1) == 'reports' || Request::segment(1) == 'total-collection-reports' || Request::segment(1) == 'payment-pending-reports'  || Request::segment(1) == 'invoice-reports'  || Request::segment(1) == 'meter-charges-reports' || Request::segment(1) == 'dispach-reports' || Request::segment(1) == 'installation-reports' || Request::segment(1) == 'meter-application-reports' || Request::segment(1) == 'final-reports' || Request::segment(1) == 'panels-required-reports' || Request::segment(1) == 'inverters-required-reports'): active @endif">
                     <a class="d-flex align-items-center" href="{{route('reports')}}">
                         <i data-feather='list'></i>

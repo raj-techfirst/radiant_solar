@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\erp;
 
+use App\Exports\B2BAcceptExport;
+use App\Exports\B2BDispatchExport;
 use App\Exports\B2BDispachExport;
+use App\Exports\B2BRateExport;
 use App\Exports\ProjectWiseDispachExport;
 use App\Exports\ProjectWiseStockExport;
 use App\Exports\RequisitionExport;
@@ -35,6 +38,9 @@ class ReportsController extends Controller
         $this->middleware('permission:required-stock-report', ['only' => ['requiredStock', 'getRequiredStock']]);
         $this->middleware('permission:stock-report', ['only' => ['requiredStock', 'stockReport']]);
         $this->middleware('permission:b2b-dispach', ['only' => ['bbDispach']]);
+        $this->middleware('permission:b2b-accept', ['only' => ['bbAccept']]);
+        $this->middleware('permission:b2b-dispatch', ['only' => ['bbDispatch']]);
+        $this->middleware('permission:b2b-rate', ['only' => ['bbRate']]);
     }
     public function index()
     {
@@ -127,7 +133,7 @@ class ReportsController extends Controller
     public function projectWiseDispachOld()
     {
         if (request()->ajax()) {
-            $where = "pws.quantity != 0 AND sm.file_cancel_order = '0'";
+            $where = "pws.quantity != 0 AND sm.file_cancel_order = '0' AND sm.deleted_at IS NULL AND dc.deleted_at IS NULL AND pws.deleted_at IS NULL";
             $company = CompanyProfile::where('user_id', Auth::id())->first();
             if ($company->user_type == 'M') {
                 $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
@@ -227,7 +233,7 @@ class ReportsController extends Controller
     {
 
         if (request()->ajax()) {
-            $where = "pws.quantity != 0 AND sm.file_cancel_order = '0'";
+            $where = "pws.quantity != 0 AND sm.file_cancel_order = '0' AND sm.deleted_at IS NULL AND dc.deleted_at IS NULL AND pws.deleted_at IS NULL";
 
              if (request()->input('consumer') != "") {
                 $consumer = request()->input('consumer');
@@ -280,7 +286,7 @@ class ReportsController extends Controller
                 WHERE " . $where.' GROUP BY sm.id';
 
 
-            $where1 = " pwsh.installation_id > 0 AND pwsh.type = 'Debit' AND sm.file_cancel_order = '0'";
+            $where1 = " pwsh.installation_id > 0 AND pwsh.type = 'Debit' AND sm.file_cancel_order = '0' AND sm.deleted_at IS NULL AND dc.deleted_at IS NULL AND pws.deleted_at IS NULL AND pwsh.deleted_at IS NULL";
 
              if (request()->input('consumer') != "") {
                 $consumer = request()->input('consumer');
@@ -427,7 +433,7 @@ class ReportsController extends Controller
     public function projectWiseStockReport()
     {
         if (request()->ajax()) {
-            $where = "pws.quantity != 0 AND sm.file_cancel_order = '0'";
+            $where = "pws.quantity != 0 AND sm.file_cancel_order = '0' AND sm.deleted_at IS NULL AND dc.deleted_at IS NULL AND pws.deleted_at IS NULL";
             if (request()->input('consumer') != "") {
                 $where .= " AND sm.id = " . request()->input('consumer');
             }
@@ -468,7 +474,7 @@ class ReportsController extends Controller
                 WHERE " . $where;
 
 
-            $where1 = " pwsh.installation_id > 0 AND pwsh.type = 'Debit' AND sm.file_cancel_order = '0'";
+            $where1 = " pwsh.installation_id > 0 AND pwsh.type = 'Debit' AND sm.file_cancel_order = '0' AND sm.deleted_at IS NULL AND dc.deleted_at IS NULL AND pws.deleted_at IS NULL AND pwsh.deleted_at IS NULL";
             if (request()->input('consumer') != "") {
                 $where1 .= " AND pwsh.sales_master_id = " . request()->input('consumer');
             }
@@ -677,7 +683,7 @@ class ReportsController extends Controller
         $data = $query->orderBy('id', 'DESC')->get();
         if ($data->count() > 0) {
             foreach ($data as $key => $value) {
-                $union[] =  " SELECT bm.type,bm.item_id,bm.item_group_id,bm.quantity,bm.unit_id FROM sales_masters as s LEFT JOIN bom_metas AS bm ON bm.boms_id = s.bom_id WHERE s.id = " . $value->id;
+                $union[] =  " SELECT bm.type,bm.item_id,bm.item_group_id,bm.quantity,bm.unit_id FROM sales_masters as s LEFT JOIN bom_metas AS bm ON bm.boms_id = s.bom_id WHERE s.id = " . $value->id . " AND s.deleted_at IS NULL AND bm.deleted_at IS NULL";
             }
             $final = implode(' UNION ALL ', $union);
 
@@ -763,11 +769,11 @@ class ReportsController extends Controller
                 INNER JOIN(
                     SELECT warehous_stock_id, MAX(created_at) AS latest_entry
                     FROM warehouse_stock_histories
-                    WHERE `type` = 'Credit' and price != 0
+                    WHERE `type` = 'Credit' and price != 0 AND deleted_at IS NULL
                     GROUP BY warehous_stock_id
                 ) w2
             ON w1.warehous_stock_id = w2.warehous_stock_id AND w1.created_at = w2.latest_entry
-            WHERE w1.type = 'Credit') st ON ws.id = st.warehous_stock_id
+            WHERE w1.type = 'Credit' AND w1.deleted_at IS NULL) st ON ws.id = st.warehous_stock_id
             LEFT JOIN units AS u ON u.id = ws.unit_id
             LEFT JOIN products AS p ON p.id = ws.item_id
             LEFT JOIN item_groups AS ig ON ig.id = ws.item_group_id
@@ -778,7 +784,7 @@ class ReportsController extends Controller
             LEFT JOIN categories AS c ON c.id = p.category_id
             LEFT JOIN warehouses AS w ON w.id = ws.warehous_id";
 
-            $query .= " WHERE ws.quantity > 0 ";
+            $query .= " WHERE ws.quantity > 0 AND ws.deleted_at IS NULL AND u.deleted_at IS NULL AND p.deleted_at IS NULL AND ig.deleted_at IS NULL AND w.deleted_at IS NULL";
             if (request()->input('warehouse_id') != "" && request()->input('warehouse_id') != "0") {
                 $query .= " AND  ws.warehous_id = " . request()->input('warehouse_id');
             }
@@ -879,7 +885,7 @@ class ReportsController extends Controller
     {
         if (request()->ajax()) {
 
-            $where = "dc.issue_type = 'trading'";
+            $where = "dc.issue_type = 'trading' AND dc.deleted_at IS NULL AND sq.deleted_at IS NULL";
             $company = CompanyProfile::where('user_id', Auth::id())->first();
             if ($company->user_type == 'M') {
                 $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
@@ -968,6 +974,220 @@ class ReportsController extends Controller
             $agentSalesPerson = $q->get();
             $warehouse = Warehouse::select('id', 'name')->get();
             return view('erp.reports.b2b-dispach', compact('agentSalesPerson', 'warehouse'));
+        }
+    }
+
+    public function bbAccept()
+    {
+        if (request()->ajax()) {
+
+            $where = "sq.form_type = 'trading' AND sq.current_status = 'accepted' AND sq.deleted_at IS NULL";
+            $company = CompanyProfile::where('user_id', Auth::id())->first();
+            if ($company->user_type == 'M') {
+                $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
+                $agentIds = [$agent->id];
+                $sales = CompanyProfile::select('company_profiles.id', 'company_profiles.user_id', 'agent_sales_people.id as agent_id')
+                    ->leftJoin('agent_sales_people', 'agent_sales_people.user_id', 'company_profiles.user_id')
+                    ->where('company_profiles.manager_id', $company->id)->get();
+                if ($sales->count() > 0) {
+                    foreach ($sales as $k => $v) :
+                        array_push($agentIds, $v->agent_id);
+                    endforeach;
+                }
+                if (request()->input('agent_sales_person_id') == "") {
+                    $where .= " AND sq.agent_sales_person_id IN (" . implode(',', $agentIds) . ")";
+                }
+            }
+            if ($company->user_type == 'S') {
+                $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
+                $id = $agent->id;
+                $where .= " AND sq.agent_sales_person_id = " . $id;
+            }
+            if (request()->input('consumer') != "") {
+                $consumer = request()->input('consumer');
+                $where .= " AND (sq.name like '%" . $consumer . "%' OR sq.mobile like '%" . $consumer . "%')";
+            }
+            if (request()->input('agent_sales_person_id') != "") {
+                $where .= " AND sq.agent_sales_person_id = " . request()->input('agent_sales_person_id');
+            }
+
+            $query = "SELECT sq.id, sq.name, sq.mobile, sq.address,
+                        sq.gst_no, sq.total_amount,
+                        DATE_FORMAT(sq.created_at, '%d-%m-%Y') AS quotation_date,
+                        asp.name AS agent_name
+                    FROM  sales_quatations AS sq
+                    LEFT JOIN agent_sales_people AS asp ON asp.id = sq.agent_sales_person_id
+                    WHERE " . $where . " ORDER BY sq.id DESC;";
+
+            if (request()->input('download') == "excel") {
+                return Excel::download(new B2BAcceptExport($query), 'b2b-accept.xlsx');
+            } else {
+                return DataTables::of(DB::select(DB::raw($query)))
+                    ->addIndexColumn()
+                    ->escapeColumns([])
+                    ->make(true);
+            }
+        } else {
+            $companyFind = CompanyProfile::where('user_id', Auth::id())->first();
+            $agentWhere = "";
+            if ($companyFind->user_type == 'M') {
+                $id = $companyFind->id;
+                $agentWhere .= '(company_profiles.user_id = ' . Auth::id() . ' OR  company_profiles.manager_id = ' . $id . ')';
+            }
+            if ($companyFind->user_type == 'S') {
+                $id = $companyFind->id;
+                $manager_id = $companyFind->manager_id;
+                $agentWhere .= '(company_profiles.id = ' . $id . ' OR  company_profiles.id = ' . $manager_id . ')';
+            }
+            $q = CompanyProfile::select('agent_sales_people.*')->leftJoin('agent_sales_people', 'agent_sales_people.user_id', 'company_profiles.user_id');
+            if ($agentWhere != "") {
+                $q->whereRaw($agentWhere);
+            }
+            $agentSalesPerson = $q->get();
+            return view('erp.reports.b2b-accept', compact('agentSalesPerson'));
+        }
+    }
+
+    public function bbDispatch()
+    {
+        if (request()->ajax()) {
+
+            $where = "sq.form_type = 'trading' AND sq.current_status = 'dispatch' AND sq.deleted_at IS NULL";
+            $company = CompanyProfile::where('user_id', Auth::id())->first();
+            if ($company->user_type == 'M') {
+                $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
+                $agentIds = [$agent->id];
+                $sales = CompanyProfile::select('company_profiles.id', 'company_profiles.user_id', 'agent_sales_people.id as agent_id')
+                    ->leftJoin('agent_sales_people', 'agent_sales_people.user_id', 'company_profiles.user_id')
+                    ->where('company_profiles.manager_id', $company->id)->get();
+                if ($sales->count() > 0) {
+                    foreach ($sales as $k => $v) :
+                        array_push($agentIds, $v->agent_id);
+                    endforeach;
+                }
+                if (request()->input('agent_sales_person_id') == "") {
+                    $where .= " AND sq.agent_sales_person_id IN (" . implode(',', $agentIds) . ")";
+                }
+            }
+            if ($company->user_type == 'S') {
+                $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
+                $id = $agent->id;
+                $where .= " AND sq.agent_sales_person_id = " . $id;
+            }
+            if (request()->input('consumer') != "") {
+                $consumer = request()->input('consumer');
+                $where .= " AND (sq.name like '%" . $consumer . "%' OR sq.mobile like '%" . $consumer . "%')";
+            }
+            if (request()->input('agent_sales_person_id') != "") {
+                $where .= " AND sq.agent_sales_person_id = " . request()->input('agent_sales_person_id');
+            }
+
+            $query = "SELECT sq.id, sq.name, sq.mobile, sq.address,
+                        sq.gst_no, sq.total_amount,
+                        DATE_FORMAT(sq.created_at, '%d-%m-%Y') AS quotation_date,
+                        asp.name AS agent_name
+                    FROM  sales_quatations AS sq
+                    LEFT JOIN agent_sales_people AS asp ON asp.id = sq.agent_sales_person_id
+                    WHERE " . $where . " ORDER BY sq.id DESC;";
+
+            if (request()->input('download') == "excel") {
+                return Excel::download(new B2BDispatchExport($query), 'b2b-dispatch.xlsx');
+            } else {
+                return DataTables::of(DB::select(DB::raw($query)))
+                    ->addIndexColumn()
+                    ->escapeColumns([])
+                    ->make(true);
+            }
+        } else {
+            $companyFind = CompanyProfile::where('user_id', Auth::id())->first();
+            $agentWhere = "";
+            if ($companyFind->user_type == 'M') {
+                $id = $companyFind->id;
+                $agentWhere .= '(company_profiles.user_id = ' . Auth::id() . ' OR  company_profiles.manager_id = ' . $id . ')';
+            }
+            if ($companyFind->user_type == 'S') {
+                $id = $companyFind->id;
+                $manager_id = $companyFind->manager_id;
+                $agentWhere .= '(company_profiles.id = ' . $id . ' OR  company_profiles.id = ' . $manager_id . ')';
+            }
+            $q = CompanyProfile::select('agent_sales_people.*')->leftJoin('agent_sales_people', 'agent_sales_people.user_id', 'company_profiles.user_id');
+            if ($agentWhere != "") {
+                $q->whereRaw($agentWhere);
+            }
+            $agentSalesPerson = $q->get();
+            return view('erp.reports.b2b-dispatch', compact('agentSalesPerson'));
+        }
+    }
+
+    public function bbRate()
+    {
+        if (request()->ajax()) {
+
+            $where = "lm.is_trading = '1' AND lm.deleted_at IS NULL
+                    AND NOT EXISTS (SELECT 1 FROM sales_quatations AS sq WHERE sq.lead_master_id = lm.id AND sq.deleted_at IS NULL AND sq.current_status = 'accepted')";
+            $company = CompanyProfile::where('user_id', Auth::id())->first();
+            if ($company->user_type == 'M') {
+                $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
+                $agentIds = [$agent->id];
+                $sales = CompanyProfile::select('company_profiles.id', 'company_profiles.user_id', 'agent_sales_people.id as agent_id')
+                    ->leftJoin('agent_sales_people', 'agent_sales_people.user_id', 'company_profiles.user_id')
+                    ->where('company_profiles.manager_id', $company->id)->get();
+                if ($sales->count() > 0) {
+                    foreach ($sales as $k => $v) :
+                        array_push($agentIds, $v->agent_id);
+                    endforeach;
+                }
+                if (request()->input('agent_sales_person_id') == "") {
+                    $where .= " AND lm.agent_sales_person_id IN (" . implode(',', $agentIds) . ")";
+                }
+            }
+            if ($company->user_type == 'S') {
+                $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
+                $id = $agent->id;
+                $where .= " AND lm.agent_sales_person_id = " . $id;
+            }
+            if (request()->input('consumer') != "") {
+                $consumer = request()->input('consumer');
+                $where .= " AND (lm.name like '%" . $consumer . "%' OR lm.mobile like '%" . $consumer . "%')";
+            }
+            if (request()->input('agent_sales_person_id') != "") {
+                $where .= " AND lm.agent_sales_person_id = " . request()->input('agent_sales_person_id');
+            }
+
+            $query = "SELECT lm.id, lm.name, lm.mobile, lm.address,
+                        lm.kw, lm.lead_value,
+                        DATE_FORMAT(lm.created_at, '%d-%m-%Y') AS lead_date,
+                        asp.name AS agent_name
+                    FROM  lead_masters AS lm
+                    LEFT JOIN agent_sales_people AS asp ON asp.id = lm.agent_sales_person_id
+                    WHERE " . $where . " ORDER BY lm.id DESC;";
+
+            if (request()->input('download') == "excel") {
+                return Excel::download(new B2BRateExport($query), 'b2b-rate.xlsx');
+            } else {
+                return DataTables::of(DB::select(DB::raw($query)))
+                    ->addIndexColumn()
+                    ->escapeColumns([])
+                    ->make(true);
+            }
+        } else {
+            $companyFind = CompanyProfile::where('user_id', Auth::id())->first();
+            $agentWhere = "";
+            if ($companyFind->user_type == 'M') {
+                $id = $companyFind->id;
+                $agentWhere .= '(company_profiles.user_id = ' . Auth::id() . ' OR  company_profiles.manager_id = ' . $id . ')';
+            }
+            if ($companyFind->user_type == 'S') {
+                $id = $companyFind->id;
+                $manager_id = $companyFind->manager_id;
+                $agentWhere .= '(company_profiles.id = ' . $id . ' OR  company_profiles.id = ' . $manager_id . ')';
+            }
+            $q = CompanyProfile::select('agent_sales_people.*')->leftJoin('agent_sales_people', 'agent_sales_people.user_id', 'company_profiles.user_id');
+            if ($agentWhere != "") {
+                $q->whereRaw($agentWhere);
+            }
+            $agentSalesPerson = $q->get();
+            return view('erp.reports.b2b-rate', compact('agentSalesPerson'));
         }
     }
 }

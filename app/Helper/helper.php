@@ -1962,6 +1962,10 @@ function getSalesQuotationStatusClass($status)
             $label = 'Cancelled/Lost';
             $class = 'danger';
             break;
+        case 'dispatch':
+            $label = 'Dispatch';
+            $class = 'success';
+            break;
         default:
             $label = 'Active';
             $class = 'warning';
@@ -1976,7 +1980,8 @@ function salesQuotationStatus()
         ['id' => 'active', 'name' => 'Active'],
         ['id' => 'accepted', 'name' => 'Accepted'],
         ['id' => 'cancelled', 'name' => 'Cancelled/Lost'],
-        ['id' => 'revised', 'name' => 'Revised']
+        ['id' => 'revised', 'name' => 'Revised'],
+        ['id' => 'dispatch', 'name' => 'Dispatch']
     ];
 }
 

@@ -292,6 +292,7 @@ class LeadMasterController extends Controller
             }
 
             $leadMaster->remark = $request->remark;
+            $leadMaster->is_trading = $request->has('is_trading') ? '1' : '0';
             $result = $leadMaster->save();
             DB::commit();
             if (!is_null($result)) {

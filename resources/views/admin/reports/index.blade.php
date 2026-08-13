@@ -286,6 +286,72 @@
             </div>
             @endcan
 
+            @can('b2b-accept')
+            <div class="col-lg-3 col-md-6 col-12">
+                <div class="card report-card border cursor-pointer">
+                    <a href="{{ route('b2b-accept') }}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <img src="{{ asset('img/icon/b2b.png') }}" alt="b2b" height="38">
+                                <span class="text-truncate fw-bolder h4">{{ $b2bAccept }}</span>
+                            </div>
+
+                            <div class="mt-1 mb-50">
+                                <h5>B2B Accept Report</h5>
+                            </div>
+                            <div class="progress progress-bar-secondary progress-md mb-0" style="height: 5px">
+                                <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="30" aria-valuemax="100" style="width: 30%"></div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            @endcan
+
+            @can('b2b-dispatch')
+            <div class="col-lg-3 col-md-6 col-12">
+                <div class="card report-card border cursor-pointer">
+                    <a href="{{ route('b2b-dispatch') }}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <img src="{{ asset('img/icon/b2b.png') }}" alt="b2b" height="38">
+                                <span class="text-truncate fw-bolder h4">{{ $b2bDispatch }}</span>
+                            </div>
+
+                            <div class="mt-1 mb-50">
+                                <h5>B2B Dispatch Report</h5>
+                            </div>
+                            <div class="progress progress-bar-secondary progress-md mb-0" style="height: 5px">
+                                <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="30" aria-valuemax="100" style="width: 30%"></div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            @endcan
+
+            @can('b2b-rate')
+            <div class="col-lg-3 col-md-6 col-12">
+                <div class="card report-card border cursor-pointer">
+                    <a href="{{ route('b2b-rate') }}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <img src="{{ asset('img/icon/b2b.png') }}" alt="b2b" height="38">
+                                <span class="text-truncate fw-bolder h4">{{ $b2bRate }}</span>
+                            </div>
+
+                            <div class="mt-1 mb-50">
+                                <h5>B2B Rate Report</h5>
+                            </div>
+                            <div class="progress progress-bar-secondary progress-md mb-0" style="height: 5px">
+                                <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="30" aria-valuemax="100" style="width: 30%"></div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            @endcan
+
             
         </div>
     </div>

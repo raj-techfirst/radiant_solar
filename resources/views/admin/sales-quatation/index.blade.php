@@ -66,6 +66,9 @@
                         <button class="btn btn-gradient-danger btn-sm reset ms-1" type="reset" data-bs-toggle="tooltip" data-placement="top" title=" Click to Reset Filter">
                             <i data-feather='x'></i>
                         </button>
+                        <button class="btn btn-gradient-success btn-sm download ms-1" type="button" data-bs-toggle="tooltip" data-placement="top" title="Click to Download Excel">
+                            <i data-feather='download'></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -258,6 +261,56 @@
 
         $(document).on('click', '.filter', function() {
             table.draw();
+        });
+
+        $(document).on('click', '.download', function() {
+            $.ajax({
+                url: "{{route('sales-quatation-export')}}",
+                type: 'POST',
+                datatype: 'json',
+                data: {
+                    "from_date": $('#from_date').val(),
+                    "to_date": $('#to_date').val(),
+                    "consumer": $('#consumer').val(),
+                    "form_type": $('#form_type').val(),
+                    "assign": $('#assign').val(),
+                    "current_status": $('#current_status').val(),
+                    "_token": "{{ csrf_token() }}",
+                },
+                cache: false,
+                xhr: function() {
+                    var xhr = new XMLHttpRequest();
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState == 2) {
+                            if (xhr.status == 200) {
+                                xhr.responseType = "blob";
+                            } else {
+                                xhr.responseType = "text";
+                            }
+                        }
+                    };
+                    return xhr;
+                },
+                success: function(data) {
+                    var blob = new Blob([data], {
+                        type: "application/octetstream"
+                    });
+                    var fileName = 'Sales_Quatation.xlsx';
+                    var isIE = false || !!document.documentMode;
+                    if (isIE) {
+                        window.navigator.msSaveBlob(blob, fileName);
+                    } else {
+                        var url = window.URL || window.webkitURL;
+                        var link = url.createObjectURL(blob);
+                        var a = $("<a />");
+                        a.attr("download", fileName);
+                        a.attr("href", link);
+                        $("body").append(a);
+                        a[0].click();
+                        $("body").remove(a);
+                    }
+                }
+            });
         });
 
         $(document).on('click', '.reset', function() {
