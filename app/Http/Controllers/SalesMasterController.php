@@ -245,6 +245,12 @@ class SalesMasterController extends Controller
                             <a class="dropdown-item status application-view" href="javascript:void(0);" data-id="'.$row->id.'" data-date="'.$sdd.'" data-value="subsidy_receveid">Subsidy Disbursal</a>';
                     }
 
+                    $pcd = ($row->project_completion_date && $row->project_completion_date != '0000-00-00') ? date('d-m-Y', strtotime($row->project_completion_date)) : '';
+
+                    if ($user->roles[0]->name != 'Manager' && $user->roles[0]->name != 'Sales') {
+                        $html .= '<a class="dropdown-item status application-view" href="javascript:void(0);" data-id="'.$row->id.'" data-date="'.$pcd.'" data-value="project_completion">Project Completion</a>';
+                    }
+
                     if ($user->roles[0]->name != 'Manager' && $user->roles[0]->name != 'Sales') {
                         $html .= '<a class="dropdown-item status application-view" href="javascript:void(0);" data-id="'.$row->id.'" data-value="hold_query" data-remark="'.$row->remark.'">Hold / Query</a>';
                     }
@@ -306,6 +312,10 @@ class SalesMasterController extends Controller
 
                 if ($a == 'subsidy_receveid') {
                     $salesMaster->subsidy_disbursement_date = ($request->subsidy_disbursement_date != '') ? date('Y-m-d', strtotime($request->subsidy_disbursement_date)) : '';
+                }
+
+                if ($a == 'project_completion') {
+                    $salesMaster->project_completion_date = ($request->project_completion_date != '') ? date('Y-m-d', strtotime($request->project_completion_date)) : null;
                 }
 
                 if ($a == 'dispach_pending_list') {
@@ -1211,6 +1221,9 @@ class SalesMasterController extends Controller
             $salesMaster = SalesMaster::where('id', $request->id)->first();
             $status = $request->status;
             $salesMaster->$status = '0';
+            if ($status == 'project_completion') {
+                $salesMaster->project_completion_date = null;
+            }
             $salesMaster->save();
             $response = ['status' => true, 'message' => ' Remove successfully.'];
 

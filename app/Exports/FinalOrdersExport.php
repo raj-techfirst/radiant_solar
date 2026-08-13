@@ -46,7 +46,7 @@ class FinalOrdersExport implements FromCollection, WithHeadings, WithMapping
             $id = $agent->id;
             $query->where('agent_sales_person_id', $id);
         }
-        $query->where('meter_application_done', "1");
+        $query->where('project_completion', "1");
         
         if ($this->request->input('from_date') != "" && $this->request->input('to_date') == '') {
             $query->where('master_create_date', '>=', date('Y-m-d 00:00:00', strtotime($this->request->input('from_date'))));

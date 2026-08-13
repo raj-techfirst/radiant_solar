@@ -494,6 +494,13 @@
                             </div>
 							
 
+                            <div class="col-12 col-md-12 mb-1 custom-input-group d-none" id="project_date">
+                                <label class="form-label" for="project_completion_date">Date</label>
+                                <input type="text" class="form-control flatpickr-date project_completion_date"
+                                    name="project_completion_date" id="project_completion_date"
+                                    placeholder="Project Completion Date">
+                            </div>
+
                             <div class="col-12 col-md-12 mb-1 custom-input-group d-none" id="subsidy_date">
                                 <label class="form-label" for="subsidy_request_date">Date</label>
                                 <input type="text" class="form-control flatpickr-date subsidy_request_date"
@@ -817,6 +824,14 @@
 
         });
 
+        function getTodaysDate() {
+            var today = new Date();
+            var dd = String(today.getDate()).padStart(2, '0');
+            var mm = String(today.getMonth() + 1).padStart(2, '0');
+            var yyyy = today.getFullYear();
+            return dd + '-' + mm + '-' + yyyy;
+        }
+
         $(document).on('click', '.application-view', function(e) {
             e.preventDefault();
             var id = $(this).data('id');
@@ -830,6 +845,7 @@
             $('#meter_subsidy').addClass('d-none');
             $('#meter_file').addClass('d-none');
             $('#subsidy_date').addClass('d-none');
+            $('#project_date').addClass('d-none');
 
             $('#sub_dis_date').addClass('d-none');
             $('#sub_ver_date').addClass('d-none');
@@ -902,6 +918,15 @@
                 $('#meter_sales_master_id').val(id);
                 $('#meter_status').val(status);
                 $('#meterAppTitle').html('Meter Application');
+                $('#meterApp').modal('show');
+            } else if (status == 'project_completion') {
+                $('#project_date').removeClass('d-none');
+                $('#meter_sales_master_id').val(id);
+                $('#meter_status').val(status);
+                var date = $(this).data('date');
+                date = (date != '' && date != null) ? date : getTodaysDate();
+                $('#project_completion_date').val(date);
+                $('#meterAppTitle').html('Project Completion');
                 $('#meterApp').modal('show');
             } else if (status == "hold_query" || status == "file_cancel_order") {
                 Swal.fire({

@@ -148,6 +148,20 @@ function toChangeStatus($status, $id)
         }
     }
     /* /Subsidy Receveid */
+    /* Project Completion */
+    if ($status == 'project_completion') {
+        $isSubsidyEligible = ($salesMaster->ragistration_portal != 'GEDA' && ! ($salesMaster->ragistration_portal == 'National' && $salesMaster->subsidy_giveup == 1));
+        if ($isSubsidyEligible) {
+            if ($salesMaster->subsidy_receveid == 1) {
+                return true;
+            }
+        } else {
+            if ($salesMaster->meter_installation == 1) {
+                return true;
+            }
+        }
+    }
+    /* /Project Completion */
     /* Hold / Query Order */
     if ($status == 'hold_query') {
         return true;
@@ -235,6 +249,9 @@ function toGetSalesMasterLastStatus($id)
         $title = 'Meter Installation';
     }
     if ($salesMaster->meter_installation == 1 && ($salesMaster->ragistration_portal == 'GEDA' || ($salesMaster->ragistration_portal == 'National' && $salesMaster->subsidy_giveup == 1))) {
+        if ($salesMaster->project_completion == 1) {
+            return 'Project Completion';
+        }
         return $title;
     }
     if ($salesMaster->subsidy_claimed == 1) {
@@ -242,6 +259,9 @@ function toGetSalesMasterLastStatus($id)
     }
     if ($salesMaster->subsidy_receveid == 1) {
         $title = 'Subsidy Disbursal';
+    }
+    if ($salesMaster->project_completion == 1) {
+        $title = 'Project Completion';
     }
     if ($salesMaster->hold_query == 1) {
         $title = 'Hold / Query';
@@ -1104,6 +1124,7 @@ function allSalesStatus()
         ['value' => 'meter_installation', 'name' => 'Meter Installation', 'is_remove' => 1, 'for_loan' => 0],
         ['value' => 'subsidy_claimed', 'name' => 'Subsidy Request', 'is_remove' => 1, 'for_loan' => 0],
         ['value' => 'subsidy_receveid', 'name' => 'Subsidy Disbursal', 'is_remove' => 1, 'for_loan' => 0],
+        ['value' => 'project_completion', 'name' => 'Project Completion', 'is_remove' => 1, 'for_loan' => 0],
         ['value' => 'hold_query', 'name' => 'Hold / Query', 'is_remove' => 0, 'is_not_in_timeline' => 1, 'for_loan' => 0],
         ['value' => 'file_cancel_order', 'name' => 'File Cancel Order', 'is_remove' => 0, 'is_not_in_timeline' => 1, 'for_loan' => 0],
     ];

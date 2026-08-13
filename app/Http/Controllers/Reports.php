@@ -74,7 +74,7 @@ class Reports extends Controller
             $q->where('form_type', 'new');
         });
         $meterApplicationquery = SalesMaster::selectRaw('sum(register_kw) as kw,count(id) as total')->where('meter_application_done', "1")->where('meter_installation', "0");
-        $finalReportquery = SalesMaster::selectRaw('sum(register_kw) as kw,count(id) as total')->where('meter_application_done', "1");
+        $finalReportquery = SalesMaster::selectRaw('sum(register_kw) as kw,count(id) as total')->where('project_completion', "1");
         if ($company->user_type == 'M') {
             $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
             $agentIds = [$agent->id];
@@ -1078,7 +1078,7 @@ class Reports extends Controller
                 ->addIndexColumn()
                 ->filter(function ($query) {
                     $query->where('file_cancel_order', '0');
-                    $query->where('meter_application_done', "1");
+                    $query->where('project_completion', "1");
                     $company = CompanyProfile::where('user_id', Auth::id())->first();
                     if ($company->user_type == 'M') {
                         $agent = AgentSalesPerson::where('user_id', Auth::id())->first();

@@ -902,6 +902,17 @@
                                         </ul>
                                     </div>
                                 </div>
+                                <div class="col-lg-4">
+                                    <div class="info-container">
+                                        <ul class="list-unstyled mb-50">
+                                            <li class="mb-1  d-flex align-items-center">
+                                                <span class="h6">Project Completion Date : </span>
+                                                <span
+                                                    class="text-dark ms-1"><b>{{ $salesMaster->project_completion_date != '' && $salesMaster->project_completion_date != '1970-01-01' && $salesMaster->project_completion_date != '0000-00-00' && $salesMaster->project_completion_date != null ? date('d-m-Y', strtotime($salesMaster->project_completion_date)) : 'N/A' }}</b></span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
                                 @if(!($salesMaster->ragistration_portal == 'GEDA' || ($salesMaster->ragistration_portal == 'National' && $salesMaster->subsidy_giveup)))
                                 <div class="col-lg-12 mt-50 mb-50">
                                     <h5 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);">

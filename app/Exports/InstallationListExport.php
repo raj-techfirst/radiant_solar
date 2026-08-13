@@ -14,11 +14,91 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
 {
     private $request;
     private $formType;
+    private $dynamicItemColumns = [];
 
     public function __construct($request, $formType = 'old')
     {
         $this->request = $request;
         $this->formType = $formType;
+        if ($formType == 'new') {
+            $this->prepareDynamicItems();
+        }
+    }
+
+    private function prepareDynamicItems()
+    {
+        $query = \App\Models\SalesMaster::select('id')
+            ->where('file_cancel_order', '0')
+            ->where('installation_asian_person', '!=', '')
+            ->where(function ($q) {
+                $q->where('installation_pending',  "1")
+                    ->orWhere('installation_done', "1");
+            })
+            ->whereHas('installation', function ($q) {
+                $q->where('form_type', 'new');
+            });
+        $company = \App\Models\CompanyProfile::where('user_id', Auth::id())->first();
+        if ($company->user_type == 'M') {
+            $agent = \App\Models\AgentSalesPerson::where('user_id', Auth::id())->first();
+            $agentIds = [$agent->id];
+            $sales = \App\Models\CompanyProfile::select('company_profiles.id', 'company_profiles.user_id', 'agent_sales_people.id as agent_id')
+                ->leftJoin('agent_sales_people', 'agent_sales_people.user_id', 'company_profiles.user_id')
+                ->where('company_profiles.manager_id', $company->id)->get();
+            if ($sales->count() > 0) {
+                foreach ($sales as $k => $v) :
+                    array_push($agentIds, $v->agent_id);
+                endforeach;
+            }
+            if ($this->request->input('agent_sales_person_id') == "") {
+                $query->whereIn('agent_sales_person_id', $agentIds);
+            }
+        }
+        if ($company->user_type == 'S') {
+            $agent = \App\Models\AgentSalesPerson::where('user_id', Auth::id())->first();
+            $id = $agent->id;
+            $query->where('agent_sales_person_id', $id);
+        }
+        if ($this->request->input('from_date') != "" && $this->request->input('to_date') == '') {
+            $query->where('master_create_date', '>=', date('Y-m-d 00:00:00', strtotime($this->request->input('from_date'))));
+            $query->where('master_create_date', '<=', date('Y-m-d 23:59:59'));
+        }
+        if ($this->request->input('from_date') != "" && $this->request->input('to_date') != '') {
+            $query->where('master_create_date', '>=', date('Y-m-d 00:00:00', strtotime($this->request->input('from_date'))));
+            $query->where('master_create_date', '<=', date('Y-m-d 23:59:59', strtotime($this->request->input('to_date'))));
+        }
+        if ($this->request->input('from_date') == "" && $this->request->input('to_date') != '') {
+            $query->where('master_create_date', '<=', date('Y-m-d 23:59:59', strtotime($this->request->input('to_date'))));
+        }
+        if ($this->request->input('consumer') != "") {
+            $query->where(function ($q) {
+                $consumer = $this->request->input('consumer');
+                $q->where('consumer_name', 'like', '%' . $consumer . '%')
+                    ->orWhere('consumer_number', 'like', '%' . $consumer . '%')
+                    ->orWhere('contact_number', 'like', '%' . $consumer . '%');
+            });
+        }
+        if ($this->request->input('agent_sales_person_id') != "") {
+            $query->where('agent_sales_person_id', $this->request->input('agent_sales_person_id'));
+        }
+        if ($this->request->input('status') != "") {
+            $query->where($this->request->input('status'), "1");
+        }
+        if ($this->request->input('not_status') != "") {
+            $query->where($this->request->input('not_status'), "0");
+        }
+        $salesIds = $query->pluck('id');
+        if ($salesIds->count() > 0) {
+            $itemIds = \App\Models\InstallationItems::whereIn('sales_master_id', $salesIds)
+                ->where('deleted_at', null)
+                ->pluck('item_id')
+                ->unique()
+                ->filter()
+                ->values();
+            if ($itemIds->count() > 0) {
+                $items = \App\Models\Product::whereIn('id', $itemIds)->get(['id', 'name']);
+                $this->dynamicItemColumns = $items->keyBy('id');
+            }
+        }
     }
     /**
      * @return \Illuminate\Support\Collection
@@ -223,6 +303,7 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
             $value->structure_others = $structure_others;
             $value->state_name = $value->district->state->state_name;
         }
+
         return $data;
     }
 
@@ -253,24 +334,32 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
         }
         array_push($headings, 'Total KW');
         if ($this->formType == 'new') {
-            array_push($headings, 'Inverter Detail');
+            array_push($headings, 'Inverter Detail', 'No of Inverter', 'Inverter Model no', 'Inverter Sr No', 'Inverter Voltage');
         } else {
             array_push($headings, 'Type Of Inverter', 'No of Inverter', 'Make Of Inverter', 'Inverter Model no', 'Inverter KW', 'Inverter Sr No', 'Inverter Voltage');
         }
+        if ($this->formType == 'new' && !empty($this->dynamicItemColumns)) {
+            foreach ($this->dynamicItemColumns as $item) {
+                array_push($headings, $item->name);
+            }
+        } else {
+            array_push($headings,
+                'Cable DC',
+                'Cable AC',
+                'Cable LA',
+                'Cable Earthing',
+                'DC Side',
+                'AC Side',
+                'LA Earthing',
+                'Phase To Earth',
+                'Phase To Phase',
+                'Structure 40*40*2 mm',
+                'Structure 60*40*2 mm',
+                'Structure 80*40*2 mm',
+                'Structure others'
+            );
+        }
         array_push($headings,
-            'Cable DC',
-            'Cable AC',
-            'Cable LA',
-            'Cable Earthing',
-            'DC Side',
-            'AC Side',
-            'LA Earthing',
-            'Phase To Earth',
-            'Phase To Phase',
-            'Structure 40*40*2 mm',
-            'Structure 60*40*2 mm',
-            'Structure 80*40*2 mm',
-            'Structure others',
             "Commission Amount",
             "Sub Commission Amount",
             "Installation Amount"
@@ -305,24 +394,34 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
         }
         array_push($data, $row->total_kw);
         if ($this->formType == 'new') {
-            array_push($data, $row->inverter_detail);
+            array_push($data, $row->inverter_detail, $row->no_of_inverter, $row->inverter_model_no, $row->inverter_sr_no, $row->inverter_voltage);
         } else {
             array_push($data, $row->type_of_inverter, $row->no_of_inverter, $row->make_of_inverter, $row->inverter_model_no, $row->inverter_kw, $row->inverter_sr_no, $row->inverter_voltage);
         }
+        if ($this->formType == 'new' && !empty($this->dynamicItemColumns)) {
+            $rowItems = optional($row->installation)->installationItems ?? collect();
+            foreach ($this->dynamicItemColumns as $itemId => $item) {
+                $itemData = $rowItems->where('item_id', $itemId)->first();
+                $data[] = $itemData ? ($itemData->use_stock ?? '') : '';
+            }
+        } else {
+            array_push($data,
+                $row->cable_dc,
+                $row->cable_ac,
+                $row->cable_la,
+                $row->cable_earthing,
+                $row->dc_side,
+                $row->ac_Side,
+                $row->la_Earthing,
+                $row->phase_to_earth,
+                $row->phase_to_phase,
+                $row->structure_40_40_2_mm,
+                $row->structure_60_40_2_mm,
+                $row->structure_80_40_2_mm,
+                $row->structure_others
+            );
+        }
         array_push($data,
-            $row->cable_dc,
-            $row->cable_ac,
-            $row->cable_la,
-            $row->cable_earthing,
-            $row->dc_side,
-            $row->ac_Side,
-            $row->la_Earthing,
-            $row->phase_to_earth,
-            $row->phase_to_phase,
-            $row->structure_40_40_2_mm,
-            $row->structure_60_40_2_mm,
-            $row->structure_80_40_2_mm,
-            $row->structure_others,
             $row->commission_amount,
             $row->sub_commission_amount,
             $row->installation_amount
