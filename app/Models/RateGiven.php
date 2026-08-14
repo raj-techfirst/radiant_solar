@@ -6,26 +6,24 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class SalesQuatationMeta extends Model
+class RateGiven extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected $table = 'rate_given_table';
+
     protected $fillable = [
-        'sales_quatation_id',
-        'rate_given_id',
+        'lead_master_id',
         'type',
         'item_id',
         'item_group_id',
         'nos',
         'rate',
         'item_gst',
+        'total_taxable',
     ];
 
     public function item()
-    {
-        return $this->hasOne(Product::class, 'id', 'item_id');
-    }
-
-    public function product()
     {
         return $this->hasOne(Product::class, 'id', 'item_id');
     }
@@ -35,13 +33,8 @@ class SalesQuatationMeta extends Model
         return $this->hasOne(ItemGroup::class, 'id', 'item_group_id');
     }
 
-    public function rateGiven()
+    public function leadMaster()
     {
-        return $this->hasOne(RateGiven::class, 'id', 'rate_given_id');
-    }
-
-    public function salesQuatation()
-    {
-        return $this->hasMany(SalesQuatation::class, 'id', 'sales_quatation_id');
+        return $this->hasOne(LeadMaster::class, 'id', 'lead_master_id');
     }
 }

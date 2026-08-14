@@ -48,7 +48,7 @@
                                     </div>
                                 </div>
                                 <div class="col-12 text-end mb-25">
-                                    <small><a href="{{route('forget')}}">Forget Password?</a></small>
+                                    {{-- <small><a href="{{route('forget')}}">Forget Password?</a></small> --}}
                                 </div>
                                 <div class="col-12 mb-1">
                                     <button type="submit" class="btn btn-primary w-100" tabindex="4">Sign in</button>

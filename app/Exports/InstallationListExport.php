@@ -328,9 +328,9 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
             'Installation Date',
         ];
         if ($this->formType == 'new') {
-            array_push($headings, 'Panel Detail', 'Panel Model no', 'Panel Nos', 'Panel Sr No');
+            array_push($headings, 'Panel Detail', 'Panel Model no', 'Panel Nos');
         } else {
-            array_push($headings, 'Panel Company', 'Panel Model no', 'Panel Type', 'Panel Watt', 'Panel Nos', 'Panel Sr No');
+            array_push($headings, 'Panel Company', 'Panel Model no', 'Panel Type', 'Panel Watt', 'Panel Nos');
         }
         array_push($headings, 'Total KW');
         if ($this->formType == 'new') {
@@ -388,9 +388,9 @@ class InstallationListExport implements FromCollection, WithHeadings, WithMappin
             $row->installation_date,
         ];
         if ($this->formType == 'new') {
-            array_push($data, $row->panel_detail, $row->penal_model_no, $row->penal_nos, $row->penal_sr_no);
+            array_push($data, $row->panel_detail, $row->penal_model_no, $row->penal_nos);
         } else {
-            array_push($data, $row->penal_company, $row->penal_model_no, $row->penal_type, $row->penal_watt, $row->penal_nos, $row->penal_sr_no);
+            array_push($data, $row->penal_company, $row->penal_model_no, $row->penal_type, $row->penal_watt, $row->penal_nos);
         }
         array_push($data, $row->total_kw);
         if ($this->formType == 'new') {

@@ -163,6 +163,71 @@
                 </div>
                 </div>
             </div>
+            @if ($leadMaster->is_trading == '1')
+            <div class="card mt-1">
+                <div class="card-header pb-50">
+                    <h4 class="card-title">{{ __('Rate Given') }}</h4>
+                    @can('follow-up-create')
+                        <a role="button" class="btn btn-sm btn-primary float-end" data-bs-toggle="modal"
+                            data-bs-target="#rateGivenModal"><i class="fa fa-plus me-25"></i>
+                            {{ __('message.Add New') }}</a>
+                    @endcan
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th><input type="checkbox" class="form-check-input" id="rate_given_check_all"></th>
+                                    <th>Date</th>
+                                    <th>Item</th>
+                                    <th>Nos</th>
+                                    <th>Rate</th>
+                                    <th>GST (%)</th>
+                                    <th>Total Taxable</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if ($rateGivens->count() > 0)
+                                    @foreach ($rateGivens as $rate)
+                                        <tr>
+                                            <td><input type="checkbox" class="form-check-input rate-given-check"
+                                                    data-id="{{ $rate->id }}"
+                                                    data-type="{{ $rate->type }}"
+                                                    data-item="{{ $rate->type == 'Item' ? $rate->item_id : $rate->item_group_id }}"></td>
+                                            <td>{{ date('d M Y h:i A', strtotime($rate->created_at)) }}</td>
+                                            <td>
+                                                @if ($rate->type == 'Item') {{ $rate->item->name ?? 'N/A' }}
+                                                @else {{ getItemGropName($rate->itemGroup, 0) }}
+                                                @endif
+                                            </td>
+                                            <td>{{ $rate->nos }}</td>
+                                            <td>{{ $rate->rate }}</td>
+                                            <td>{{ $rate->item_gst }}</td>
+                                            <td>{{ $rate->total_taxable }}</td>
+                                        </tr>
+                                    @endforeach
+                                @else
+                                    <tr>
+                                        <td colspan="7" class="text-center">
+                                            <p class="text-muteds">Till now, rate not given..</p>
+                                        </td>
+                                    </tr>
+                                @endif
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-2">
+                        @can('sales-quatation-create')
+                            <a role="button" class="btn btn-sm btn-primary float-end d-none"
+                                href="javascript:void(0);" target="_blank"
+                                id="convert_sales_quotation"><i class="fa fa-file-text-o me-25"></i>
+                                Convert Sales Quotation</a>
+                        @endcan
+                    </div>
+                </div>
+            </div>
+            @endif
             <div class="card">
                 <div class="card-header pb-50">
                     <h4 class="card-title">{{ __('Sales Quotations') }}</h4>
@@ -199,7 +264,7 @@
                                                 </h6>
                                                 <small>
                                                     @if ($value->form_type == 'trading')
-                                                        Trading
+                                                        B2B
                                                     @elseif ($value->form_type == 'resident')
                                                         Resident With Subsidy
                                                     @elseif ($value->form_type == 'roof')
@@ -442,6 +507,95 @@
         </div>
     </div>
 
+    <div class="modal fade" id="rateGivenModal" aria-labelledby="rateGivenModalLabel" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-transparent border-bottom">
+                    <h4 class="text-center mb-0" id="rateGivenModalTitle">{{ __('Add Rate Given') }}</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-2" id="rateGivenBody">
+                    <form id="rateGivenForm" class="rate-given-repeater" method="POST" action="javascript:void(0);">
+                        @csrf
+                        <input type="hidden" name="lead_master_id" value="{{ $leadMaster->id }}">
+                        <div data-repeater-list="rate_givens">
+                            <div data-repeater-item>
+                                <div class="row">
+                                    <div class="col-12 col-md-2 mb-1 custom-input-group">
+                                        <label class="form-label">Type <span class="text-danger">*</span></label>
+                                        <select class="form-select custom-select2 rate_type" name="type" required>
+                                            <option value="Item" selected>BOS</option>
+                                            <option value="ItemGroup">Panel/Inverter</option>
+                                        </select>
+                                        <span class="invalid-feedback d-block" role="alert"></span>
+                                    </div>
+
+                                    <div class="col-12 col-md-2 mb-1 custom-input-group rate-type-item">
+                                        <label class="form-label">{{ __('message.Item') }} <span class="text-danger">*</span></label>
+                                        <select class="form-control rate_item_id" name="item_id" required>
+                                            <option selected disabled value="">{{ __('message.-- Select --') }}</option>
+                                            @foreach ($product as $value)
+                                            <option value="{{ $value->id }}" data-gst_rate="{{ $value->gst_rate }}">{{ $value->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <span class="invalid-feedback d-block" role="alert"></span>
+                                    </div>
+                                    <div class="col-12 col-md-2 mb-1 custom-input-group rate-type-item-group d-none">
+                                        <label class="form-label">{{ __('message.Item') }} <span class="text-danger">*</span></label>
+                                        <select class="form-select rate_item_group_id custom-select2" name="item_group_id" required>
+                                            <option value="" selected disabled>-- Select --</option>
+                                            @foreach ($itemGroup as $k => $v)
+                                            <option value="{{ $v['id'] }}" data-gst_rate="{{ $v['gst_rate'] }}">{{ getItemGropName($v,0) }}</option>
+                                            @endforeach
+                                        </select>
+                                        <span class="invalid-feedback d-block" role="alert"></span>
+                                    </div>
+
+                                    <div class="col-6 col-md-1 mb-1 custom-input-group">
+                                        <label class="form-label">{{ __('message.Nos') }} <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control rate_nos" name="nos" placeholder="{{ __('message.Nos') }}" value="1" required>
+                                        <span class="invalid-feedback d-block" role="alert"></span>
+                                    </div>
+                                    <div class="col-6 col-md-2 mb-1 custom-input-group">
+                                        <label class="form-label">{{ __('message.Rate') }} <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control rate_value" name="rate" placeholder="{{ __('message.Rate') }}" required>
+                                        <span class="invalid-feedback d-block" role="alert"></span>
+                                    </div>
+                                    <div class="col-6 col-md-2 mb-1 custom-input-group">
+                                        <label class="form-label">{{ __('message.GST') }} (%)<span class="text-danger">*</span></label>
+                                        <input type="number" readonly class="form-control rate_item_gst" name="item_gst" placeholder="{{ __('message.GST') }}">
+                                        <span class="invalid-feedback d-block" role="alert"></span>
+                                    </div>
+                                    <div class="col-6 col-md-2 mb-1 custom-input-group">
+                                        <label class="form-label">Total Taxable<span class="text-danger">*</span></label>
+                                        <input type="number" readonly class="form-control rate_total_taxable" name="total_taxable" placeholder="Taxable" value="0">
+                                        <span class="invalid-feedback d-block" role="alert"></span>
+                                    </div>
+                                    <div class="col-12 col-md-1 d-flex justify-content-end align-items-center">
+                                        <button class="btn btn-outline-danger btn-sm text-nowrap px-1 mb-1 data-repeater-delete remove-rate-item"
+                                            data-repeater-delete type="button">
+                                            <i class="fa fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12 mb-1">
+<button class="btn btn-sm btn-icon btn-primary float-end" type="button" data-repeater-create>
+                                    <i class="fa fa-plus me-25"></i> <span>Add</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="mt-1">
+                            <button type="submit" class="btn btn-primary float-end rate_given_save">{{ __('message.Submit') }}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
 @endsection
 
 @section('pagescript')
@@ -606,6 +760,168 @@
                     }
                 });
             }
+        });
+
+        $('.rate-given-repeater').repeater({
+            show: function() {
+                $(this).slideDown();
+                var obj = $(this).children(':last-child').children(':last-child').find('.remove-rate-item');
+                obj.removeAttr('data-id');
+                if (feather) {
+                    feather.replace({
+                        width: 14,
+                        height: 14
+                    });
+                }
+            },
+            hide: function(deleteElement) {
+                if (($('.remove-rate-item').length) > 1) {
+                    $(this).slideUp(deleteElement);
+                } else {
+                    Swal.fire({
+                        text: "Cannot remove first item",
+                        icon: 'warning',
+                        confirmButtonText: 'OK',
+                    });
+                }
+            }
+        });
+
+        $(document).on('click', '.rate_given_save', function() {
+            var text = "{{ __('Submit') }}";
+            var btn = $(this);
+            var formData = new FormData($("#rateGivenForm")[0]);
+            $.ajax({
+                type: "POST",
+                url: "{{ route('follow-up-rate-given-store') }}",
+                data: formData,
+                dataType: 'json',
+                cache: false,
+                contentType: false,
+                processData: false,
+                beforeSend: function() {
+                    btn.html(
+                        `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> {{ __('Wait') }}`
+                    );
+                    btn.attr('disabled', true);
+                },
+                success: function(response) {
+                    btn.html(text);
+                    btn.attr('disabled', false);
+                    if (response.server_error && response.status == false) {
+                        toastr.error("{{ __('Something went wrong. Please try again.') }}",
+                            "{{ __('Error') }}");
+                    } else if (response.status == false) {
+                        $('#rateGivenForm .field-error').remove();
+                        $.each(response.errors, function(key, value) {
+                            var match = key.match(/rate_givens\.(\d+)\.(\w+)/);
+                            if (match) {
+                                var idx = match[1];
+                                var field = match[2];
+                                $('[name="rate_givens[' + idx + '][' + field + ']"]')
+                                    .closest('.custom-input-group')
+                                    .append('<p class="text-danger mb-0 field-error">' + value[0] + '</p>');
+                            } else {
+                                $('#rateGivenForm')
+                                    .find('[name="' + key + '"]')
+                                    .closest('.custom-input-group')
+                                    .append('<p class="text-danger mb-0 field-error">' + value[0] + '</p>');
+                            }
+                        });
+                    } else {
+                        $('#rateGivenForm')[0].reset();
+                        toastr.success(response.message, "{{ __('Success') }}");
+                        setTimeout(function() {
+                            location.reload(true);
+                        }, 1500);
+                    }
+                }
+            });
+        });
+
+        $(document).on('change', '.rate_type', function() {
+            var type = $(this).val();
+            var $item = $(this).closest('[data-repeater-item]');
+            if (type == 'ItemGroup') {
+                $item.find('.rate-type-item').addClass('d-none');
+                $item.find('.rate-type-item-group').removeClass('d-none');
+            } else {
+                $item.find('.rate-type-item').removeClass('d-none');
+                $item.find('.rate-type-item-group').addClass('d-none');
+            }
+        });
+
+        $(document).on('change', '.rate_item_id, .rate_item_group_id', function() {
+            var gstRate = $(this).find('option:selected').data('gst_rate');
+            $(this).closest('[data-repeater-item]').find('.rate_item_gst').val(gstRate);
+        });
+
+        $(document).on('keyup', '.rate_nos, .rate_value', function() {
+            var $item = $(this).closest('[data-repeater-item]');
+            var nos = parseFloat($item.find('.rate_nos').val()) || 0;
+            var rate = parseFloat($item.find('.rate_value').val()) || 0;
+            var sub = nos * rate;
+            $item.find('.rate_total_taxable').val(sub);
+        });
+
+        $('#rateGivenModal').on('show.bs.modal', function() {
+            $('#rateGivenForm')[0].reset();
+            $('#rateGivenForm .field-error').remove();
+        });
+
+        $('#rate_given_check_all').on('change', function() {
+            var isChecked = $(this).prop('checked');
+            var seen = {};
+            $('.rate-given-check').each(function() {
+                var key = $(this).data('type') + '_' + $(this).data('item');
+                if (isChecked) {
+                    if (!seen[key]) {
+                        $(this).prop('checked', true);
+                        seen[key] = true;
+                    } else {
+                        $(this).prop('checked', false);
+                    }
+                } else {
+                    $(this).prop('checked', false);
+                }
+            });
+            toggleConvertButton();
+        });
+
+        function checkRateGiven($checkbox) {
+            var type = $checkbox.data('type');
+            var item = $checkbox.data('item');
+            $('.rate-given-check:checked').not($checkbox).each(function() {
+                if ($(this).data('type') == type && $(this).data('item') == item) {
+                    $(this).prop('checked', false);
+                }
+            });
+            $checkbox.prop('checked', true);
+        }
+
+        function toggleConvertButton() {
+            var any = $('.rate-given-check:checked').length > 0;
+            $('#convert_sales_quotation').toggleClass('d-none', !any);
+        }
+
+        $(document).on('change', '.rate-given-check', function() {
+            var $cb = $(this);
+            if ($cb.prop('checked')) {
+                checkRateGiven($cb);
+            }
+            toggleConvertButton();
+        });
+
+        $('#convert_sales_quotation').on('click', function() {
+            var rateIds = [];
+            $('.rate-given-check:checked').each(function() {
+                rateIds.push($(this).data('id'));
+            });
+            if (rateIds.length === 0) {
+                return false;
+            }
+            var url = "{{ route('sales-quatation.create') }}" + '?id={{ $leadMaster->id }}&rate_givens=' + rateIds.join(',');
+            window.open(url, '_blank');
         });
 
         $(document).on('click', '.delete', function() {

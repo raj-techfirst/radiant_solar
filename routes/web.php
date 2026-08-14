@@ -164,6 +164,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('lead-complet', [LeadMasterController::class, 'update'])->name('lead-complet');
 
     Route::resource('follow-up', FollowUpController::class);
+    Route::post('follow-up-rate-given-store', [FollowUpController::class, 'storeRateGiven'])->name('follow-up-rate-given-store');
     Route::resource('inquiry-follow-up', InquiryFollowController::class);
     Route::resource('profile', CompanyProfileController::class);
     Route::resource('estimate', EstimateController::class);
@@ -343,6 +344,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('reports/b2b-accept', [ReportsController::class, 'bbAccept'])->name('b2b-accept');
     Route::get('reports/b2b-dispatch', [ReportsController::class, 'bbDispatch'])->name('b2b-dispatch');
     Route::get('reports/b2b-rate', [ReportsController::class, 'bbRate'])->name('b2b-rate');
+    Route::get('reports/b2b-report', [ReportsController::class, 'bbReport'])->name('b2b-report');
     Route::get('reports/sales-agent-wise', [ReportsController::class, 'salesAgentWise'])->name('sales-agent-wise');
 
     Route::get('import-serial-number/{id}', [DeliveryChallanController::class, 'importSerialNumber'])->name('import-serial-number');

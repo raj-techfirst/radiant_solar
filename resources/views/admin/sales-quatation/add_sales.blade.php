@@ -125,6 +125,7 @@
                             <div class="col-12 col-md-6 col-lg-1 mb-1 custom-input-group">
                                 <label class="form-label" for="nos">{{ __('message.Nos') }} <span class="text-danger">*</span></label>
                                 <input type="hidden" id="sales_quatation_meta_id" name="sales_quatation_meta_id" value="{{ ((isset($meta) && isset($record->id)) ? $record->id : '')  }}">
+                                <input type="hidden" id="rate_given_id" name="rate_given_id" value="{{ ((isset($meta) && isset($record->rate_given_id)) ? $record->rate_given_id : '')  }}">
                                 <input type="number" class="form-control nos" name="nos" id="nos" placeholder="{{ __('message.Nos') }}" value="{{ ((isset($meta) && isset($record->nos)) ? $record->nos : '')  }}" required>
                                 <span class="invalid-feedback d-block" id="error_nos" role="alert"></span>
                             </div>
@@ -1018,6 +1019,9 @@
             calculateTotal($repeaterItem);
         });
         $('[data-repeater-item]').each(function() {
+            var nos = parseFloat($(this).find('.nos').val()) || 0;
+            var rate = parseFloat($(this).find('.rate').val()) || 0;
+            $(this).find('.total_taxable').val(nos * rate);
             calculateTotal($(this));
         });
         $('.trading_gst').on('change', function() {

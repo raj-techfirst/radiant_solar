@@ -146,6 +146,10 @@ class HomeController extends Controller
                     $salesData['forstatus']['hold_/_query']['count'] = 0;
                     $salesData['forstatus']['hold_/_query']['register_kw'] = 0;
 
+                    $salesData['forstatus']['project_completion']['name'] = 'Project Completion';
+                    $salesData['forstatus']['project_completion']['count'] = 0;
+                    $salesData['forstatus']['project_completion']['register_kw'] = 0;
+
                      $salesData['forPortal']['National']['count'] = 0;
                      $salesData['forPortal']['National']['register_kw'] = 0;
                      $salesData['forPortal']['GEDA']['count'] = 0;

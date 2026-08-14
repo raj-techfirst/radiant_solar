@@ -73,7 +73,7 @@ class SalesQuatationExport implements FromCollection, WithHeadings, WithMapping
         foreach ($data as $key => $value) {
             $value->id = $key + 1;
             $value->agentsalesperson_name = (isset($value->agentSalesPerson)) ? $value->agentSalesPerson->name : '';
-            $value->quatation_type = ($value->form_type == 'trading') ? 'Trading' : (($value->form_type == 'resident') ? 'Resident With Subsidy' : 'Solar RoofTop');
+            $value->quatation_type = ($value->form_type == 'trading') ? 'B2B' : (($value->form_type == 'resident') ? 'Resident With Subsidy' : 'Solar RoofTop');
             $value->quatation_status = getSalesQuotationStatusClass($value->current_status);
         }
         return $data;

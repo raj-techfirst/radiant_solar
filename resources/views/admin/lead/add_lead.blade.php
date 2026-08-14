@@ -120,7 +120,7 @@
                             </div>
 
                             <div class="col-12 col-md-6 col-lg-4 mt-2 mb-1 custom-input-group">
-                                <label class="form-label" for="is_trading">Trading</label>
+                                <label class="form-label" for="is_trading">B2B</label>
                                 <input type="checkbox" class="form-check-input ms-1" name="is_trading" id="is_trading" value="1" {{ (isset($lead) && $lead->is_trading == '1') ? 'checked' : '' }}>
                                 <span class="invalid-feedback d-block" id="error_is_trading" role="alert"></span>
                             </div>

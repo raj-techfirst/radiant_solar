@@ -20,6 +20,7 @@ use App\Models\erp\Warehouse;
 use App\Models\InstallationInvater;
 use App\Models\InstallationPenal;
 use App\Models\ItemGroup;
+use App\Models\LeadMaster;
 use App\Models\SalesMaster;
 use App\Models\SalesQuatation;
 use App\Models\SerialNumberLog;
@@ -1021,7 +1022,7 @@ class ReportsController extends Controller
                         asp.name AS agent_name
                     FROM  sales_quatations AS sq
                     LEFT JOIN agent_sales_people AS asp ON asp.id = sq.agent_sales_person_id
-                    WHERE " . $where . " ORDER BY sq.id DESC;";
+                    WHERE " . $where . " ORDER BY sq.created_at DESC, sq.id DESC;";
 
             if (request()->input('download') == "excel") {
                 return Excel::download(new B2BAcceptExport($query), 'b2b-accept.xlsx');
@@ -1193,6 +1194,69 @@ class ReportsController extends Controller
             $agentSalesPerson = $q->get();
             return view('erp.reports.b2b-rate', compact('agentSalesPerson'));
         }
+    }
+
+    public function bbReport()
+    {
+        $company = CompanyProfile::where('user_id', Auth::id())->first();
+
+        $b2bAcceptCount = SalesQuatation::where('form_type', 'trading')->where('current_status', 'accepted')->where('deleted_at', null);
+        $b2bDispatchCount = SalesQuatation::where('form_type', 'trading')->where('current_status', 'dispatch')->where('deleted_at', null);
+        $b2bRateCount = LeadMaster::where('is_trading', '1')
+            ->whereNotExists(function ($q) {
+                $q->select(DB::raw(1))
+                    ->from('sales_quatations')
+                    ->whereColumn('sales_quatations.lead_master_id', 'lead_masters.id')
+                    ->whereNull('sales_quatations.deleted_at')
+                    ->where('sales_quatations.current_status', 'accepted');
+            });
+
+        $companyFind = CompanyProfile::where('user_id', Auth::id())->first();
+        $agentWhere = "";
+        if ($companyFind->user_type == 'M') {
+            $id = $companyFind->id;
+            $agentWhere .= '(company_profiles.user_id = ' . Auth::id() . ' OR  company_profiles.manager_id = ' . $id . ')';
+        }
+        if ($companyFind->user_type == 'S') {
+            $id = $companyFind->id;
+            $manager_id = $companyFind->manager_id;
+            $agentWhere .= '(company_profiles.id = ' . $id . ' OR  company_profiles.id = ' . $manager_id . ')';
+        }
+
+        if ($company->user_type == 'M') {
+            $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
+            $agentIds = [$agent->id];
+            $sales = CompanyProfile::select('company_profiles.id', 'company_profiles.user_id', 'agent_sales_people.id as agent_id')
+                ->leftJoin('agent_sales_people', 'agent_sales_people.user_id', 'company_profiles.user_id')
+                ->where('company_profiles.manager_id', $company->id)->get();
+            if ($sales->count() > 0) {
+                foreach ($sales as $k => $v) :
+                    array_push($agentIds, $v->agent_id);
+                endforeach;
+            }
+            $b2bAcceptCount->whereIn('agent_sales_person_id', $agentIds);
+            $b2bDispatchCount->whereIn('agent_sales_person_id', $agentIds);
+            $b2bRateCount->whereIn('agent_sales_person_id', $agentIds);
+        }
+        if ($company->user_type == 'S') {
+            $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
+            $id = $agent->id;
+            $b2bAcceptCount->where('agent_sales_person_id', $id);
+            $b2bDispatchCount->where('agent_sales_person_id', $id);
+            $b2bRateCount->where('agent_sales_person_id', $id);
+        }
+
+        $b2bAccept = $b2bAcceptCount->count();
+        $b2bDispatch = $b2bDispatchCount->count();
+        $b2bRate = $b2bRateCount->count();
+
+        $q = CompanyProfile::select('agent_sales_people.*')->leftJoin('agent_sales_people', 'agent_sales_people.user_id', 'company_profiles.user_id');
+        if ($agentWhere != "") {
+            $q->whereRaw($agentWhere);
+        }
+        $agentSalesPerson = $q->get();
+
+        return view('erp.reports.b2b-report', compact('agentSalesPerson', 'b2bAccept', 'b2bDispatch', 'b2bRate'));
     }
 
     public function salesAgentWise()

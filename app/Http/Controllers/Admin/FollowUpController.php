@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\CompanyProfile;
 use App\Models\FollowUp;
 use App\Models\FollowUpImage;
+use App\Models\ItemGroup;
 use App\Models\LeadMaster;
 use App\Models\LeadStatus;
 use App\Models\Notification;
+use App\Models\Product;
+use App\Models\RateGiven;
 use App\Models\SalesQuatation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +25,7 @@ class FollowUpController extends Controller
     {
         $this->middleware('permission:follow-up-list', ['only' => ['edit']]);
         $this->middleware('permission:follow-up-create', ['only' => ['store']]);
+        $this->middleware('permission:follow-up-create', ['only' => ['storeRateGiven']]);
     }
 
     public function index()
@@ -126,6 +130,65 @@ class FollowUpController extends Controller
         }
     }
 
+    public function storeRateGiven(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'lead_master_id' => 'required',
+            'rate_givens' => 'required|array|min:1',
+            'rate_givens.*.type' => 'required',
+            'rate_givens.*.nos' => 'required|numeric',
+            'rate_givens.*.rate' => 'required|numeric',
+            'rate_givens.*.item_gst' => 'required|numeric',
+        ], [
+            'lead_master_id.required' => 'Lead is required',
+            'rate_givens.required' => 'Add at least one item',
+            'rate_givens.*.type.required' => 'Select type',
+            'rate_givens.*.nos.required' => 'Enter nos',
+            'rate_givens.*.rate.required' => 'Enter rate',
+            'rate_givens.*.item_gst.required' => 'Enter GST',
+        ]);
+        if ($validator->fails()) {
+            $response = ['status' => false, 'message' => 'Please input proper data.', 'errors' => $validator->errors()];
+
+            return response()->json($response);
+        }
+        DB::beginTransaction();
+        try {
+            foreach ($request->rate_givens as $row) {
+                $rateGiven = new RateGiven();
+                $rateGiven->lead_master_id = $request->lead_master_id;
+                $rateGiven->type = $row['type'];
+                if ($row['type'] == 'Item') {
+                    $rateGiven->item_id = $row['item_id'];
+                    $rateGiven->item_group_id = 0;
+                } else {
+                    $rateGiven->item_id = 0;
+                    $rateGiven->item_group_id = $row['item_group_id'];
+                }
+                $rateGiven->nos = $row['nos'];
+                $rateGiven->rate = $row['rate'];
+                $rateGiven->item_gst = $row['item_gst'];
+                $rateGiven->total_taxable = $row['total_taxable'];
+                $result = $rateGiven->save();
+            }
+
+            $response = ['status' => true, 'message' => 'Rate given added successfully.'];
+            DB::commit();
+            if (! is_null($result)) {
+                return response()->json($response);
+            } else {
+                $response = ['status' => false, 'server_error' => 'Something went wrong. Please try again.'];
+
+                return response()->json($response);
+            }
+        } catch (\Exception $e) {
+            DB::rollback();
+            $response = ['status' => false, 'server_error' => 'Something went wrong. Please try again.'];
+
+            return response()->json($response);
+        }
+    }
+
     public function show($id)
     {
         $leadMaster = LeadMaster::with('company', 'company.user')->where('id', $id)->first();
@@ -148,6 +211,10 @@ class FollowUpController extends Controller
             $salesQuatations = SalesQuatation::where('lead_master_id', $leadMaster->id)->get();
             $leadStatus = LeadStatus::select('id', 'name')->where('is_for_system', '0')->orderBy('id', 'asc')->get();
 
+            $rateGivens = RateGiven::with('item', 'itemGroup')->where('lead_master_id', $leadMaster->id)->orderBy('id', 'desc')->get();
+            $product = Product::get();
+            $itemGroup = ItemGroup::with('panel_company', 'panel_type', 'panel_watt', 'inveter_company')->get();
+
             $where = '1 = 1';
 
             $companyFind = CompanyProfile::where('user_id', Auth::id())->first();
@@ -160,7 +227,7 @@ class FollowUpController extends Controller
             }
             $companyProfile = CompanyProfile::with('user')->whereRaw($where)->get();
 
-            return view('admin.follow_up.view_follow_up', compact('leadMaster', 'companyProfile', 'followUp', 'salesQuatations', 'leadStatus'));
+            return view('admin.follow_up.view_follow_up', compact('leadMaster', 'companyProfile', 'followUp', 'salesQuatations', 'leadStatus', 'rateGivens', 'product', 'itemGroup'));
         } else {
             return abort(404);
         }

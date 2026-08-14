@@ -1090,6 +1090,11 @@ function toGetSalesMasterStatusForDashboard($id)
         $value = 'hold_query';
         $next = '';
     }
+    if ($salesMaster->project_completion == 1) {
+        $title = 'Project Completion';
+        $value = 'project_completion';
+        $next = '';
+    }
     if ($salesMaster->file_cancel_order == 1) {
         $title = 'File Cancel Order';
         $value = 'file_cancel_order';

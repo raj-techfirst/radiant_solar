@@ -1,6 +1,29 @@
 @extends('layouts.app')
 @section('title', 'Sales Quatation')
 @section('content')
+    <style>
+        .nav-pills .type-tab {
+            color: #6e6b7b;
+            border: 1px solid transparent;
+            box-shadow: none !important;
+        }
+        .nav-pills .type-tab:hover,
+        .nav-pills .type-tab:focus {
+            color: var(--mainColor);
+            background-color: rgba(239, 127, 27, 0.12);
+            border-color: transparent;
+        }
+        .nav-pills .type-tab.active {
+            color: #fff;
+            background-color: var(--mainColor);
+            border-color: transparent;
+        }
+        .nav-pills .type-tab.active:focus,
+        .nav-pills .type-tab.active:active {
+            border-color: transparent;
+            box-shadow: none !important;
+        }
+    </style>
     <div class="row">
         <div class="col-12 mb-1">
             <h4 class="content-header-title float-start">{{ __('message.Sales Quatation List') }}</h4>
@@ -10,6 +33,22 @@
             @endcan
         </div>
 
+        <div class="col-12">
+            <ul class="nav nav-pills" id="typeTabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active type-tab" data-type="" href="javascript:void(0);">All</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link type-tab" data-type="trading" href="javascript:void(0);">B2B</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link type-tab" data-type="resident" href="javascript:void(0);">Resident With Subsidy</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link type-tab" data-type="roof" href="javascript:void(0);">Solar RoofTop</a>
+                </li>
+            </ul>
+        </div>
         <div class="col-12">
             <div class="card p-1">
             <div class="row">
@@ -27,15 +66,6 @@
                 <div class="col-sm-12 col-md-6 col-lg-2 custom-input-group">
                     <label class="form-label" for="consumer">Name / Mobile</label>
                     <input type="text" class="form-control" name="consumer" id="consumer" placeholder="Name / Mobile">
-                </div>
-                <div class="col-sm-12 col-md-3 col-lg-2 custom-input-group">
-                    <label class="form-label" for="form_type">Type</label>
-                    <select class="form-select select2" name="form_type" id="form_type">
-                        <option value="" selected>ALL</option>
-                        <option value="trading">Trading</option>
-                        <option value="resident">Resident With Subsidy</option>
-                        <option value="roof">Solar RoofTop</option>
-                    </select>
                 </div>
                 <div class="col-sm-12 col-md-3 col-lg-2 custom-input-group">
                     <label class="form-label" for="assign">Agent / Sales Person</label>
@@ -119,6 +149,7 @@
         'use strict';
         const URL = "{{ route('sales-quatation.index') }}";
         var table = '';
+        var form_type = '';
         $(function() {
             table = $('#table').DataTable({
                 ajax: {
@@ -126,7 +157,7 @@
                     data: function(d) {
                         d.mstatus = '';
                         d.consumer = $('#consumer').val();
-                        d.form_type = $('#form_type').val();
+                        d.form_type = form_type;
                         d.assign = $('#assign').val();
                         d.from_date = $('#from_date').val();
                         d.to_date = $('#to_date').val();
@@ -263,6 +294,13 @@
             table.draw();
         });
 
+        $(document).on('click', '.type-tab', function() {
+            $('.type-tab').removeClass('active');
+            $(this).addClass('active');
+            form_type = $(this).data('type');
+            table.draw();
+        });
+
         $(document).on('click', '.download', function() {
             $.ajax({
                 url: "{{route('sales-quatation-export')}}",
@@ -272,7 +310,7 @@
                     "from_date": $('#from_date').val(),
                     "to_date": $('#to_date').val(),
                     "consumer": $('#consumer').val(),
-                    "form_type": $('#form_type').val(),
+                    "form_type": form_type,
                     "assign": $('#assign').val(),
                     "current_status": $('#current_status').val(),
                     "_token": "{{ csrf_token() }}",
@@ -316,10 +354,13 @@
         $(document).on('click', '.reset', function() {
             $('#from_date').val('');
             $('#to_date').val('');
-            $('#form_type').val('');
             $('#consumer').val('');
             $('#assign').val('');
             $('#current_status').val('');
+
+            form_type = '';
+            $('.type-tab').removeClass('active');
+            $('.type-tab[data-type=""]').addClass('active');
 
             $("#from_date").flatpickr({
                 altInput: true,

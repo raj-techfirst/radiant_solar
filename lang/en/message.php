@@ -279,7 +279,7 @@ return [
      'KW' => 'KW',
      'Reference' => 'Reference',
      'Agent / Sales Person' => 'Agent / Sales Person',
-     'Trading' => 'Trading',
+     'Trading' => 'B2B',
      'Resident With Subsidy' => 'Resident With Subsidy',
      'Solar RoofTop' => 'Solar RoofTop',
      'Bill to Address' => 'Bill to Address',

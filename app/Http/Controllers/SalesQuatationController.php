@@ -15,6 +15,7 @@ use App\Models\PenalType;
 use App\Models\PenalWatt;
 use App\Models\Policy;
 use App\Models\Product;
+use App\Models\RateGiven;
 use App\Models\SalesMaster;
 use App\Models\SalesQuatation;
 use App\Models\SalesQuatationMeta;
@@ -118,7 +119,7 @@ class SalesQuatationController extends Controller
                 })
                 ->addColumn('form_type', function ($row) {
                     if ($row->form_type == 'trading') {
-                        return $row->form_type = 'Trading';
+                        return $row->form_type = 'B2B';
                     } elseif ($row->form_type == 'resident') {
                         return $row->form_type = 'Resident With Subsidy';
                     } elseif ($row->form_type == 'roof') {
@@ -250,7 +251,21 @@ class SalesQuatationController extends Controller
         $inveter_company = InveterCompany::get();
         $bank = Bank::get();
         $technicalSpecification = [];
-        return view('admin.sales-quatation.add_sales', compact('product', 'agentSalesPerson', 'penal_company', 'lead_complete', 'inveter_company', 'penal_type', 'penal_watt', 'bank', 'itemGroup','technicalSpecification', 'trading_lead'));
+
+        $viewData = compact('product', 'agentSalesPerson', 'penal_company', 'lead_complete', 'inveter_company', 'penal_type', 'penal_watt', 'bank', 'itemGroup', 'technicalSpecification', 'trading_lead');
+
+        if (! empty(request('rate_givens'))) {
+            $rateIds = array_filter(explode(',', request('rate_givens')));
+            if (count($rateIds) > 0) {
+                $meta = RateGiven::whereIn('id', $rateIds)->get()->each(function ($row) {
+                    $row->rate_given_id = $row->id;
+                    $row->id = null;
+                });
+                $viewData['meta'] = $meta;
+            }
+        }
+
+        return view('admin.sales-quatation.add_sales', $viewData);
     }
 
     /**
@@ -299,6 +314,7 @@ class SalesQuatationController extends Controller
                                 if ($value['type'] == "Item") {
                                     $salesQuatationMetaData = [
                                         'sales_quatation_id' => $request->sales_quatation_id,
+                                        'rate_given_id' => $value['rate_given_id'] ?? null,
                                         'type' => "Item",
                                         'item_id' => $value['item_id'],
                                         'item_group_id' => 0,
@@ -310,6 +326,7 @@ class SalesQuatationController extends Controller
                                 if ($value['type'] == "ItemGroup") {
                                     $salesQuatationMetaData = [
                                         'sales_quatation_id' => $request->sales_quatation_id,
+                                        'rate_given_id' => $value['rate_given_id'] ?? null,
                                         'type' => "ItemGroup",
                                         'item_id' => 0,
                                         'item_group_id' => $value['item_group_id'],
@@ -324,6 +341,7 @@ class SalesQuatationController extends Controller
                                 if ($value['type'] == "Item") {
                                     $salesQuatationMetaData = [
                                         'sales_quatation_id' => $SalesQuatation->id,
+                                        'rate_given_id' => $value['rate_given_id'] ?? null,
                                         'type' => "Item",
                                         'item_id' => $value['item_id'],
                                         'item_group_id' => 0,
@@ -335,6 +353,7 @@ class SalesQuatationController extends Controller
                                 if ($value['type'] == "ItemGroup") {
                                     $salesQuatationMetaData = [
                                         'sales_quatation_id' => $SalesQuatation->id,
+                                        'rate_given_id' => $value['rate_given_id'] ?? null,
                                         'type' => "ItemGroup",
                                         'item_id' => 0,
                                         'item_group_id' => $value['item_group_id'],

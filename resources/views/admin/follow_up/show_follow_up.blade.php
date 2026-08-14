@@ -172,7 +172,7 @@
                                                 </h6>
                                                 <small>
                                                     @if ($value->form_type == 'trading')
-                                                        Trading
+                                                        B2B
                                                     @elseif ($value->form_type == 'resident')
                                                         Resident With Subsidy
                                                     @elseif ($value->form_type == 'roof')
