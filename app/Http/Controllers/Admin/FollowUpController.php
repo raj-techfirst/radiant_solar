@@ -172,6 +172,8 @@ class FollowUpController extends Controller
                 $result = $rateGiven->save();
             }
 
+            $this->addRateGivenActivity($request->lead_master_id);
+
             $response = ['status' => true, 'message' => 'Rate given added successfully.'];
             DB::commit();
             if (! is_null($result)) {
@@ -186,6 +188,39 @@ class FollowUpController extends Controller
             $response = ['status' => false, 'server_error' => 'Something went wrong. Please try again.'];
 
             return response()->json($response);
+        }
+    }
+
+    protected function addRateGivenActivity($leadMasterId)
+    {
+        try {
+            $leadMaster = LeadMaster::where('id', $leadMasterId)->first();
+            if (is_null($leadMaster)) {
+                return;
+            }
+
+            $company = CompanyProfile::with('user')->where('user_id', Auth::id())->first();
+            $creatorName = 'System';
+            if (!is_null($company) && !is_null($company->user) && !is_null($company->user->name)) {
+                $creatorName = $company->user->name . ' ' . ($company->user->last_name ?? '');
+            }
+            if (trim($creatorName) == '') {
+                $creatorName = 'System';
+            }
+
+            $statusId = LeadStatus::where('name', 'Rate Given')->where('is_for_system', '1')->value('id');
+            if (is_null($statusId)) {
+                $statusId = $leadMaster->lead_status_id;
+            }
+
+            $followUp = new FollowUp();
+            $followUp->lead_master_id = $leadMaster->id;
+            $followUp->call_detail = '';
+            $followUp->remark = 'Rate Given added By ' . $creatorName;
+            $followUp->follow_up_by = !is_null($company) ? $company->id : Auth::id();
+            $followUp->status_id = $statusId;
+            $followUp->save();
+        } catch (\Exception $e) {
         }
     }
 

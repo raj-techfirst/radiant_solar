@@ -51,11 +51,14 @@
                             <th>#</th>
                             <th>Name</th>
                             <th>Mobile</th>
-                            <th>Address</th>
                             <th>KW</th>
-                            <th>Lead Value</th>
                             <th>Lead Date</th>
                             <th>Agent</th>
+                            <th>Item Detail</th>
+                            <th>Nos</th>
+                            <th>Rate</th>
+                            <th>GST</th>
+                            <th>Total Taxable</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -92,15 +95,10 @@
                 [20, -1],
                 [20, "All"],
             ],
-            order: [
-                [0, 'desc']
-            ],
+            order: [],
             columns: [{
-                    data: 'id',
-                    name: 'id',
-                    render: function(data, type, row, meta) {
-                        return meta.row + meta.settings._iDisplayStart + 1;
-                    }
+                    data: 'sr_no',
+                    name: 'sr_no'
                 },
                 {
                     data: 'name',
@@ -111,16 +109,8 @@
                     name: 'mobile'
                 },
                 {
-                    data: 'address',
-                    name: 'address'
-                },
-                {
                     data: 'kw',
                     name: 'kw'
-                },
-                {
-                    data: 'lead_value',
-                    name: 'lead_value'
                 },
                 {
                     data: 'lead_date',
@@ -129,6 +119,26 @@
                 {
                     data: 'agent_name',
                     name: 'agent_name'
+                },
+                {
+                    data: 'item_detail',
+                    name: 'item_detail'
+                },
+                {
+                    data: 'nos',
+                    name: 'nos'
+                },
+                {
+                    data: 'rate',
+                    name: 'rate'
+                },
+                {
+                    data: 'item_gst',
+                    name: 'item_gst'
+                },
+                {
+                    data: 'total_taxable',
+                    name: 'total_taxable'
                 }
             ],
             initComplete: function(settings, json) {

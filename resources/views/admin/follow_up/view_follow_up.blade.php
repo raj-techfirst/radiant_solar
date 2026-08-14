@@ -520,8 +520,8 @@
                         <input type="hidden" name="lead_master_id" value="{{ $leadMaster->id }}">
                         <div data-repeater-list="rate_givens">
                             <div data-repeater-item>
-                                <div class="row">
-                                    <div class="col-12 col-md-2 mb-1 custom-input-group">
+                                <div class="row g-1">
+                                    <div class="col-12 col-md-2 mb-0 custom-input-group">
                                         <label class="form-label">Type <span class="text-danger">*</span></label>
                                         <select class="form-select custom-select2 rate_type" name="type" required>
                                             <option value="Item" selected>BOS</option>
@@ -530,7 +530,7 @@
                                         <span class="invalid-feedback d-block" role="alert"></span>
                                     </div>
 
-                                    <div class="col-12 col-md-2 mb-1 custom-input-group rate-type-item">
+                                    <div class="col-12 col-md-2 mb-0 custom-input-group rate-type-item">
                                         <label class="form-label">{{ __('message.Item') }} <span class="text-danger">*</span></label>
                                         <select class="form-control rate_item_id" name="item_id" required>
                                             <option selected disabled value="">{{ __('message.-- Select --') }}</option>
@@ -540,7 +540,7 @@
                                         </select>
                                         <span class="invalid-feedback d-block" role="alert"></span>
                                     </div>
-                                    <div class="col-12 col-md-2 mb-1 custom-input-group rate-type-item-group d-none">
+                                    <div class="col-12 col-md-2 mb-0 custom-input-group rate-type-item-group d-none">
                                         <label class="form-label">{{ __('message.Item') }} <span class="text-danger">*</span></label>
                                         <select class="form-select rate_item_group_id custom-select2" name="item_group_id" required>
                                             <option value="" selected disabled>-- Select --</option>
@@ -551,27 +551,27 @@
                                         <span class="invalid-feedback d-block" role="alert"></span>
                                     </div>
 
-                                    <div class="col-6 col-md-1 mb-1 custom-input-group">
+                                    <div class="col-6 col-md-1 mb-0 custom-input-group">
                                         <label class="form-label">{{ __('message.Nos') }} <span class="text-danger">*</span></label>
                                         <input type="number" class="form-control rate_nos" name="nos" placeholder="{{ __('message.Nos') }}" value="1" required>
                                         <span class="invalid-feedback d-block" role="alert"></span>
                                     </div>
-                                    <div class="col-6 col-md-2 mb-1 custom-input-group">
+                                    <div class="col-6 col-md-2 mb-0 custom-input-group">
                                         <label class="form-label">{{ __('message.Rate') }} <span class="text-danger">*</span></label>
                                         <input type="number" class="form-control rate_value" name="rate" placeholder="{{ __('message.Rate') }}" required>
                                         <span class="invalid-feedback d-block" role="alert"></span>
                                     </div>
-                                    <div class="col-6 col-md-2 mb-1 custom-input-group">
+                                    <div class="col-6 col-md-2 mb-0 custom-input-group">
                                         <label class="form-label">{{ __('message.GST') }} (%)<span class="text-danger">*</span></label>
                                         <input type="number" readonly class="form-control rate_item_gst" name="item_gst" placeholder="{{ __('message.GST') }}">
                                         <span class="invalid-feedback d-block" role="alert"></span>
                                     </div>
-                                    <div class="col-6 col-md-2 mb-1 custom-input-group">
+                                    <div class="col-6 col-md-2 mb-0 custom-input-group">
                                         <label class="form-label">Total Taxable<span class="text-danger">*</span></label>
                                         <input type="number" readonly class="form-control rate_total_taxable" name="total_taxable" placeholder="Taxable" value="0">
                                         <span class="invalid-feedback d-block" role="alert"></span>
                                     </div>
-                                    <div class="col-12 col-md-1 d-flex justify-content-end align-items-center">
+                                    <div class="col-12 col-md-1 mb-0 d-flex justify-content-end align-items-center">
                                         <button class="btn btn-outline-danger btn-sm text-nowrap px-1 mb-1 data-repeater-delete remove-rate-item"
                                             data-repeater-delete type="button">
                                             <i class="fa fa-times"></i>
@@ -601,6 +601,20 @@
 @section('pagescript')
     <script type="text/javascript">
         'use strict';
+        function initRateGivenSelect2($scope) {
+            $scope.find('.rate_type, .rate_item_id, .rate_item_group_id').each(function() {
+                var $select = $(this);
+                if ($select.hasClass('select2-hidden-accessible')) {
+                    return;
+                }
+                $select.select2({
+                    placeholder: "-- Select --",
+                    allowClear: true,
+                    dropdownParent: $('#rateGivenBody')
+                });
+            });
+        }
+
         $(document).ready(function() {
             var date = new Date();
 
@@ -611,6 +625,7 @@
                 minDate: 'today',
             });
 
+            initRateGivenSelect2($('#rateGivenForm'));
         });
 
         $(document).on('click', '.change-status', function() {
@@ -765,6 +780,7 @@
         $('.rate-given-repeater').repeater({
             show: function() {
                 $(this).slideDown();
+                initRateGivenSelect2($(this));
                 var obj = $(this).children(':last-child').children(':last-child').find('.remove-rate-item');
                 obj.removeAttr('data-id');
                 if (feather) {
@@ -867,6 +883,8 @@
         $('#rateGivenModal').on('show.bs.modal', function() {
             $('#rateGivenForm')[0].reset();
             $('#rateGivenForm .field-error').remove();
+            initRateGivenSelect2($('#rateGivenForm'));
+            $('#rateGivenForm').find('.rate_type, .rate_item_id, .rate_item_group_id').trigger('change');
         });
 
         $('#rate_given_check_all').on('change', function() {

@@ -37,20 +37,84 @@
         <div class="col-12">
             <ul class="nav nav-pills" id="b2bTabs" role="tablist">
                 <li class="nav-item">
-                    <a class="nav-link active b2b-tab" id="accept-tab" data-bs-toggle="tab" href="#accept" role="tab" aria-controls="accept" aria-selected="true">B2B Accept Report <span class="badge bg-gradient-primary ms-50 mt-25">{{ $b2bAccept }}</span></a>
+                    <a class="nav-link active b2b-tab" id="rate-tab" data-bs-toggle="tab" href="#rate" role="tab" aria-controls="rate" aria-selected="true">B2B Rate Report <span class="badge bg-gradient-primary ms-50 mt-25">{{ $b2bRate }}</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link b2b-tab" id="accept-tab" data-bs-toggle="tab" href="#accept" role="tab" aria-controls="accept" aria-selected="false">B2B Accept Report <span class="badge bg-gradient-primary ms-50 mt-25">{{ $b2bAccept }}</span></a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link b2b-tab" id="dispatch-tab" data-bs-toggle="tab" href="#dispatch" role="tab" aria-controls="dispatch" aria-selected="false">B2B Dispatch Report <span class="badge bg-gradient-primary ms-50 mt-25">{{ $b2bDispatch }}</span></a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link b2b-tab" id="rate-tab" data-bs-toggle="tab" href="#rate" role="tab" aria-controls="rate" aria-selected="false">B2B Rate Report <span class="badge bg-gradient-primary ms-50 mt-25">{{ $b2bRate }}</span></a>
                 </li>
             </ul>
         </div>
     </div>
 </div>
 <div class="tab-content">
-    <div class="tab-pane fade show active" id="accept" role="tabpanel" aria-labelledby="accept-tab">
+    <div class="tab-pane fade show active" id="rate" role="tabpanel" aria-labelledby="rate-tab">
+        <div class="col-12">
+            <div class="card p-1">
+                <div class="row">
+                    <div class="col-12">
+                        <h3>Filter</h3>
+                    </div>
+
+                    <div class="col-sm-12 col-md-6 col-lg-2 pe-50 custom-input-group">
+                        <label class="form-label" for="rate_consumer">Name</label>
+                        <input type="text" class="form-control" name="consumer" id="rate_consumer" placeholder="Name / Mobile">
+                    </div>
+                    <div class="col-sm-12 col-md-3 col-lg-3 ps-50 pe-50 custom-input-group">
+                        <label class="form-label" for="rate_agent_sales_person_id">Agent</label>
+                        <select class="form-select select2" name="agent_sales_person_id" id="rate_agent_sales_person_id">
+                            <option value="" selected>ALL Agent</option>
+                            @foreach($agentSalesPerson as $value)
+                            <option value="{{$value->id}}">{{ $value->name}}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="col-sm-12 col-md-3 col-lg-3 ps-50 custom-input-group pt-1">
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-gradient-primary btn-sm rate-filter" type="button" data-bs-toggle="tooltip" data-placement="top" title="Click to Filter">
+                                <i data-feather='search'></i>
+                            </button>
+                            <button class="btn btn-gradient-danger btn-sm rate-reset ms-50" type="reset" data-bs-toggle="tooltip" data-placement="top" title=" Click to Reset Filter">
+                                <i data-feather='x'></i>
+                            </button>
+                            <button class="btn btn-gradient-success btn-sm rate-download ms-50" type="button" data-bs-toggle="tooltip" data-placement="top" title="Click to Download Excel">
+                                <i data-feather='download'></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12">
+            <div class="card p-1">
+                <div class="table-responsive">
+                    <table id="rate_table" class="datatables-basic table table-hover">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Mobile</th>
+                            <th>KW</th>
+                            <th>Lead Date</th>
+                            <th>Agent</th>
+                            <th>Item Detail</th>
+                            <th>Nos</th>
+                            <th>Rate</th>
+                            <th>GST</th>
+                            <th>Total Taxable</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane fade" id="accept" role="tabpanel" aria-labelledby="accept-tab">
         <div class="col-12">
             <div class="card p-1">
                 <div class="row">
@@ -162,67 +226,6 @@
                                 <th>GST No</th>
                                 <th>Total Amount</th>
                                 <th>Quotation Date</th>
-                                <th>Agent</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="tab-pane fade" id="rate" role="tabpanel" aria-labelledby="rate-tab">
-        <div class="col-12">
-            <div class="card p-1">
-                <div class="row">
-                    <div class="col-12">
-                        <h3>Filter</h3>
-                    </div>
-
-                    <div class="col-sm-12 col-md-6 col-lg-2 pe-50 custom-input-group">
-                        <label class="form-label" for="rate_consumer">Name</label>
-                        <input type="text" class="form-control" name="consumer" id="rate_consumer" placeholder="Name / Mobile">
-                    </div>
-                    <div class="col-sm-12 col-md-3 col-lg-3 ps-50 pe-50 custom-input-group">
-                        <label class="form-label" for="rate_agent_sales_person_id">Agent</label>
-                        <select class="form-select select2" name="agent_sales_person_id" id="rate_agent_sales_person_id">
-                            <option value="" selected>ALL Agent</option>
-                            @foreach($agentSalesPerson as $value)
-                            <option value="{{$value->id}}">{{ $value->name}}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="col-sm-12 col-md-3 col-lg-3 ps-50 custom-input-group pt-1">
-                        <div class="d-flex justify-content-end">
-                            <button class="btn btn-gradient-primary btn-sm rate-filter" type="button" data-bs-toggle="tooltip" data-placement="top" title="Click to Filter">
-                                <i data-feather='search'></i>
-                            </button>
-                            <button class="btn btn-gradient-danger btn-sm rate-reset ms-50" type="reset" data-bs-toggle="tooltip" data-placement="top" title=" Click to Reset Filter">
-                                <i data-feather='x'></i>
-                            </button>
-                            <button class="btn btn-gradient-success btn-sm rate-download ms-50" type="button" data-bs-toggle="tooltip" data-placement="top" title="Click to Download Excel">
-                                <i data-feather='download'></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-12">
-            <div class="card p-1">
-                <div class="table-responsive">
-                    <table id="rate_table" class="datatables-basic table table-hover">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Name</th>
-                                <th>Mobile</th>
-                                <th>Address</th>
-                                <th>KW</th>
-                                <th>Lead Value</th>
-                                <th>Lead Date</th>
                                 <th>Agent</th>
                             </tr>
                         </thead>
@@ -449,14 +452,10 @@
                 [20, -1],
                 [20, "All"],
             ],
-            order: [
-                [0, 'desc']
-            ],
+            order: [],
             columns: [{
-                    data: 'id',
-                    render: function(data, type, row, meta) {
-                        return meta.row + meta.settings._iDisplayStart + 1;
-                    }
+                    data: 'sr_no',
+                    name: 'sr_no'
                 },
                 {
                     data: 'name',
@@ -467,16 +466,8 @@
                     name: 'mobile'
                 },
                 {
-                    data: 'address',
-                    name: 'address'
-                },
-                {
                     data: 'kw',
                     name: 'kw'
-                },
-                {
-                    data: 'lead_value',
-                    name: 'lead_value'
                 },
                 {
                     data: 'lead_date',
@@ -485,6 +476,26 @@
                 {
                     data: 'agent_name',
                     name: 'agent_name'
+                },
+                {
+                    data: 'item_detail',
+                    name: 'item_detail'
+                },
+                {
+                    data: 'nos',
+                    name: 'nos'
+                },
+                {
+                    data: 'rate',
+                    name: 'rate'
+                },
+                {
+                    data: 'item_gst',
+                    name: 'item_gst'
+                },
+                {
+                    data: 'total_taxable',
+                    name: 'total_taxable'
                 }
             ],
             initComplete: function(settings, json) {
@@ -543,6 +554,10 @@
         $('#rate_consumer').val('');
         $('#rate_agent_sales_person_id').val('');
         $('.select2').select2();
+        initRateTable();
+    });
+
+    $(document).ready(function() {
         initRateTable();
     });
 </script>

@@ -141,8 +141,6 @@ class PermissionSeeder extends Seeder
             ['name' => 'reports-final', 'title' => 'Final Report', 'title_tag' => 'Reports', 'type' => 'CRM'],
             ['name' => 'reports-invoice', 'title' => 'Invoice Report', 'title_tag' => 'Reports', 'type' => 'CRM'],
             ['name' => 'subsidy-claim-report', 'title' => 'Subsidy Claim Report', 'title_tag' => 'Reports', 'type' => 'CRM'],
-            ['name' => 'panels-required-reports', 'title' => 'Panel Required', 'title_tag' => 'Reports', 'type' => 'CRM'],
-            ['name' => 'inverters-required-reports', 'title' => 'Inverters Required', 'title_tag' => 'Reports', 'type' => 'CRM'],
             ['name' => 'b2b-accept', 'title' => 'B2B Accept', 'title_tag' => 'Reports', 'type' => 'CRM'],
             ['name' => 'b2b-dispatch', 'title' => 'B2B Dispatch', 'title_tag' => 'Reports', 'type' => 'CRM'],
             ['name' => 'b2b-rate', 'title' => 'B2B Rate', 'title_tag' => 'Reports', 'type' => 'CRM'],

@@ -1159,18 +1159,44 @@ class ReportsController extends Controller
                 $where .= " AND lm.agent_sales_person_id = " . request()->input('agent_sales_person_id');
             }
 
-            $query = "SELECT lm.id, lm.name, lm.mobile, lm.address,
-                        lm.kw, lm.lead_value,
+            $query = "SELECT lm.id, lm.name, lm.mobile, lm.kw,
                         DATE_FORMAT(lm.created_at, '%d-%m-%Y') AS lead_date,
-                        asp.name AS agent_name
-                    FROM  lead_masters AS lm
+                        asp.name AS agent_name,
+                        rg.type, rg.nos, rg.rate, rg.item_gst, rg.total_taxable,
+                        pw.name AS panel_watt,
+                        CASE
+                            WHEN rg.type = 'Item' THEN p.name
+                            WHEN rg.type = 'ItemGroup' AND ig.group_type = 'inverter'
+                                THEN CONCAT(ig.inveter_kw, ' KW Inverter (', IFNULL(ic.name, 'N/A'), ' | ', IFNULL(ig.inverter_type, 'N/A'), ')')
+                            WHEN rg.type = 'ItemGroup'
+                                THEN CONCAT(IFNULL(pw.name, 'N/A'), 'W Solar Module (', IFNULL(pc.name, 'N/A'), ' - ', IFNULL(pt.name, 'N/A'), ' | ', IFNULL(ig.p_type, 'N/A'), ')')
+                            ELSE ''
+                        END AS item_detail
+                    FROM lead_masters AS lm
+                    LEFT JOIN rate_given_table AS rg ON rg.lead_master_id = lm.id AND rg.deleted_at IS NULL
+                    LEFT JOIN products AS p ON p.id = rg.item_id AND rg.type = 'Item'
+                    LEFT JOIN item_groups AS ig ON ig.id = rg.item_group_id AND rg.type = 'ItemGroup'
+                    LEFT JOIN penal_companies AS pc ON pc.id = ig.panel_company_id
+                    LEFT JOIN penal_types AS pt ON pt.id = ig.panel_type_id
+                    LEFT JOIN penal_watts AS pw ON pw.id = ig.panel_watt_id
+                    LEFT JOIN inveter_companies AS ic ON ic.id = ig.inveter_company_id
                     LEFT JOIN agent_sales_people AS asp ON asp.id = lm.agent_sales_person_id
-                    WHERE " . $where . " ORDER BY lm.created_at DESC, lm.id DESC;";
+                    WHERE " . $where . " ORDER BY lm.created_at DESC, lm.id DESC, rg.id ASC;";
 
             if (request()->input('download') == "excel") {
                 return Excel::download(new B2BRateExport($query), 'b2b-rate.xlsx');
             } else {
-                return DataTables::of(DB::select(DB::raw($query)))
+                $rows = DB::select(DB::raw($query));
+                $srNo = 0;
+                $prevLeadId = null;
+                foreach ($rows as $row) {
+                    if ($row->id !== $prevLeadId) {
+                        $srNo++;
+                        $prevLeadId = $row->id;
+                    }
+                    $row->sr_no = $srNo;
+                }
+                return DataTables::of($rows)
                     ->addIndexColumn()
                     ->escapeColumns([])
                     ->make(true);

@@ -5,27 +5,20 @@ namespace App\Http\Controllers;
 use App\Exports\DispachListExport;
 use App\Exports\FinalOrdersExport;
 use App\Exports\InstallationListExport;
-use App\Exports\InverterRequired;
 use App\Exports\InvoiceExport;
 use App\Exports\MeterApplicationExport;
 use App\Exports\MeterChargesExport;
-use App\Exports\PanelsRequired;
 use App\Exports\PaymentPendingExport;
 use App\Exports\SubsidyClaimExport;
 use App\Exports\TotalcollectionExport;
 use App\Models\AgentSalesPerson;
 use App\Models\CompanyProfile;
-use App\Models\District;
-use App\Models\InveterCompany;
-use App\Models\PenalCompany;
-use App\Models\PenalWatt;
 use App\Models\LeadMaster;
 use App\Models\SalesMaster;
 use App\Models\SalesQuatation;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -33,7 +26,7 @@ class Reports extends Controller
 {
     function __construct()
     {
-        $this->middleware('permission:reports-total-collection|reports-payment-pending|reports-meter-charges|reports-dispach|reports-installation|reports-meter-application|reports-final|reports-invoice|panels-required-reports|inverters-required-reports|b2b-accept|b2b-dispatch|b2b-rate|sales-agent-wise-report|subsidy-claim-report', ['only' => ['index']]);
+        $this->middleware('permission:reports-total-collection|reports-payment-pending|reports-meter-charges|reports-dispach|reports-installation|reports-meter-application|reports-final|reports-invoice|b2b-accept|b2b-dispatch|b2b-rate|sales-agent-wise-report|subsidy-claim-report', ['only' => ['index']]);
         $this->middleware('permission:reports-total-collection', ['only' => ['totalcollection']]);
         $this->middleware('permission:reports-payment-pending', ['only' => ['paymentPending']]);
         $this->middleware('permission:reports-meter-charges', ['only' => ['meterCharges']]);
@@ -1356,176 +1349,6 @@ class Reports extends Controller
     public function invoiceDownload(Request $request)
     {
         return Excel::download(new InvoiceExport($request), 'Invoice_Report.xlsx');
-    }
-
-    public function panelsRequired()
-    {
-        $companyFind = CompanyProfile::where('user_id', Auth::id())->first();
-        $agentWhere = "";
-        if ($companyFind->user_type == 'M') {
-            $id = $companyFind->id;
-            $agentWhere .= '(company_profiles.user_id = ' . Auth::id() . ' OR  company_profiles.manager_id = ' . $id . ')';
-        }
-        if ($companyFind->user_type == 'S') {
-            $id = $companyFind->id;
-            $manager_id = $companyFind->manager_id;
-            $agentWhere .= '(company_profiles.id = ' . $id . ' OR  company_profiles.id = ' . $manager_id . ')';
-        }
-        $q = CompanyProfile::select('agent_sales_people.*')->leftJoin('agent_sales_people', 'agent_sales_people.user_id', 'company_profiles.user_id');
-        if ($agentWhere != "") {
-            $q->whereRaw($agentWhere);
-        }
-        $agentSalesPerson = $q->get();
-
-        $districts = District::get();
-        $panelCompany = PenalCompany::get();
-        $panelwatts = PenalWatt::get();
-
-        if (request()->ajax()) {
-            return DataTables::of(
-                SalesMaster::select('sales_masters.*', DB::raw('SUM(sales_quatations.penal_nos) as total_panel'))
-                    ->with('district', 'panel', 'panelwatt')
-                    ->leftJoin('sales_quatations', 'sales_quatations.id', '=', 'sales_masters.sales_quatation_id')
-                    ->groupBy(
-                        'sales_masters.district_id',
-                        'sales_masters.penal_company_id',
-                        'sales_masters.penal_watt_id'
-                    )
-                    ->orderBy('sales_masters.district_id')
-                    ->orderBy('sales_masters.penal_company_id')
-                    ->orderBy('sales_masters.penal_watt_id')
-            )
-                ->addIndexColumn()
-                ->filter(function ($query) {
-                    $query->where('sales_masters.file_cancel_order', '0');
-                    $query->where('sales_masters.installation_done', '0');
-                    $company = CompanyProfile::where('user_id', Auth::id())->first();
-                    if ($company->user_type == 'M') {
-                        $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
-                        $agentIds = [$agent->id];
-                        $sales = CompanyProfile::select('company_profiles.id', 'company_profiles.user_id', 'agent_sales_people.id as agent_id')
-                            ->leftJoin('agent_sales_people', 'agent_sales_people.user_id', 'company_profiles.user_id')
-                            ->where('company_profiles.manager_id', $company->id)->get();
-                        if ($sales->count() > 0) {
-                            foreach ($sales as $k => $v) :
-                                array_push($agentIds, $v->agent_id);
-                            endforeach;
-                        }
-                        if (request()->input('agent_sales_person_id') == "") {
-                            $query->whereIn('sales_masters.agent_sales_person_id', $agentIds);
-                        }
-                    }
-                    if ($company->user_type == 'S') {
-                        $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
-                        $id = $agent->id;
-                        $query->where('sales_masters.agent_sales_person_id', $id);
-                    }
-
-                    if (request()->input('agent_sales_person_id') != "") {
-                        $query->where('sales_masters.agent_sales_person_id', request()->input('agent_sales_person_id'));
-                    }
-
-                    if (request()->input('district_id') != "") {
-                        $query->where('sales_masters.district_id', request()->input('district_id'));
-                    }
-
-                    if (request()->input('panel_company_id') != "") {
-                        $query->where('sales_masters.penal_company_id', request()->input('panel_company_id'));
-                    }
-
-                    if (request()->input('panel_watt_id') != "") {
-                        $query->where('sales_masters.penal_watt_id', request()->input('panel_watt_id'));
-                    }
-                })
-                ->escapeColumns([])
-                ->make(true);
-        } else {
-            return view('admin.reports.panels-required', compact('agentSalesPerson', 'districts', 'panelCompany', 'panelwatts'));
-        }
-    }
-    public function panelsRequiredDownload(Request $request)
-    {
-        return Excel::download(new PanelsRequired($request), 'Panels_Required_Report.xlsx');
-    }
-
-    public function invertersRequired()
-    {
-        $companyFind = CompanyProfile::where('user_id', Auth::id())->first();
-        $agentWhere = "";
-        if ($companyFind->user_type == 'M') {
-            $id = $companyFind->id;
-            $agentWhere .= '(company_profiles.user_id = ' . Auth::id() . ' OR  company_profiles.manager_id = ' . $id . ')';
-        }
-        if ($companyFind->user_type == 'S') {
-            $id = $companyFind->id;
-            $manager_id = $companyFind->manager_id;
-            $agentWhere .= '(company_profiles.id = ' . $id . ' OR  company_profiles.id = ' . $manager_id . ')';
-        }
-        $q = CompanyProfile::select('agent_sales_people.*')->leftJoin('agent_sales_people', 'agent_sales_people.user_id', 'company_profiles.user_id');
-        if ($agentWhere != "") {
-            $q->whereRaw($agentWhere);
-        }
-        $agentSalesPerson = $q->get();
-
-        $districts = District::get();
-        $inveterCompany = InveterCompany::get();
-
-        if (request()->ajax()) {
-            return DataTables::of(
-                SalesMaster::select('sales_masters.*', DB::raw('SUM(sales_quatations.no_of_inveter) as total_inveter'))
-                    ->with('district', 'inveter')
-                    ->leftJoin('sales_quatations', 'sales_quatations.id', '=', 'sales_masters.sales_quatation_id')
-                    ->groupBy(
-                        'sales_masters.district_id',
-                        'sales_masters.inveter_company_id'
-                    )
-                    ->orderBy('sales_masters.district_id')
-                    ->orderBy('sales_masters.inveter_company_id')
-            )
-                ->addIndexColumn()
-                ->filter(function ($query) {
-                    $query->where('sales_masters.file_cancel_order', '0');
-                    $query->where('sales_masters.installation_done', '0');
-                    $company = CompanyProfile::where('user_id', Auth::id())->first();
-                    if ($company->user_type == 'M') {
-                        $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
-                        $agentIds = [$agent->id];
-                        $sales = CompanyProfile::select('company_profiles.id', 'company_profiles.user_id', 'agent_sales_people.id as agent_id')
-                            ->leftJoin('agent_sales_people', 'agent_sales_people.user_id', 'company_profiles.user_id')
-                            ->where('company_profiles.manager_id', $company->id)->get();
-                        if ($sales->count() > 0) {
-                            foreach ($sales as $k => $v) :
-                                array_push($agentIds, $v->agent_id);
-                            endforeach;
-                        }
-                        if (request()->input('agent_sales_person_id') == "") {
-                            $query->whereIn('sales_masters.agent_sales_person_id', $agentIds);
-                        }
-                    }
-                    if ($company->user_type == 'S') {
-                        $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
-                        $id = $agent->id;
-                        $query->where('sales_masters.agent_sales_person_id', $id);
-                    }
-                    if (request()->input('agent_sales_person_id') != "") {
-                        $query->where('sales_masters.agent_sales_person_id', request()->input('agent_sales_person_id'));
-                    }
-                    if (request()->input('district_id') != "") {
-                        $query->where('sales_masters.district_id', request()->input('district_id'));
-                    }
-                    if (request()->input('inveter_company_id') != "") {
-                        $query->where('sales_masters.inveter_company_id', request()->input('inveter_company_id'));
-                    }
-                })
-                ->escapeColumns([])
-                ->make(true);
-        } else {
-            return view('admin.reports.inverter-required', compact('agentSalesPerson', 'districts', 'inveterCompany'));
-        }
-    }
-    public function inverterRequiredDownload(Request $request)
-    {
-        return Excel::download(new InverterRequired($request), 'Inverter_Required_Report.xlsx');
     }
 
     public function subsidyClaimReports()

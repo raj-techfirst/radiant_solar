@@ -248,45 +248,6 @@
                 </div>
             </div>
             @endcan
-            @can('panels-required-reports')
-            <div class="col-lg-3 col-md-6 col-12">
-                <div class="card report-card border cursor-pointer">
-                    <a href="{{ route('panels-required-reports') }}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <img src="{{ asset('img/icon/panel.png') }}" alt="google drive" height="38">
-                            </div>
-                            <div class="my-1 mb-50">
-                                <h5>Panel Required Report</h5>
-                            </div>
-                            <div class="progress progress-bar-secondary progress-md mb-0" style="height: 5px">
-                                <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="30" aria-valuemax="100" style="width: 30%"></div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            </div>
-            @endcan
-            @can('inverters-required-reports')
-            <div class="col-lg-3 col-md-6 col-12">
-                <div class="card report-card border cursor-pointer">
-                    <a href="{{ route('inverters-required-reports') }}">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <img src="{{ asset('img/icon/inverter.png') }}" alt="google drive" height="38">
-                            </div>
-
-                            <div class="mt-1 mb-50">
-                                <h5>Inverter Required Report</h5>
-                            </div>
-                            <div class="progress progress-bar-secondary progress-md mb-0" style="height: 5px">
-                                <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="30" aria-valuemax="100" style="width: 30%"></div>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            </div>
-            @endcan
 
             @canany(['b2b-accept', 'b2b-dispatch', 'b2b-rate'])
             <div class="col-lg-3 col-md-6 col-12">

@@ -258,12 +258,6 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('invoice-reports', [Reports::class, 'invoice'])->name('invoice-reports');
     Route::post('invoice-download', [Reports::class, 'invoiceDownload'])->name('invoice-download');
 
-    Route::get('panels-required-reports', [Reports::class, 'panelsRequired'])->name('panels-required-reports');
-    Route::post('panels-required-download', [Reports::class, 'panelsRequiredDownload'])->name('panels-required-download');
-
-    Route::get('inverters-required-reports', [Reports::class, 'invertersRequired'])->name('inverters-required-reports');
-    Route::post('inverters-required-download', [Reports::class, 'inverterRequiredDownload'])->name('inverters-required-download');
-
     Route::post('sales-order-payment/{id}', [SalesMasterController::class, 'paymentList'])->name('sales-order-payment');
     Route::post('sales-quatation-get-details', [SalesQuatationController::class, 'getDetails'])->name('sales-quatation-get-details');
      Route::post('sales-quatation-status', [SalesQuatationController::class, 'changeStatus'])->name('sales-quatation-status');
