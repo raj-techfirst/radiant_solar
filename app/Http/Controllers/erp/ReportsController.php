@@ -53,7 +53,7 @@ class ReportsController extends Controller
     public function getSerialNumbers()
     {
         if (request()->ajax()) {
-            return DataTables::of(SerialNumber::with('warehouse', 'itemGroup'))
+            return DataTables::of(SerialNumber::with('warehouse', 'itemGroup')->orderBy('id', 'DESC'))
                 ->addIndexColumn()
                 ->filter(function ($query) {
                     if (request()->input('from_date') != "" && request()->input('to_date') == '') {
@@ -1092,7 +1092,7 @@ class ReportsController extends Controller
                         asp.name AS agent_name
                     FROM  sales_quatations AS sq
                     LEFT JOIN agent_sales_people AS asp ON asp.id = sq.agent_sales_person_id
-                    WHERE " . $where . " ORDER BY sq.id DESC;";
+                    WHERE " . $where . " ORDER BY sq.created_at DESC, sq.id DESC;";
 
             if (request()->input('download') == "excel") {
                 return Excel::download(new B2BDispatchExport($query), 'b2b-dispatch.xlsx');
@@ -1164,7 +1164,7 @@ class ReportsController extends Controller
                         asp.name AS agent_name
                     FROM  lead_masters AS lm
                     LEFT JOIN agent_sales_people AS asp ON asp.id = lm.agent_sales_person_id
-                    WHERE " . $where . " ORDER BY lm.id DESC;";
+                    WHERE " . $where . " ORDER BY lm.created_at DESC, lm.id DESC;";
 
             if (request()->input('download') == "excel") {
                 return Excel::download(new B2BRateExport($query), 'b2b-rate.xlsx');
@@ -1232,7 +1232,7 @@ class ReportsController extends Controller
             $start->addMonth();
         }
 
-        $where = "sq.current_status = 'accepted' AND sq.deleted_at IS NULL AND DATE_FORMAT(sq.created_at, '%Y-%m') BETWEEN '" . date('Y-m', strtotime($from)) . "' AND '" . date('Y-m', strtotime($to)) . "'";
+        $where = "sq.current_status = 'dispatch' AND sq.deleted_at IS NULL AND DATE_FORMAT(sq.created_at, '%Y-%m') BETWEEN '" . date('Y-m', strtotime($from)) . "' AND '" . date('Y-m', strtotime($to)) . "'";
         if (count($agentIds) > 0) {
             $where .= " AND sq.agent_sales_person_id IN (" . implode(',', $agentIds) . ")";
         }

@@ -234,6 +234,9 @@
                                                     </button>
                                                     <div class="dropdown-menu" container="body">
                                                         @foreach ($salesQuatationStatus as $k => $v)
+                                                            @if ($v['id'] == 'dispatch')
+                                                                @continue
+                                                            @endif
                                                             <a class="dropdown-item change-status" href="javascript:void(0);"
                                                                 data-id="{{ $value->id }}"
                                                                 data-status="{{ $v['id'] }}">{{ $v['name'] }}</a>

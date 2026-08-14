@@ -143,6 +143,9 @@ class SalesQuatationController extends Controller
 
                         $salesQuatationStatus = salesQuotationStatus();
                         foreach ($salesQuatationStatus as $k => $v):
+                            if ($v['id'] == 'dispatch') {
+                                continue;
+                            }
                             $html .= '<a class="dropdown-item change-status" href="javascript:void(0);" data-id="' . $row->id . '" data-status="' . $v['id'] . '">' . $v['name'] . '</a>';
                         endforeach;
                         $html .= '</div>
@@ -469,6 +472,9 @@ class SalesQuatationController extends Controller
             }
             DB::commit();
             if (!is_null($result)) {
+                if (is_null($request->sales_quatation_id)) {
+                    $this->addSalesQuotationActivity($SalesQuatation);
+                }
                 return response()->json($response);
             } else {
                 $response = ['status' => false, 'server_error' => 'Something went wrong. Please try again.'];
@@ -478,6 +484,38 @@ class SalesQuatationController extends Controller
             DB::rollback();
             $response = ['status' => false, 'server_error' => 'Something went wrong. Please try again. 2'];
             return response()->json($response);
+        }
+    }
+
+    protected function addSalesQuotationActivity($SalesQuatation)
+    {
+        try {
+            if (is_null($SalesQuatation->lead_master_id)) {
+                return;
+            }
+
+            $company = CompanyProfile::with('user')->where('user_id', Auth::id())->first();
+            $creatorName = null;
+            if (!is_null($SalesQuatation->agentSalesPerson) && !is_null($SalesQuatation->agentSalesPerson->name)) {
+                $creatorName = $SalesQuatation->agentSalesPerson->name;
+            } elseif (!is_null($company) && !is_null($company->user)) {
+                $creatorName = $company->user->name;
+            }
+            if (is_null($creatorName)) {
+                $creatorName = 'System';
+            }
+
+            $sqId = env('APP_SORT') . '/EPC/' . str_pad($SalesQuatation->id, 2, '0', STR_PAD_LEFT);
+            $remark = $sqId . ' Sales Quotation created By ' . $creatorName;
+
+            $followUp = new FollowUp();
+            $followUp->lead_master_id = $SalesQuatation->lead_master_id;
+            $followUp->call_detail = '';
+            $followUp->remark = $remark;
+            $followUp->follow_up_by = !is_null($company) ? $company->id : Auth::id();
+            $followUp->status_id = 15;
+            $followUp->save();
+        } catch (\Exception $e) {
         }
     }
 
@@ -825,6 +863,11 @@ class SalesQuatationController extends Controller
             $response = ['status' => false, 'server_error' => 'Not Found.'];
             $salesQuatation = SalesQuatation::where('id', $request->id)->first();
             if (!is_null($salesQuatation)) {
+
+                if ($request->status == 'dispatch') {
+                    $response = ['status' => false, 'message' => 'Dispatch status can only be updated via Delivery Challan.'];
+                    return response()->json($response);
+                }
 
                 $oldStatus = $salesQuatation->current_status;
                 $salesQuatation->current_status = $request->status;

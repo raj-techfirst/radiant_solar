@@ -2,6 +2,9 @@
 @section('title', 'Subsidy Claim Report')
 @section('content')
 <div class="row">
+    <div class="col-12 mb-1">
+        <h4 class="content-header-title float-start">Subsidy Claim Report</h4>
+    </div>
     <div class="col-12 mt-2">
         <div class="card p-1">
             <div class="row">

@@ -2,6 +2,9 @@
 @section('title', 'B2B Rate Report')
 @section('content')
 <div class="row">
+    <div class="col-12 mb-1">
+        <h4 class="content-header-title float-start">B2B Rate Report</h4>
+    </div>
     <div class="col-12 mt-2">
         <div class="card p-1">
             <div class="row">
@@ -89,8 +92,12 @@
                 [20, -1],
                 [20, "All"],
             ],
+            order: [
+                [0, 'desc']
+            ],
             columns: [{
                     data: 'id',
+                    name: 'id',
                     render: function(data, type, row, meta) {
                         return meta.row + meta.settings._iDisplayStart + 1;
                     }
