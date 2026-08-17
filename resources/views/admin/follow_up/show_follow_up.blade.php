@@ -235,6 +235,32 @@
                                             <p class="m-0"><small class="text-muteds">{{ __('Remark') }}:</small>
                                                 {{ $value->remark }}</p>
                                         @endif
+                                        @if (!empty($value->rate_data) && is_array($value->rate_data))
+                                            <div class="mt-50">
+                                                <table class="table table-bordered table-sm mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Item</th>
+                                                            <th>Nos</th>
+                                                            <th>Rate</th>
+                                                            <th>GST (%)</th>
+                                                            <th>Total Taxable</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach ($value->rate_data as $rd)
+                                                            <tr>
+                                                                <td>{{ $rd['item_name'] ?? '' }}</td>
+                                                                <td>{{ $rd['nos'] ?? '' }}</td>
+                                                                <td>{{ $rd['rate'] ?? '' }}</td>
+                                                                <td>{{ $rd['item_gst'] ?? '' }}</td>
+                                                                <td>{{ $rd['total_taxable'] ?? '' }}</td>
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        @endif
                                         @if ($value->reminder_date)
                                             <div class="mt-50">
                                                 <span class="badge rounded-pill badge-light-warning">

@@ -11,7 +11,11 @@ class FollowUp extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'follow_ups';
-    protected $fillable = ['lead_master_id', 'call_detail', 'call_recording', 'remark', 'reminder_date', 'follow_up_by', 'status_id'];
+    protected $fillable = ['lead_master_id', 'call_detail', 'call_recording', 'remark', 'reminder_date', 'follow_up_by', 'status_id', 'rate_data'];
+
+    protected $casts = [
+        'rate_data' => 'array',
+    ];
 
     public function company()
     {

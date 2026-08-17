@@ -21,6 +21,7 @@ class RateGiven extends Model
         'rate',
         'item_gst',
         'total_taxable',
+        'is_hide',
     ];
 
     public function item()

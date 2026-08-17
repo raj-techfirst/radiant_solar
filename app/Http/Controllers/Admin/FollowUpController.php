@@ -172,7 +172,7 @@ class FollowUpController extends Controller
                 $result = $rateGiven->save();
             }
 
-            $this->addRateGivenActivity($request->lead_master_id);
+            $this->addRateGivenActivity($request->lead_master_id, $request->rate_givens);
 
             $response = ['status' => true, 'message' => 'Rate given added successfully.'];
             DB::commit();
@@ -191,7 +191,7 @@ class FollowUpController extends Controller
         }
     }
 
-    protected function addRateGivenActivity($leadMasterId)
+    protected function addRateGivenActivity($leadMasterId, $rateGivens = [])
     {
         try {
             $leadMaster = LeadMaster::where('id', $leadMasterId)->first();
@@ -213,12 +213,35 @@ class FollowUpController extends Controller
                 $statusId = $leadMaster->lead_status_id;
             }
 
+            $rateData = [];
+            if (!empty($rateGivens)) {
+                foreach ($rateGivens as $row) {
+                    $itemName = '';
+                    if ($row['type'] == 'Item') {
+                        $product = Product::where('id', $row['item_id'] ?? 0)->first();
+                        $itemName = $product->name ?? '';
+                    } else {
+                        $itemGroup = ItemGroup::with('panel_watt', 'inveter_company')->where('id', $row['item_group_id'] ?? 0)->first();
+                        $itemName = getItemGropName($itemGroup, 0);
+                    }
+                    $rateData[] = [
+                        'type' => $row['type'],
+                        'item_name' => $itemName,
+                        'nos' => $row['nos'],
+                        'rate' => $row['rate'],
+                        'item_gst' => $row['item_gst'],
+                        'total_taxable' => $row['total_taxable'] ?? 0,
+                    ];
+                }
+            }
+
             $followUp = new FollowUp();
             $followUp->lead_master_id = $leadMaster->id;
             $followUp->call_detail = '';
             $followUp->remark = 'Rate Given added By ' . $creatorName;
             $followUp->follow_up_by = !is_null($company) ? $company->id : Auth::id();
             $followUp->status_id = $statusId;
+            $followUp->rate_data = !empty($rateData) ? $rateData : null;
             $followUp->save();
         } catch (\Exception $e) {
         }
@@ -246,7 +269,7 @@ class FollowUpController extends Controller
             $salesQuatations = SalesQuatation::where('lead_master_id', $leadMaster->id)->get();
             $leadStatus = LeadStatus::select('id', 'name')->where('is_for_system', '0')->orderBy('id', 'asc')->get();
 
-            $rateGivens = RateGiven::with('item', 'itemGroup')->where('lead_master_id', $leadMaster->id)->orderBy('id', 'desc')->get();
+            $rateGivens = RateGiven::with('item', 'itemGroup')->where('lead_master_id', $leadMaster->id)->where('is_hide', 0)->orderBy('id', 'desc')->get();
             $product = Product::get();
             $itemGroup = ItemGroup::with('panel_company', 'panel_type', 'panel_watt', 'inveter_company')->get();
 

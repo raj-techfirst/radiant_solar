@@ -489,6 +489,9 @@ class SalesQuatationController extends Controller
                 }
                 /* / Technical Specification & BOM */
             }
+            if ($request->form_type == 'trading' && !empty($request->lead_master_id)) {
+                RateGiven::where('lead_master_id', $request->lead_master_id)->update(['is_hide' => 1]);
+            }
             DB::commit();
             if (!is_null($result)) {
                 if (is_null($request->sales_quatation_id)) {

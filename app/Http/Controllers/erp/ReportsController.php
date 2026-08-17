@@ -1231,7 +1231,7 @@ class ReportsController extends Controller
                             ELSE ''
                         END AS item_detail
                     FROM lead_masters AS lm
-                    LEFT JOIN rate_given_table AS rg ON rg.lead_master_id = lm.id AND rg.deleted_at IS NULL
+                    LEFT JOIN rate_given_table AS rg ON rg.lead_master_id = lm.id AND rg.deleted_at IS NULL AND rg.is_hide = 0
                     LEFT JOIN products AS p ON p.id = rg.item_id AND rg.type = 'Item'
                     LEFT JOIN item_groups AS ig ON ig.id = rg.item_group_id AND rg.type = 'ItemGroup'
                     LEFT JOIN penal_companies AS pc ON pc.id = ig.panel_company_id
