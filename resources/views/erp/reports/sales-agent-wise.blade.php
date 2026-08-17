@@ -45,7 +45,7 @@
                             @foreach($agents as $agent)
                             <th>{{ $agent['name'] }}</th>
                             @endforeach
-                            <th rowspan="2" class="align-middle">Total</th>
+                            <th rowspan="2" class="align-middle">Total KW</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -59,9 +59,9 @@
                                 $val = isset($data[$key]) ? $data[$key] : 0;
                                 $rowTotal += $val;
                             @endphp
-                            <td>{{ number_format($val, 2) }}</td>
+                            <td>{{ number_format($val, 3) }}</td>
                             @endforeach
-                            <td class="fw-bolder">{{ number_format($rowTotal, 2) }}</td>
+                            <td class="fw-bolder">{{ number_format($rowTotal, 3) }}</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -78,9 +78,9 @@
                                 }
                                 $grandTotal += $colTotal;
                             @endphp
-                            <td>{{ number_format($colTotal, 2) }}</td>
+                            <td>{{ number_format($colTotal, 3) }}</td>
                             @endforeach
-                            <td>{{ number_format($grandTotal, 2) }}</td>
+                            <td>{{ number_format($grandTotal, 3) }}</td>
                         </tr>
                     </tfoot>
                 </table>

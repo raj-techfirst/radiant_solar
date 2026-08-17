@@ -1016,18 +1016,46 @@ class ReportsController extends Controller
                 $where .= " AND sq.agent_sales_person_id = " . request()->input('agent_sales_person_id');
             }
 
-            $query = "SELECT sq.id, sq.name, sq.mobile, sq.address,
-                        sq.gst_no, sq.total_amount,
+            $query = "SELECT sq.id, sq.name, sq.mobile,
                         DATE_FORMAT(sq.created_at, '%d-%m-%Y') AS quotation_date,
-                        asp.name AS agent_name
+                        asp.name AS agent_name,
+                        sq.gst,
+                        sq.total_amount AS total_taxable,
+                        sqm.nos,
+                        sqm.rate,
+                        CASE
+                            WHEN sqm.type = 'Item' THEN p.name
+                            WHEN sqm.type = 'ItemGroup' AND ig.group_type = 'inverter'
+                                THEN CONCAT(ig.inveter_kw, ' KW Inverter (', IFNULL(ic.name, 'N/A'), ' | ', IFNULL(ig.inverter_type, 'N/A'), ')')
+                            WHEN sqm.type = 'ItemGroup'
+                                THEN CONCAT(IFNULL(pw.name, 'N/A'), 'W Solar Module (', IFNULL(pc.name, 'N/A'), ' - ', IFNULL(pt.name, 'N/A'), ' | ', IFNULL(ig.p_type, 'N/A'), ')')
+                            ELSE ''
+                        END AS item_detail
                     FROM  sales_quatations AS sq
+                    LEFT JOIN sales_quatation_metas AS sqm ON sqm.sales_quatation_id = sq.id AND sqm.deleted_at IS NULL
+                    LEFT JOIN products AS p ON p.id = sqm.item_id AND sqm.type = 'Item'
+                    LEFT JOIN item_groups AS ig ON ig.id = sqm.item_group_id AND sqm.type = 'ItemGroup'
+                    LEFT JOIN penal_companies AS pc ON pc.id = ig.panel_company_id
+                    LEFT JOIN penal_types AS pt ON pt.id = ig.panel_type_id
+                    LEFT JOIN penal_watts AS pw ON pw.id = ig.panel_watt_id
+                    LEFT JOIN inveter_companies AS ic ON ic.id = ig.inveter_company_id
                     LEFT JOIN agent_sales_people AS asp ON asp.id = sq.agent_sales_person_id
-                    WHERE " . $where . " ORDER BY sq.created_at DESC, sq.id DESC;";
+                    WHERE " . $where . " ORDER BY sq.created_at DESC, sq.id DESC, sqm.id ASC;";
 
             if (request()->input('download') == "excel") {
                 return Excel::download(new B2BAcceptExport($query), 'b2b-accept.xlsx');
             } else {
-                return DataTables::of(DB::select(DB::raw($query)))
+                $rows = DB::select(DB::raw($query));
+                $srNo = 0;
+                $prevQuoteId = null;
+                foreach ($rows as $row) {
+                    if ($row->id !== $prevQuoteId) {
+                        $srNo++;
+                        $prevQuoteId = $row->id;
+                    }
+                    $row->sr_no = $srNo;
+                }
+                return DataTables::of($rows)
                     ->addIndexColumn()
                     ->escapeColumns([])
                     ->make(true);
@@ -1087,18 +1115,48 @@ class ReportsController extends Controller
                 $where .= " AND sq.agent_sales_person_id = " . request()->input('agent_sales_person_id');
             }
 
-            $query = "SELECT sq.id, sq.name, sq.mobile, sq.address,
-                        sq.gst_no, sq.total_amount,
+            $query = "SELECT sq.id, sq.name, sq.mobile,
                         DATE_FORMAT(sq.created_at, '%d-%m-%Y') AS quotation_date,
-                        asp.name AS agent_name
+                        asp.name AS agent_name,
+                        sq.address AS bill_to_address,
+                        sq.ship_to,
+                        sq.gst,
+                        sq.total_amount AS total_taxable,
+                        sqm.nos,
+                        sqm.rate,
+                        CASE
+                            WHEN sqm.type = 'Item' THEN p.name
+                            WHEN sqm.type = 'ItemGroup' AND ig.group_type = 'inverter'
+                                THEN CONCAT(ig.inveter_kw, ' KW Inverter (', IFNULL(ic.name, 'N/A'), ' | ', IFNULL(ig.inverter_type, 'N/A'), ')')
+                            WHEN sqm.type = 'ItemGroup'
+                                THEN CONCAT(IFNULL(pw.name, 'N/A'), 'W Solar Module (', IFNULL(pc.name, 'N/A'), ' - ', IFNULL(pt.name, 'N/A'), ' | ', IFNULL(ig.p_type, 'N/A'), ')')
+                            ELSE ''
+                        END AS item_detail
                     FROM  sales_quatations AS sq
+                    LEFT JOIN sales_quatation_metas AS sqm ON sqm.sales_quatation_id = sq.id AND sqm.deleted_at IS NULL
+                    LEFT JOIN products AS p ON p.id = sqm.item_id AND sqm.type = 'Item'
+                    LEFT JOIN item_groups AS ig ON ig.id = sqm.item_group_id AND sqm.type = 'ItemGroup'
+                    LEFT JOIN penal_companies AS pc ON pc.id = ig.panel_company_id
+                    LEFT JOIN penal_types AS pt ON pt.id = ig.panel_type_id
+                    LEFT JOIN penal_watts AS pw ON pw.id = ig.panel_watt_id
+                    LEFT JOIN inveter_companies AS ic ON ic.id = ig.inveter_company_id
                     LEFT JOIN agent_sales_people AS asp ON asp.id = sq.agent_sales_person_id
-                    WHERE " . $where . " ORDER BY sq.created_at DESC, sq.id DESC;";
+                    WHERE " . $where . " ORDER BY sq.created_at DESC, sq.id DESC, sqm.id ASC;";
 
             if (request()->input('download') == "excel") {
                 return Excel::download(new B2BDispatchExport($query), 'b2b-dispatch.xlsx');
             } else {
-                return DataTables::of(DB::select(DB::raw($query)))
+                $rows = DB::select(DB::raw($query));
+                $srNo = 0;
+                $prevQuoteId = null;
+                foreach ($rows as $row) {
+                    if ($row->id !== $prevQuoteId) {
+                        $srNo++;
+                        $prevQuoteId = $row->id;
+                    }
+                    $row->sr_no = $srNo;
+                }
+                return DataTables::of($rows)
                     ->addIndexColumn()
                     ->escapeColumns([])
                     ->make(true);
@@ -1322,7 +1380,9 @@ class ReportsController extends Controller
             $start->addMonth();
         }
 
-        $where = "sq.current_status = 'dispatch' AND sq.deleted_at IS NULL AND DATE_FORMAT(sq.created_at, '%Y-%m') BETWEEN '" . date('Y-m', strtotime($from)) . "' AND '" . date('Y-m', strtotime($to)) . "'";
+        $where = "dc.issue_type = 'trading' AND dc.deleted_at IS NULL
+                    AND sq.current_status = 'dispatch' AND sq.deleted_at IS NULL
+                    AND DATE_FORMAT(sq.created_at, '%Y-%m') BETWEEN '" . date('Y-m', strtotime($from)) . "' AND '" . date('Y-m', strtotime($to)) . "'";
         if (count($agentIds) > 0) {
             $where .= " AND sq.agent_sales_person_id IN (" . implode(',', $agentIds) . ")";
         }
@@ -1330,8 +1390,18 @@ class ReportsController extends Controller
         $query = "SELECT sq.agent_sales_person_id, asp.name AS agent_name,
                     DATE_FORMAT(sq.created_at, '%b-%y') AS month_label,
                     DATE_FORMAT(sq.created_at, '%Y-%m') AS month_key,
-                    SUM(sq.total_amount) AS total_amount
-                FROM  sales_quatations AS sq
+            ROUND(SUM(
+                CASE
+                    WHEN dcm.type = 'ItemGroup' AND ig.group_type = 'panel'
+                        THEN (CAST(pw.name AS DECIMAL(10,2)) * dcm.quantity) / 1000
+                    ELSE 0
+                END
+            ), 3) AS total_kw
+                FROM delivery_challans AS dc
+                LEFT JOIN delivery_challan_metas AS dcm ON dcm.delivery_challan_id = dc.id AND dcm.deleted_at IS NULL
+                LEFT JOIN item_groups AS ig ON ig.id = dcm.item_group_id AND dcm.type = 'ItemGroup'
+                LEFT JOIN penal_watts AS pw ON pw.id = ig.panel_watt_id
+                LEFT JOIN sales_quatations AS sq ON sq.id = dc.quotations_id AND sq.deleted_at IS NULL
                 LEFT JOIN agent_sales_people AS asp ON asp.id = sq.agent_sales_person_id
                 WHERE " . $where . "
                 GROUP BY sq.agent_sales_person_id, month_key
@@ -1348,7 +1418,7 @@ class ReportsController extends Controller
                     'name' => $row->agent_name ?: 'Unknown',
                 ];
             }
-            $data[$row->month_label . '|' . $row->agent_sales_person_id] = (float) $row->total_amount;
+            $data[$row->month_label . '|' . $row->agent_sales_person_id] = (float) $row->total_kw;
         }
 
         foreach ($agents as $agentId => $agent) {

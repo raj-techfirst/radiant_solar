@@ -161,11 +161,13 @@
                                 <th>#</th>
                                 <th>Name</th>
                                 <th>Mobile</th>
-                                <th>Address</th>
-                                <th>GST No</th>
-                                <th>Total Amount</th>
                                 <th>Quotation Date</th>
                                 <th>Agent</th>
+                                <th>Item Detail</th>
+                                <th>Nos</th>
+                                <th>Rate</th>
+                                <th>GST</th>
+                                <th>Total Taxable</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -222,11 +224,15 @@
                                 <th>#</th>
                                 <th>Name</th>
                                 <th>Mobile</th>
-                                <th>Address</th>
-                                <th>GST No</th>
-                                <th>Total Amount</th>
                                 <th>Quotation Date</th>
                                 <th>Agent</th>
+                                <th>Bill To Address</th>
+                                <th>Ship To</th>
+                                <th>Item Detail</th>
+                                <th>Nos</th>
+                                <th>Rate</th>
+                                <th>GST</th>
+                                <th>Total Taxable</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -248,6 +254,8 @@
     var accept_table = '';
     var dispatch_table = '';
     var rate_table = '';
+    var prevQuoteId = null;
+    var prevLeadId = null;
 
     function downloadExcel(url, filename, prefix) {
         $.ajax({
@@ -316,14 +324,10 @@
                 [20, -1],
                 [20, "All"],
             ],
-            order: [
-                [0, 'desc']
-            ],
+            order: [],
             columns: [{
-                    data: 'id',
-                    render: function(data, type, row, meta) {
-                        return meta.row + meta.settings._iDisplayStart + 1;
-                    }
+                    data: 'sr_no',
+                    name: 'sr_no'
                 },
                 {
                     data: 'name',
@@ -334,26 +338,46 @@
                     name: 'mobile'
                 },
                 {
-                    data: 'address',
-                    name: 'address'
-                },
-                {
-                    data: 'gst_no',
-                    name: 'gst_no'
-                },
-                {
-                    data: 'total_amount',
-                    name: 'total_amount'
-                },
-                {
                     data: 'quotation_date',
                     name: 'quotation_date'
                 },
                 {
                     data: 'agent_name',
                     name: 'agent_name'
+                },
+                {
+                    data: 'item_detail',
+                    name: 'item_detail'
+                },
+                {
+                    data: 'nos',
+                    name: 'nos'
+                },
+                {
+                    data: 'rate',
+                    name: 'rate'
+                },
+                {
+                    data: 'gst',
+                    name: 'gst'
+                },
+                {
+                    data: 'total_taxable',
+                    name: 'total_taxable'
                 }
             ],
+            createdRow: function(row, data, dataIndex) {
+                if (data.id === prevQuoteId) {
+                    var $cells = $(row).find('td');
+                    $cells.eq(1).text('');
+                    $cells.eq(2).text('');
+                    $cells.eq(3).text('');
+                    $cells.eq(4).text('');
+                    $cells.eq(8).text('');
+                    $cells.eq(9).text('');
+                }
+                prevQuoteId = data.id;
+            },
             initComplete: function(settings, json) {
                 var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
                 var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
@@ -384,14 +408,10 @@
                 [20, -1],
                 [20, "All"],
             ],
-            order: [
-                [0, 'desc']
-            ],
+            order: [],
             columns: [{
-                    data: 'id',
-                    render: function(data, type, row, meta) {
-                        return meta.row + meta.settings._iDisplayStart + 1;
-                    }
+                    data: 'sr_no',
+                    name: 'sr_no'
                 },
                 {
                     data: 'name',
@@ -402,26 +422,56 @@
                     name: 'mobile'
                 },
                 {
-                    data: 'address',
-                    name: 'address'
-                },
-                {
-                    data: 'gst_no',
-                    name: 'gst_no'
-                },
-                {
-                    data: 'total_amount',
-                    name: 'total_amount'
-                },
-                {
                     data: 'quotation_date',
                     name: 'quotation_date'
                 },
                 {
                     data: 'agent_name',
                     name: 'agent_name'
+                },
+                {
+                    data: 'bill_to_address',
+                    name: 'bill_to_address'
+                },
+                {
+                    data: 'ship_to',
+                    name: 'ship_to'
+                },
+                {
+                    data: 'item_detail',
+                    name: 'item_detail'
+                },
+                {
+                    data: 'nos',
+                    name: 'nos'
+                },
+                {
+                    data: 'rate',
+                    name: 'rate'
+                },
+                {
+                    data: 'gst',
+                    name: 'gst'
+                },
+                {
+                    data: 'total_taxable',
+                    name: 'total_taxable'
                 }
             ],
+            createdRow: function(row, data, dataIndex) {
+                if (data.id === prevQuoteId) {
+                    var $cells = $(row).find('td');
+                    $cells.eq(1).text('');
+                    $cells.eq(2).text('');
+                    $cells.eq(3).text('');
+                    $cells.eq(4).text('');
+                    $cells.eq(5).text('');
+                    $cells.eq(6).text('');
+                    $cells.eq(10).text('');
+                    $cells.eq(11).text('');
+                }
+                prevQuoteId = data.id;
+            },
             initComplete: function(settings, json) {
                 var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
                 var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
@@ -498,6 +548,17 @@
                     name: 'total_taxable'
                 }
             ],
+            createdRow: function(row, data, dataIndex) {
+                if (data.id === prevLeadId) {
+                    var $cells = $(row).find('td');
+                    $cells.eq(1).text('');
+                    $cells.eq(2).text('');
+                    $cells.eq(3).text('');
+                    $cells.eq(4).text('');
+                    $cells.eq(5).text('');
+                }
+                prevLeadId = data.id;
+            },
             initComplete: function(settings, json) {
                 var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
                 var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {

@@ -549,14 +549,14 @@
                     </a>
                 </li>
                 @endcan
-                @can('sales-master-list')
+                @canany(['sales-master-list', 'sales-master-create', 'sales-master-edit', 'sales-master-delete'])
                 <li class="nav-item @if(Request::segment(1) == 'sales-master'): active @endif">
                     <a class="d-flex align-items-center" href="{{route('sales-master.index')}}">
                         <i data-feather='dribbble'></i>
                         <span class="menu-title text-truncate">Sales Order</span>
                     </a>
                 </li>
-                @endcan
+                @endcanany
                 @can('payment-collection-list')
                 <li class="nav-item @if(Request::segment(1) == 'payment-collection'): active @endif">
                     <a class="d-flex align-items-center" href="{{route('payment-collection.index')}}">

@@ -67,19 +67,19 @@ class LoginApiController extends Controller
 
         $menu['lead']['list'] = 1;
         $menu['sales_quatation']['list'] = 1;
-        $menu['sales_order']['list'] = 1;
+        $menu['sales_order']['list'] = $user->hasPermissionTo('sales-master-list') ? 1 : 0;
         $menu['payment']['list'] = 1;
         $menu['lead']['add'] =   1;
         $menu['sales_quatation']['add'] = 1;
-        $menu['sales_order']['add'] = 1;
+        $menu['sales_order']['add'] = $user->hasPermissionTo('sales-master-create') ? 1 : 0;
         $menu['payment']['add'] = 1;
         $menu['lead']['edit'] = 1;
         $menu['sales_quatation']['edit'] = 1;
-        $menu['sales_order']['edit'] = 1;
+        $menu['sales_order']['edit'] = $user->hasPermissionTo('sales-master-edit') ? 1 : 0;
         $menu['payment']['edit'] = 1;
         $menu['lead']['delete'] =  1;
         $menu['sales_quatation']['delete'] = 1;
-        $menu['sales_order']['delete'] = 1;
+        $menu['sales_order']['delete'] = $user->hasPermissionTo('sales-master-delete') ? 1 : 0;
         $menu['payment']['delete'] = 1;
 
         $response = [

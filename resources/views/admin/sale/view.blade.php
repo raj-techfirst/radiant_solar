@@ -4,10 +4,10 @@
     <div class="row">
         <div class="col-12 mb-1">
             <h4 class="content-header-title float-start">Sales Order List</h4>
-            {{-- @can('sales-master-create') --}}
+            @can('sales-master-create')
             <a role="button" class="btn btn-sm btn-primary float-end" href="{{ route('sales-master.create') }}"><i
                     class="fa fa-plus me-25"></i> {{ __('message.Add New') }}</a>
-            {{-- @endcan  --}}
+            @endcan
         </div>
 
         <div class="col-12">
@@ -91,10 +91,12 @@
                                 data-bs-toggle="tooltip" data-placement="top" title=" Click to Reset Filter">
                                 <i data-feather='x'></i>
                             </button>
+                            @can('sales-master-list')
                             <button class="btn btn-gradient-success btn-sm download ms-1" type="button"
                                 data-bs-toggle="tooltip" data-placement="top" title="Click to Download">
                                 <i data-feather='download'></i>
                             </button>
+                            @endcan
                         </div>
                     </div>
                 </div>

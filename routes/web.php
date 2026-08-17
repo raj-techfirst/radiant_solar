@@ -143,7 +143,6 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('taluka', TalukaController::class);
     Route::resource('village', VillageController::class);
     Route::resource('agent-sales-person', AgentSalesPersonController::class);
-    Route::get('payment-view/{id}', [SalesMasterController::class, 'paymentView'])->name('payment-view');
     Route::get('application-view/{id}', [SalesMasterController::class, 'view'])->name('application-view');
     Route::get('document-view/{id}', [SalesMasterController::class, 'documentView'])->name('document-view');
     Route::post('status-view/{id}', [SalesMasterController::class, 'statusView'])->name('status-view');

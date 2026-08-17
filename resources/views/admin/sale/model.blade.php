@@ -30,18 +30,20 @@
                         class="btn btn-sm bg-danger waves-effect text-white delete" data-bs-toggle="tooltip"
                         data-placement="left" title="Delete"><i class="fa fa-trash"></i> Delete </a>
                 @endcan
-                @if ($salesMaster->hold_query == '1')
-                    <a href="javascript:void(0)" data-id="{{ $salesMaster->id }}" data-status="hold_query"
-                        class="btn btn-sm bg-light-danger float-end waves-effect text-danger remove-status"
-                        data-bs-toggle="tooltip" data-placement="left" title="Click to remove status"
-                        style="margin-right: 100px;"><i class="fa fa-close"></i> Remove From Hold / Query </a>
-                @endif
-                @if ($salesMaster->file_cancel_order == '1')
-                    <a href="javascript:void(0)" data-id="{{ $salesMaster->id }}" data-status="file_cancel_order"
-                        class="btn btn-sm bg-light-danger float-end waves-effect text-danger remove-status"
-                        data-bs-toggle="tooltip" data-placement="left" title="Click to remove status"
-                        style="margin-right: 100px;"><i class="fa fa-close"></i> Remove From File Cancel Order </a>
-                @endif
+                @can('sales-master-edit')
+                    @if ($salesMaster->hold_query == '1')
+                        <a href="javascript:void(0)" data-id="{{ $salesMaster->id }}" data-status="hold_query"
+                            class="btn btn-sm bg-light-danger float-end waves-effect text-danger remove-status"
+                            data-bs-toggle="tooltip" data-placement="left" title="Click to remove status"
+                            style="margin-right: 100px;"><i class="fa fa-close"></i> Remove From Hold / Query </a>
+                    @endif
+                    @if ($salesMaster->file_cancel_order == '1')
+                        <a href="javascript:void(0)" data-id="{{ $salesMaster->id }}" data-status="file_cancel_order"
+                            class="btn btn-sm bg-light-danger float-end waves-effect text-danger remove-status"
+                            data-bs-toggle="tooltip" data-placement="left" title="Click to remove status"
+                            style="margin-right: 100px;"><i class="fa fa-close"></i> Remove From File Cancel Order </a>
+                    @endif
+                @endcan
             </div>
             <div
                 class="card @if ($salesMaster->hold_query != '1' && $salesMaster->file_cancel_order != '1') border-success @endif

@@ -77,6 +77,7 @@
     'use strict';
     const URL = "{{route('b2b-rate')}}";
     var table = '';
+    var prevLeadId = null;
     $(function() {
 
         table = $('#table').DataTable({
@@ -141,6 +142,17 @@
                     name: 'total_taxable'
                 }
             ],
+            createdRow: function(row, data, dataIndex) {
+                if (data.id === prevLeadId) {
+                    var $cells = $(row).find('td');
+                    $cells.eq(1).text('');
+                    $cells.eq(2).text('');
+                    $cells.eq(3).text('');
+                    $cells.eq(4).text('');
+                    $cells.eq(5).text('');
+                }
+                prevLeadId = data.id;
+            },
             initComplete: function(settings, json) {
                 var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
                 var tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {

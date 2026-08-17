@@ -70,7 +70,7 @@ class SalesAgentWiseExport implements FromCollection, WithStyles, WithColumnWidt
                 $sheet->getStyle("A1:{$lastCol}{$finalRow}")->getFont()->setName('Arial')->setSize(10);
 
                 // ---- Row 1: Period ----
-                $period = 'Period: ' . date('M-Y', strtotime($this->from)) . ' to ' . date('M-Y', strtotime($this->to));
+                $period = 'KW Report — Period: ' . date('M-Y', strtotime($this->from)) . ' to ' . date('M-Y', strtotime($this->to));
                 $sheet->mergeCells("A1:{$lastCol}1");
                 $sheet->setCellValue('A1', $period);
                 $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(11)->setName('Arial');
@@ -84,7 +84,7 @@ class SalesAgentWiseExport implements FromCollection, WithStyles, WithColumnWidt
                 $sheet->setCellValue('A2', 'Months');
                 $sheet->mergeCells("{$firstAgentCol}2:{$lastAgentCol}2");
                 $sheet->setCellValue('B2', 'Sales Person');
-                $sheet->setCellValue("{$totalCol}2", 'Total');
+                $sheet->setCellValue("{$totalCol}2", 'Total KW');
                 $headerStyle = $sheet->getStyle("A2:{$lastCol}2");
                 $headerStyle->getFont()->setBold(true)->setName('Arial');
                 $headerStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
@@ -99,7 +99,7 @@ class SalesAgentWiseExport implements FromCollection, WithStyles, WithColumnWidt
                     $col = Coordinate::stringFromColumnIndex($i + 2);
                     $sheet->setCellValue("{$col}3", $agent['name']);
                 }
-                $sheet->setCellValue("{$totalCol}3", 'Total');
+                $sheet->setCellValue("{$totalCol}3", 'Total KW');
                 $subStyle = $sheet->getStyle("A3:{$lastCol}3");
                 $subStyle->getFont()->setBold(true)->setName('Arial');
                 $subStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
@@ -142,7 +142,7 @@ class SalesAgentWiseExport implements FromCollection, WithStyles, WithColumnWidt
 
                 // ---- Styles: values ----
                 $valueStyle = $sheet->getStyle("{$firstAgentCol}{$startRow}:{$lastCol}{$totalRow}");
-                $valueStyle->getNumberFormat()->setFormatCode('#,##0.00;-0.00;"-"');
+                $valueStyle->getNumberFormat()->setFormatCode('#,##0.000;-0.000;"-"');
                 $valueStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT)->setVertical(Alignment::VERTICAL_CENTER);
 
                 // ---- Borders ----

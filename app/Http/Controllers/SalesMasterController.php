@@ -42,10 +42,11 @@ class SalesMasterController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:sales-master-list|sales-master-create|sales-master-edit|sales-master-delete', ['only' => ['index', 'store']]);
-        $this->middleware('permission:sales-master-create', ['only' => ['create', 'store']]);
-        $this->middleware('permission:sales-master-edit', ['only' => ['edit', 'store']]);
+        $this->middleware('permission:sales-master-list|sales-master-create|sales-master-edit|sales-master-delete', ['only' => ['index', 'store', 'show', 'view', 'documentView', 'statusView', 'paymentList', 'getComsumerUsingMobile', 'selfCertificationPdf', 'requestLetterPdf', 'modelAgreementPdf', 'declarationDCRPdf', 'agreementPdf', 'gedaAgreementPdf', 'pmsgmbyCommissioningPdf', 'netMeteringInterConnectionPdf', 'vendorFeasibilityPdf', 'netMeterPdf']]);
+        $this->middleware('permission:sales-master-create', ['only' => ['create', 'import']]);
+        $this->middleware('permission:sales-master-edit', ['only' => ['edit', 'update', 'applicatonSave', 'statusSave', 'removeStatus', 'declarationUpdate']]);
         $this->middleware('permission:sales-master-delete', ['only' => ['destroy']]);
+        $this->middleware('permission:sales-master-list', ['only' => ['salesOrderReport']]);
     }
 
     public function index()
@@ -610,6 +611,12 @@ class SalesMasterController extends Controller
 
     public function store(Request $request)
     {
+        if (is_null($request->sales_master_id)) {
+            abort_unless(Gate::allows('sales-master-create'), 403);
+        } else {
+            abort_unless(Gate::allows('sales-master-edit'), 403);
+        }
+
         if (! is_null($request->sales_master_id)) {
             $consumer_number = [
                 'required',
