@@ -1187,7 +1187,11 @@ class ReportsController extends Controller
         if (request()->ajax()) {
 
             $where = "lm.is_trading = '1' AND lm.deleted_at IS NULL
-                    AND NOT EXISTS (SELECT 1 FROM sales_quatations AS sq WHERE sq.lead_master_id = lm.id AND sq.deleted_at IS NULL AND sq.current_status = 'accepted')";
+                    AND (
+                        EXISTS (SELECT 1 FROM sales_quatations AS sq WHERE sq.lead_master_id = lm.id AND sq.deleted_at IS NULL AND sq.current_status = 'active')
+                        OR
+                        EXISTS (SELECT 1 FROM rate_given_table AS rg2 WHERE rg2.lead_master_id = lm.id AND rg2.deleted_at IS NULL AND rg2.is_hide = 0)
+                    )";
             $company = CompanyProfile::where('user_id', Auth::id())->first();
             if ($company->user_type == 'M') {
                 $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
@@ -1217,7 +1221,7 @@ class ReportsController extends Controller
                 $where .= " AND lm.agent_sales_person_id = " . request()->input('agent_sales_person_id');
             }
 
-            $query = "SELECT lm.id, lm.name, lm.mobile, lm.kw,
+            $query = "(SELECT lm.id, lm.name, lm.mobile, lm.kw,
                         DATE_FORMAT(lm.created_at, '%d-%m-%Y') AS lead_date,
                         asp.name AS agent_name,
                         rg.type, rg.nos, rg.rate, rg.item_gst, rg.total_taxable,
@@ -1239,7 +1243,40 @@ class ReportsController extends Controller
                     LEFT JOIN penal_watts AS pw ON pw.id = ig.panel_watt_id
                     LEFT JOIN inveter_companies AS ic ON ic.id = ig.inveter_company_id
                     LEFT JOIN agent_sales_people AS asp ON asp.id = lm.agent_sales_person_id
-                    WHERE " . $where . " ORDER BY lm.created_at DESC, lm.id DESC, rg.id ASC;";
+                    WHERE " . $where . "
+                    AND rg.id IS NOT NULL
+                    AND NOT EXISTS (SELECT 1 FROM sales_quatations AS sq WHERE sq.lead_master_id = lm.id AND sq.deleted_at IS NULL AND sq.current_status = 'active')
+                    AND rg.id IN (
+                        SELECT MAX(rg3.id) FROM rate_given_table AS rg3
+                        WHERE rg3.lead_master_id = lm.id AND rg3.deleted_at IS NULL AND rg3.is_hide = 0
+                        GROUP BY COALESCE(rg3.item_id, 0), COALESCE(rg3.item_group_id, 0)
+                    ))
+                    UNION ALL
+                    (SELECT lm.id, lm.name, lm.mobile, lm.kw,
+                        DATE_FORMAT(lm.created_at, '%d-%m-%Y') AS lead_date,
+                        asp.name AS agent_name,
+                        sqm.type, sqm.nos, sqm.rate, sqm.item_gst, (CAST(sqm.nos AS DECIMAL(10,2)) * CAST(sqm.rate AS DECIMAL(10,2))) AS total_taxable,
+                        pw.name AS panel_watt,
+                        CASE
+                            WHEN sqm.type = 'Item' THEN p.name
+                            WHEN sqm.type = 'ItemGroup' AND ig.group_type = 'inverter'
+                                THEN CONCAT(ig.inveter_kw, ' KW Inverter (', IFNULL(ic.name, 'N/A'), ' | ', IFNULL(ig.inverter_type, 'N/A'), ')')
+                            WHEN sqm.type = 'ItemGroup'
+                                THEN CONCAT(IFNULL(pw.name, 'N/A'), 'W Solar Module (', IFNULL(pc.name, 'N/A'), ' - ', IFNULL(pt.name, 'N/A'), ' | ', IFNULL(ig.p_type, 'N/A'), ')')
+                            ELSE ''
+                        END AS item_detail
+                    FROM lead_masters AS lm
+                    INNER JOIN sales_quatations AS sq ON sq.lead_master_id = lm.id AND sq.deleted_at IS NULL AND sq.current_status = 'active'
+                    INNER JOIN sales_quatation_metas AS sqm ON sqm.sales_quatation_id = sq.id AND sqm.deleted_at IS NULL
+                    LEFT JOIN products AS p ON p.id = sqm.item_id AND sqm.type = 'Item'
+                    LEFT JOIN item_groups AS ig ON ig.id = sqm.item_group_id AND sqm.type = 'ItemGroup'
+                    LEFT JOIN penal_companies AS pc ON pc.id = ig.panel_company_id
+                    LEFT JOIN penal_types AS pt ON pt.id = ig.panel_type_id
+                    LEFT JOIN penal_watts AS pw ON pw.id = ig.panel_watt_id
+                    LEFT JOIN inveter_companies AS ic ON ic.id = ig.inveter_company_id
+                    LEFT JOIN agent_sales_people AS asp ON asp.id = lm.agent_sales_person_id
+                    WHERE " . $where . ")
+                    ORDER BY id DESC, lead_date DESC;";
 
             if (request()->input('download') == "excel") {
                 return Excel::download(new B2BRateExport($query), 'b2b-rate.xlsx');

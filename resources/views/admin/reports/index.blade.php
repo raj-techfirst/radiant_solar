@@ -277,7 +277,7 @@
                             </div>
 
                             <div class="mt-1 mb-50">
-                                <h5>Sales Agent Wise</h5>
+                                <h5>Sales Agent Wise(B2B)</h5>
                             </div>
                             <div class="progress progress-bar-secondary progress-md mb-0" style="height: 5px">
                                 <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="30" aria-valuemax="100" style="width: 30%"></div>
