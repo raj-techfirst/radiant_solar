@@ -414,7 +414,7 @@
                                 Person</label>
                             <select class="form-control form-select select2 custom-select2"
                                 name="installation_asian_person" id="installation_asian_person">
-                                <option selected>{{ __('message.-- Select --') }}</option>
+                                <option value="" selected>{{ __('message.-- Select --') }}</option>
                                 @foreach ($user as $value)
                                     <option value="{{ $value->id }}"
                                         {{ isset($salesMaster) && $salesMaster->installation_asian_person == $value->id ? 'selected' : '' }}>

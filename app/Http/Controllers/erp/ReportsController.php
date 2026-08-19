@@ -987,6 +987,10 @@ class ReportsController extends Controller
         if (request()->ajax()) {
 
             $where = "sq.form_type = 'trading' AND sq.current_status = 'accepted' AND sq.deleted_at IS NULL";
+            $b2bStartDate = env('B2B_REPORT_START_DATE');
+            if (!empty($b2bStartDate)) {
+                $where .= " AND sq.created_at >= '" . $b2bStartDate . "'";
+            }
             $company = CompanyProfile::where('user_id', Auth::id())->first();
             if ($company->user_type == 'M') {
                 $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
@@ -1088,6 +1092,10 @@ class ReportsController extends Controller
         if (request()->ajax()) {
 
             $where = "sq.form_type = 'trading' AND sq.current_status = 'dispatch' AND sq.deleted_at IS NULL";
+            $b2bStartDate = env('B2B_REPORT_START_DATE');
+            if (!empty($b2bStartDate)) {
+                $where .= " AND sq.created_at >= '" . $b2bStartDate . "'";
+            }
             $company = CompanyProfile::where('user_id', Auth::id())->first();
             if ($company->user_type == 'M') {
                 $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
@@ -1198,6 +1206,10 @@ class ReportsController extends Controller
                         OR
                         EXISTS (SELECT 1 FROM rate_given_table AS rg2 WHERE rg2.lead_master_id = lm.id AND rg2.deleted_at IS NULL AND rg2.is_hide = 0)
                     )";
+            $b2bStartDate = env('B2B_REPORT_START_DATE');
+            if (!empty($b2bStartDate)) {
+                $where .= " AND lm.created_at >= '" . $b2bStartDate . "'";
+            }
             $company = CompanyProfile::where('user_id', Auth::id())->first();
             if ($company->user_type == 'M') {
                 $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
@@ -1342,6 +1354,13 @@ class ReportsController extends Controller
                     ->whereNull('sales_quatations.deleted_at')
                     ->where('sales_quatations.current_status', 'accepted');
             });
+
+        $b2bStartDate = env('B2B_REPORT_START_DATE');
+        if (!empty($b2bStartDate)) {
+            $b2bAcceptCount->where('created_at', '>=', $b2bStartDate);
+            $b2bDispatchCount->where('created_at', '>=', $b2bStartDate);
+            $b2bRateCount->where('created_at', '>=', $b2bStartDate);
+        }
 
         $companyFind = CompanyProfile::where('user_id', Auth::id())->first();
         $agentWhere = "";

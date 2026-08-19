@@ -1508,6 +1508,15 @@
                 success: function(response) {
                     $("#status-body").html(response.html);
 
+                    var $instPerson = $('#installation_asian_person');
+                    $instPerson.wrap('<div class="position-relative"></div>');
+                    $instPerson.select2({
+                        dropdownAutoWidth: true,
+                        width: '100%',
+                        placeholder: '-- Select --',
+                        dropdownParent: $instPerson.parent()
+                    });
+
                     flatpickr('.flatpickr-date', {
                         enableTime: false,
                         dateFormat: 'd-m-Y',
