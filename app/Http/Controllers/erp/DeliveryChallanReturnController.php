@@ -225,7 +225,7 @@ class DeliveryChallanReturnController extends Controller
     public function getNumberOrder()
     {
         $last = DeliveryChallanReturn::latest('id')->first();
-        $currentYear = date('y') . date('m');
+        $currentYear = date('Y');
         if (!is_null($last)) {
             $item = $last->challan_number;
             $nwMsg = explode("/", $item);

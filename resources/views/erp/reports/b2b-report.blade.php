@@ -101,6 +101,7 @@
                             <th>Lead Date</th>
                             <th>Agent</th>
                             <th>Item Detail</th>
+                            <th>Rate Given By</th>
                             <th>Nos</th>
                             <th>Rate</th>
                             <th>GST</th>
@@ -226,8 +227,7 @@
                                 <th>Mobile</th>
                                 <th>Quotation Date</th>
                                 <th>Agent</th>
-                                <th>Bill To Address</th>
-                                <th>Ship To</th>
+                                <th>Dispatch Date</th>
                                 <th>Item Detail</th>
                                 <th>Nos</th>
                                 <th>Rate</th>
@@ -430,12 +430,8 @@
                     name: 'agent_name'
                 },
                 {
-                    data: 'bill_to_address',
-                    name: 'bill_to_address'
-                },
-                {
-                    data: 'ship_to',
-                    name: 'ship_to'
+                    data: 'dispatch_date',
+                    name: 'dispatch_date'
                 },
                 {
                     data: 'item_detail',
@@ -466,9 +462,8 @@
                     $cells.eq(3).text('');
                     $cells.eq(4).text('');
                     $cells.eq(5).text('');
-                    $cells.eq(6).text('');
+                    $cells.eq(9).text('');
                     $cells.eq(10).text('');
-                    $cells.eq(11).text('');
                 }
                 prevQuoteId = data.id;
             },
@@ -530,6 +525,10 @@
                 {
                     data: 'item_detail',
                     name: 'item_detail'
+                },
+                {
+                    data: 'rate_given_by',
+                    name: 'rate_given_by'
                 },
                 {
                     data: 'nos',

@@ -55,6 +55,7 @@
                             <th>Lead Date</th>
                             <th>Agent</th>
                             <th>Item Detail</th>
+                            <th>Rate Given By</th>
                             <th>Nos</th>
                             <th>Rate</th>
                             <th>GST</th>
@@ -124,6 +125,10 @@
                 {
                     data: 'item_detail',
                     name: 'item_detail'
+                },
+                {
+                    data: 'rate_given_by',
+                    name: 'rate_given_by'
                 },
                 {
                     data: 'nos',

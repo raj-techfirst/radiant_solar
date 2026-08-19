@@ -412,7 +412,7 @@ class PurchaseOrderController extends Controller
     public function poNumber()
     {
         $last = PurchaseOrder::latest('id')->first();
-        $currentYear = date('y') . date('m');
+        $currentYear = date('Y');
         if (!is_null($last)) {
             $item = $last->po_number;
             $nwMsg = explode("/", $item);
@@ -589,7 +589,7 @@ class PurchaseOrderController extends Controller
     public function grnNumber()
     {
         $last = GoodsReceiveNote::latest('id')->first();
-        $currentYear = date('y') . date('m');
+        $currentYear = date('Y');
         if (!is_null($last)) {
             $item = $last->grn_number;
             $nwMsg = explode("/", $item);

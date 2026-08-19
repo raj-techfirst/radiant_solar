@@ -1052,8 +1052,10 @@ class ReportsController extends Controller
                     if ($row->id !== $prevQuoteId) {
                         $srNo++;
                         $prevQuoteId = $row->id;
+                        $row->sr_no = $srNo;
+                    } else {
+                        $row->sr_no = '';
                     }
-                    $row->sr_no = $srNo;
                 }
                 return DataTables::of($rows)
                     ->addIndexColumn()
@@ -1117,31 +1119,33 @@ class ReportsController extends Controller
 
             $query = "SELECT sq.id, sq.name, sq.mobile,
                         DATE_FORMAT(sq.created_at, '%d-%m-%Y') AS quotation_date,
+                        DATE_FORMAT(dc.challan_date, '%d-%m-%Y') AS dispatch_date,
                         asp.name AS agent_name,
                         sq.address AS bill_to_address,
                         sq.ship_to,
                         sq.gst,
                         sq.total_amount AS total_taxable,
-                        sqm.nos,
-                        sqm.rate,
+                        dcm.quantity AS nos,
+                        dcm.rate,
                         CASE
-                            WHEN sqm.type = 'Item' THEN p.name
-                            WHEN sqm.type = 'ItemGroup' AND ig.group_type = 'inverter'
+                            WHEN dcm.type = 'Item' THEN p.name
+                            WHEN dcm.type = 'ItemGroup' AND ig.group_type = 'inverter'
                                 THEN CONCAT(ig.inveter_kw, ' KW Inverter (', IFNULL(ic.name, 'N/A'), ' | ', IFNULL(ig.inverter_type, 'N/A'), ')')
-                            WHEN sqm.type = 'ItemGroup'
+                            WHEN dcm.type = 'ItemGroup'
                                 THEN CONCAT(IFNULL(pw.name, 'N/A'), 'W Solar Module (', IFNULL(pc.name, 'N/A'), ' - ', IFNULL(pt.name, 'N/A'), ' | ', IFNULL(ig.p_type, 'N/A'), ')')
                             ELSE ''
                         END AS item_detail
                     FROM  sales_quatations AS sq
-                    LEFT JOIN sales_quatation_metas AS sqm ON sqm.sales_quatation_id = sq.id AND sqm.deleted_at IS NULL
-                    LEFT JOIN products AS p ON p.id = sqm.item_id AND sqm.type = 'Item'
-                    LEFT JOIN item_groups AS ig ON ig.id = sqm.item_group_id AND sqm.type = 'ItemGroup'
+                    INNER JOIN delivery_challans AS dc ON dc.quotations_id = sq.id AND dc.deleted_at IS NULL
+                    LEFT JOIN delivery_challan_metas AS dcm ON dcm.delivery_challan_id = dc.id AND dcm.deleted_at IS NULL
+                    LEFT JOIN products AS p ON p.id = dcm.item_id AND dcm.type = 'Item'
+                    LEFT JOIN item_groups AS ig ON ig.id = dcm.item_group_id AND dcm.type = 'ItemGroup'
                     LEFT JOIN penal_companies AS pc ON pc.id = ig.panel_company_id
                     LEFT JOIN penal_types AS pt ON pt.id = ig.panel_type_id
                     LEFT JOIN penal_watts AS pw ON pw.id = ig.panel_watt_id
                     LEFT JOIN inveter_companies AS ic ON ic.id = ig.inveter_company_id
                     LEFT JOIN agent_sales_people AS asp ON asp.id = sq.agent_sales_person_id
-                    WHERE " . $where . " ORDER BY sq.created_at DESC, sq.id DESC, sqm.id ASC;";
+                    WHERE " . $where . " ORDER BY sq.created_at DESC, sq.id DESC, dcm.id ASC;";
 
             if (request()->input('download') == "excel") {
                 return Excel::download(new B2BDispatchExport($query), 'b2b-dispatch.xlsx');
@@ -1153,8 +1157,10 @@ class ReportsController extends Controller
                     if ($row->id !== $prevQuoteId) {
                         $srNo++;
                         $prevQuoteId = $row->id;
+                        $row->sr_no = $srNo;
+                    } else {
+                        $row->sr_no = '';
                     }
-                    $row->sr_no = $srNo;
                 }
                 return DataTables::of($rows)
                     ->addIndexColumn()
@@ -1233,7 +1239,8 @@ class ReportsController extends Controller
                             WHEN rg.type = 'ItemGroup'
                                 THEN CONCAT(IFNULL(pw.name, 'N/A'), 'W Solar Module (', IFNULL(pc.name, 'N/A'), ' - ', IFNULL(pt.name, 'N/A'), ' | ', IFNULL(ig.p_type, 'N/A'), ')')
                             ELSE ''
-                        END AS item_detail
+                        END AS item_detail,
+                        CONCAT(IFNULL(cb_user.name, ''), ' ', IFNULL(cb_user.last_name, '')) AS rate_given_by
                     FROM lead_masters AS lm
                     LEFT JOIN rate_given_table AS rg ON rg.lead_master_id = lm.id AND rg.deleted_at IS NULL AND rg.is_hide = 0
                     LEFT JOIN products AS p ON p.id = rg.item_id AND rg.type = 'Item'
@@ -1243,6 +1250,7 @@ class ReportsController extends Controller
                     LEFT JOIN penal_watts AS pw ON pw.id = ig.panel_watt_id
                     LEFT JOIN inveter_companies AS ic ON ic.id = ig.inveter_company_id
                     LEFT JOIN agent_sales_people AS asp ON asp.id = lm.agent_sales_person_id
+                    LEFT JOIN users AS cb_user ON cb_user.id = rg.created_by
                     WHERE " . $where . "
                     AND rg.id IS NOT NULL
                     AND NOT EXISTS (SELECT 1 FROM sales_quatations AS sq WHERE sq.lead_master_id = lm.id AND sq.deleted_at IS NULL AND sq.current_status = 'active')
@@ -1264,7 +1272,8 @@ class ReportsController extends Controller
                             WHEN sqm.type = 'ItemGroup'
                                 THEN CONCAT(IFNULL(pw.name, 'N/A'), 'W Solar Module (', IFNULL(pc.name, 'N/A'), ' - ', IFNULL(pt.name, 'N/A'), ' | ', IFNULL(ig.p_type, 'N/A'), ')')
                             ELSE ''
-                        END AS item_detail
+                        END AS item_detail,
+                        NULL AS rate_given_by
                     FROM lead_masters AS lm
                     INNER JOIN sales_quatations AS sq ON sq.lead_master_id = lm.id AND sq.deleted_at IS NULL AND sq.current_status = 'active'
                     INNER JOIN sales_quatation_metas AS sqm ON sqm.sales_quatation_id = sq.id AND sqm.deleted_at IS NULL
@@ -1288,8 +1297,10 @@ class ReportsController extends Controller
                     if ($row->id !== $prevLeadId) {
                         $srNo++;
                         $prevLeadId = $row->id;
+                        $row->sr_no = $srNo;
+                    } else {
+                        $row->sr_no = '';
                     }
-                    $row->sr_no = $srNo;
                 }
                 return DataTables::of($rows)
                     ->addIndexColumn()

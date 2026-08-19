@@ -169,6 +169,7 @@ class FollowUpController extends Controller
                 $rateGiven->rate = $row['rate'];
                 $rateGiven->item_gst = $row['item_gst'];
                 $rateGiven->total_taxable = $row['total_taxable'];
+                $rateGiven->created_by = Auth::id();
                 $result = $rateGiven->save();
             }
 

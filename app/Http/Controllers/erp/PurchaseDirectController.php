@@ -206,7 +206,7 @@ class PurchaseDirectController extends Controller
     public function getNumberOrder()
     {
         $last = PurchaseDirect::latest('id')->first();
-        $currentYear = date('y') . date('m');
+        $currentYear = date('Y');
         if (!is_null($last)) {
             $item = $last->grn_number;
             $nwMsg = explode("/", $item);
