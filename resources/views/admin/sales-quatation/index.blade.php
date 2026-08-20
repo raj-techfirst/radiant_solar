@@ -88,7 +88,7 @@
                     </select>
                 </div>
 
-                <div class="col-sm-12 col-md-4 col-lg-12 custom-input-group pt-1">
+                <div class="col-sm-12 col-md-4 col-lg-2 custom-input-group pt-2">
                     <div class="d-flex justify-content-end">
                         <button class="btn btn-gradient-primary btn-sm filter" type="button" data-bs-toggle="tooltip" data-placement="top" title="Click to Filter">
                             <i data-feather='search'></i>

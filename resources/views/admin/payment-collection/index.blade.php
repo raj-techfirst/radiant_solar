@@ -94,6 +94,7 @@
                                 <th>Amount</th>
                                 <th>Payment Date</th>
                                 <th>Payment Type</th>
+                                <th>Credited Bank</th>
                                 <th>Bank/Branch Name</th>
                                 <th>Cheque/UTR/UPI</th>
                                 <th>File</th>
@@ -336,6 +337,11 @@
                 {
                     data: 'payment_type',
                     name: 'payment_type'
+                },
+                {
+                    data: 'credited_bank_name',
+                    name: 'credited_bank_name',
+                    defaultContent: 'N/A'
                 },
 
                 {

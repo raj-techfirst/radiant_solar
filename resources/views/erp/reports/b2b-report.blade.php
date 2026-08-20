@@ -98,7 +98,7 @@
                             <th>Name</th>
                             <th>Mobile</th>
                             <th>KW</th>
-                            <th>Lead Date</th>
+                            <th>Rate Given Date</th>
                             <th>Agent</th>
                             <th>Item Detail</th>
                             <th>Rate Given By</th>
@@ -515,8 +515,8 @@
                     name: 'kw'
                 },
                 {
-                    data: 'lead_date',
-                    name: 'lead_date'
+                    data: 'rate_given_date',
+                    name: 'rate_given_date'
                 },
                 {
                     data: 'agent_name',
@@ -553,8 +553,8 @@
                     $cells.eq(1).text('');
                     $cells.eq(2).text('');
                     $cells.eq(3).text('');
-                    $cells.eq(4).text('');
                     $cells.eq(5).text('');
+                    $cells.eq(7).text('');
                 }
                 prevLeadId = data.id;
             },

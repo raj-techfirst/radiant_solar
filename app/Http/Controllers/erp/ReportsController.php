@@ -1207,8 +1207,10 @@ class ReportsController extends Controller
                         EXISTS (SELECT 1 FROM rate_given_table AS rg2 WHERE rg2.lead_master_id = lm.id AND rg2.deleted_at IS NULL AND rg2.is_hide = 0)
                     )";
             $b2bStartDate = env('B2B_REPORT_START_DATE');
+            $rateDateWhere = "";
             if (!empty($b2bStartDate)) {
-                $where .= " AND lm.created_at >= '" . $b2bStartDate . "'";
+                $rateDateWhere = " AND rg.created_at >= '" . $b2bStartDate . "'";
+                $quoteDateWhere = " AND sq.created_at >= '" . $b2bStartDate . "'";
             }
             $company = CompanyProfile::where('user_id', Auth::id())->first();
             if ($company->user_type == 'M') {
@@ -1240,7 +1242,7 @@ class ReportsController extends Controller
             }
 
             $query = "(SELECT lm.id, lm.name, lm.mobile, lm.kw,
-                        DATE_FORMAT(lm.created_at, '%d-%m-%Y') AS lead_date,
+                        DATE_FORMAT(rg.created_at, '%d-%m-%Y') AS rate_given_date,
                         asp.name AS agent_name,
                         rg.type, rg.nos, rg.rate, rg.item_gst, rg.total_taxable,
                         pw.name AS panel_watt,
@@ -1263,7 +1265,7 @@ class ReportsController extends Controller
                     LEFT JOIN inveter_companies AS ic ON ic.id = ig.inveter_company_id
                     LEFT JOIN agent_sales_people AS asp ON asp.id = lm.agent_sales_person_id
                     LEFT JOIN users AS cb_user ON cb_user.id = rg.created_by
-                    WHERE " . $where . "
+                    WHERE " . $where . " " . $rateDateWhere . "
                     AND rg.id IS NOT NULL
                     AND NOT EXISTS (SELECT 1 FROM sales_quatations AS sq WHERE sq.lead_master_id = lm.id AND sq.deleted_at IS NULL AND sq.current_status = 'active')
                     AND rg.id IN (
@@ -1273,7 +1275,7 @@ class ReportsController extends Controller
                     ))
                     UNION ALL
                     (SELECT lm.id, lm.name, lm.mobile, lm.kw,
-                        DATE_FORMAT(lm.created_at, '%d-%m-%Y') AS lead_date,
+                        DATE_FORMAT(sq.created_at, '%d-%m-%Y') AS rate_given_date,
                         asp.name AS agent_name,
                         sqm.type, sqm.nos, sqm.rate, sqm.item_gst, (CAST(sqm.nos AS DECIMAL(10,2)) * CAST(sqm.rate AS DECIMAL(10,2))) AS total_taxable,
                         pw.name AS panel_watt,
@@ -1296,8 +1298,8 @@ class ReportsController extends Controller
                     LEFT JOIN penal_watts AS pw ON pw.id = ig.panel_watt_id
                     LEFT JOIN inveter_companies AS ic ON ic.id = ig.inveter_company_id
                     LEFT JOIN agent_sales_people AS asp ON asp.id = lm.agent_sales_person_id
-                    WHERE " . $where . ")
-                    ORDER BY id DESC, lead_date DESC;";
+                    WHERE " . $where . " " . $quoteDateWhere . ")
+                    ORDER BY id DESC, rate_given_date DESC;";
 
             if (request()->input('download') == "excel") {
                 return Excel::download(new B2BRateExport($query), 'b2b-rate.xlsx');
@@ -1346,20 +1348,54 @@ class ReportsController extends Controller
 
         $b2bAcceptCount = SalesQuatation::where('form_type', 'trading')->where('current_status', 'accepted')->where('deleted_at', null);
         $b2bDispatchCount = SalesQuatation::where('form_type', 'trading')->where('current_status', 'dispatch')->where('deleted_at', null);
-        $b2bRateCount = LeadMaster::where('is_trading', '1')
-            ->whereNotExists(function ($q) {
-                $q->select(DB::raw(1))
-                    ->from('sales_quatations')
-                    ->whereColumn('sales_quatations.lead_master_id', 'lead_masters.id')
-                    ->whereNull('sales_quatations.deleted_at')
-                    ->where('sales_quatations.current_status', 'accepted');
+        $b2bRateCount = LeadMaster::where('is_trading', '1')->where('deleted_at', null)
+            ->where(function ($q) {
+                // Has active quotation WITH items (shown via sales_quatation_metas)
+                $q->whereExists(function ($q2) {
+                    $q2->select(DB::raw(1))
+                        ->from('sales_quatations')
+                        ->whereColumn('sales_quatations.lead_master_id', 'lead_masters.id')
+                        ->whereNull('sales_quatations.deleted_at')
+                        ->where('sales_quatations.current_status', 'active')
+                        ->when(env('B2B_REPORT_START_DATE'), function ($q3) {
+                            $q3->where('sales_quatations.created_at', '>=', env('B2B_REPORT_START_DATE'));
+                        });
+                })->whereExists(function ($q2) {
+                    $q2->select(DB::raw(1))
+                        ->from('sales_quatation_metas')
+                        ->join('sales_quatations', 'sales_quatations.id', '=', 'sales_quatation_metas.sales_quatation_id')
+                        ->whereColumn('sales_quatations.lead_master_id', 'lead_masters.id')
+                        ->whereNull('sales_quatation_metas.deleted_at')
+                        ->whereNull('sales_quatations.deleted_at')
+                        ->where('sales_quatations.current_status', 'active')
+                        ->when(env('B2B_REPORT_START_DATE'), function ($q3) {
+                            $q3->where('sales_quatations.created_at', '>=', env('B2B_REPORT_START_DATE'));
+                        });
+                })->orWhere(function ($q2) {
+                    // Has visible rate_given records and no active quotation
+                    $q2->whereExists(function ($q3) {
+                        $q3->select(DB::raw(1))
+                            ->from('rate_given_table')
+                            ->whereColumn('rate_given_table.lead_master_id', 'lead_masters.id')
+                            ->whereNull('rate_given_table.deleted_at')
+                            ->where('rate_given_table.is_hide', 0)
+                            ->when(env('B2B_REPORT_START_DATE'), function ($q4) {
+                                $q4->where('rate_given_table.created_at', '>=', env('B2B_REPORT_START_DATE'));
+                            });
+                    })->whereNotExists(function ($q3) {
+                        $q3->select(DB::raw(1))
+                            ->from('sales_quatations')
+                            ->whereColumn('sales_quatations.lead_master_id', 'lead_masters.id')
+                            ->whereNull('sales_quatations.deleted_at')
+                            ->where('sales_quatations.current_status', 'active');
+                    });
+                });
             });
 
         $b2bStartDate = env('B2B_REPORT_START_DATE');
         if (!empty($b2bStartDate)) {
             $b2bAcceptCount->where('created_at', '>=', $b2bStartDate);
             $b2bDispatchCount->where('created_at', '>=', $b2bStartDate);
-            $b2bRateCount->where('created_at', '>=', $b2bStartDate);
         }
 
         $companyFind = CompanyProfile::where('user_id', Auth::id())->first();
