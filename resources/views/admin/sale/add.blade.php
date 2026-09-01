@@ -461,7 +461,7 @@
                                                 <label class="form-label">Upload Document </label>
                                                 <input type="file" class="form-control" name="image">
                                                 @if (isset($value) && isset($value->id) && $value->image != '')
-                                                    <a href="{{ asset('upload/document/' . $value->image) }}"
+                                                    <a href="{{ route('download-document', $value->image) }}"
                                                         download="{{ $value->name }}">
                                                         <button type="button"
                                                             class="btn btn-sm mt-1 btn-outline-primary"><span>Download</span>

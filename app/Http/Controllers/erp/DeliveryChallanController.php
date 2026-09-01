@@ -75,14 +75,14 @@ class DeliveryChallanController extends Controller
                     if ($row->issue_type == "project") {
                         return '(PRO) ' . $row->project->consumer_name ?? '';
                     } else  if ($row->issue_type == "warehouse") {
-                        return '(WHS) '. $row->warehouse_from->name ?? '';
+                        return '(WHS) ' . $row->warehouse_from->name ?? '';
                     } else  if ($row->issue_type == "trading") {
-                        return '(B2B) '. $row->salesQuatation->name ?? '';
+                        return '(B2B) ' . $row->salesQuatation->name ?? '';
                     } else {
-						if($row->installer){
-                        return '(INS) ' . $row->installer->name  . ' ' . $row->installer->last_name;
-						}
-						return '(INS)';
+                        if ($row->installer) {
+                            return '(INS) ' . $row->installer->name  . ' ' . $row->installer->last_name;
+                        }
+                        return '(INS)';
                     }
                 })
                 ->addColumn('uploaded', function ($row) {
@@ -111,6 +111,9 @@ class DeliveryChallanController extends Controller
                         ->selectRaw('SUM(amount) AS total_amount, SUM(gst_amount) AS total_gst_amount')
                         ->groupBy('delivery_challan_id')
                         ->first();
+                    if (is_null($qry)) {
+                        return number_format(0, 2);
+                    }
                     return number_format($qry->total_amount + $qry->total_gst_amount, 2);
                 })
                 ->escapeColumns([])
@@ -295,240 +298,238 @@ class DeliveryChallanController extends Controller
             }
 
             $amount = 0;
-			if(isset($request->invoice)){
-            $processedMetaIds = [];
-            foreach ($request->invoice as $key => $value) {
-                $quantity = $value['quantity'];
-                if ($quantity != 0) {
-                    if (!empty($value['delivery_challan_meta_id']) && in_array($value['delivery_challan_meta_id'], $processedMetaIds)) {
-                        continue;
-                    }
-                    $unit_id = $product_id = $item_group_id = 0;
-                    $checkStock = null;
-                    $outStock = null;
-                    $gst = 0;
-                    if (!empty($value['item_id']) || !empty($value['item_group_id'])) {
-                        if ($value['type'] == "Item") {
-                            $unit_id = Product::where('id', $value['item_id'])->first()->unit_id;
-                            $product_id = $value['item_id'];
-                            if ($request->issue_type == "project") {
-                                /* Project Wise  */
-                                $outStock = WarehouseStock::where([['warehous_id', $request->warehouse_id], ['item_id', $value['item_id']], ['quantity', '>=', $quantity]])->first();
-                                $checkStock = ProjectWiseStock::where([['sales_master_id', $request->project_id], ['item_id', $value['item_id']]])->first();
-                                /* / Project Wise  */
-                            } else if ($request->issue_type == "warehouse") {
-                                /* warehouse Wise  */
-                                $outStock = WarehouseStock::where([['warehous_id', $request->warehouse_id], ['item_id', $value['item_id']], ['quantity', '>=', $quantity]])->first();
-                                $checkStock = WarehouseStock::where([['warehous_id', $request->warehouse_id_from], ['item_id', $value['item_id']]])->first();
-                                /* / warehouse Wise  */
+            if (isset($request->invoice)) {
+                $processedMetaIds = [];
+                foreach ($request->invoice as $key => $value) {
+                    $quantity = $value['quantity'];
+                    if ($quantity != 0) {
+                        if (!empty($value['delivery_challan_meta_id']) && in_array($value['delivery_challan_meta_id'], $processedMetaIds)) {
+                            continue;
+                        }
+                        $unit_id = $product_id = $item_group_id = 0;
+                        $checkStock = null;
+                        $outStock = null;
+                        $gst = 0;
+                        if (!empty($value['item_id']) || !empty($value['item_group_id'])) {
+                            if ($value['type'] == "Item") {
+                                $unit_id = Product::where('id', $value['item_id'])->first()->unit_id;
+                                $product_id = $value['item_id'];
+                                if ($request->issue_type == "project") {
+                                    /* Project Wise  */
+                                    $outStock = WarehouseStock::where([['warehous_id', $request->warehouse_id], ['item_id', $value['item_id']], ['quantity', '>=', $quantity]])->first();
+                                    $checkStock = ProjectWiseStock::where([['sales_master_id', $request->project_id], ['item_id', $value['item_id']]])->first();
+                                    /* / Project Wise  */
+                                } else if ($request->issue_type == "warehouse") {
+                                    /* warehouse Wise  */
+                                    $outStock = WarehouseStock::where([['warehous_id', $request->warehouse_id], ['item_id', $value['item_id']], ['quantity', '>=', $quantity]])->first();
+                                    $checkStock = WarehouseStock::where([['warehous_id', $request->warehouse_id_from], ['item_id', $value['item_id']]])->first();
+                                    /* / warehouse Wise  */
+                                } else {
+                                    /* Installer Wise */
+                                    $outStock = WarehouseStock::where([['warehous_id', $request->warehouse_id], ['item_id', $value['item_id']], ['quantity', '>=', $quantity]])->first();
+                                    $checkStock = ProjectWiseStock::where([['installer_id', $request->installer_id], ['item_id', $value['item_id']]])->first();
+                                    /* / Installer Wise */
+                                }
+                                if (is_null($outStock)) {
+                                    DB::rollback();
+                                    return response()->json(array('status_code' => 403, 'message' => 'Sorry, stock is insufficient.'));
+                                }
+                                $gst = $outStock->item->gst_rate;
                             } else {
-                                /* Installer Wise */
-                                $outStock = WarehouseStock::where([['warehous_id', $request->warehouse_id], ['item_id', $value['item_id']], ['quantity', '>=', $quantity]])->first();
-                                $checkStock = ProjectWiseStock::where([['installer_id', $request->installer_id], ['item_id', $value['item_id']]])->first();
-                                /* / Installer Wise */
+                                $unit_id = ItemGroup::where('id', $value['item_group_id'])->first()->unit_id;
+                                $item_group_id = $value['item_group_id'];
+                                $outStock = WarehouseStock::where([['warehous_id', $request->warehouse_id], ['item_group_id', $value['item_group_id']], ['quantity', '>=', $quantity]])->first();
+                                if (is_null($outStock)) {
+                                    DB::rollback();
+                                    return response()->json(array('status_code' => 403, 'message' => 'Sorry, stock is insufficient.'));
+                                }
+                                $gst = $outStock->itemGroup->gst_rate;
+                                if ($request->issue_type == "project") {
+                                    /* Project Wise  */
+                                    $checkStock = ProjectWiseStock::where([['sales_master_id', $request->project_id], ['item_group_id', $value['item_group_id']]])->first();
+                                    /* / Project Wise  */
+                                } else if ($request->issue_type == "warehouse") {
+                                    /* warehouse Wise  */
+                                    $checkStock = WarehouseStock::where([['warehous_id', $request->warehouse_id_from], ['item_group_id', $value['item_group_id']]])->first();
+                                    /* / warehouse Wise  */
+                                } else if ($request->issue_type == "trading") {
+                                    /* trading Wise  */
+
+                                    /* / trading Wise  */
+                                } else {
+                                    /* Installer Wise */
+                                    $checkStock = ProjectWiseStock::where([['installer_id', $request->installer_id], ['item_group_id', $value['item_group_id']]])->first();
+                                    /* / Installer Wise */
+                                }
                             }
-                            if (is_null($outStock)) {
-                                DB::rollback();
-                                return response()->json(array('status_code' => 403, 'message' => 'Sorry, stock is insufficient.'));
+                        }
+                        if (is_null($outStock)) {
+                            continue;
+                        }
+                        $qtyR = 0;
+                        $rate = $value['rate'];
+                        $amount = $rate * $quantity;
+                        $gst_amt = ($amount * $gst) / 100;
+                        if (!empty($value['delivery_challan_meta_id'])) {
+                            $meta = DeliveryChallanMeta::where('id', $value['delivery_challan_meta_id'])->first();
+                            $qtyR = $meta->quantity;
+                            if ($request->issue_type != "warehouse") {
+                                if (!is_null($checkStock)) {
+                                    $stockTransactionR = new ProjectWiseStockHistory();
+                                    $stockTransactionR->delivery_challan_meta_id = $meta->id;
+                                    $stockTransactionR->project_wise_stock_id = $checkStock->id;
+                                    $stockTransactionR->quantity = $meta->quantity;
+                                    $stockTransactionR->type = 'Debit';
+                                    $stockTransactionR->remark = 'Edit time Delivery Challan from ' . $qry->challan_number . ' - ' . $outStock->warehouse->name . ', ' . $request->remark;
+                                    $stockTransactionR->save();
+                                }
+                            } else {
+                                if (!is_null($checkStock)) {
+                                    $reversalStock = new WarehouseStockHistory();
+                                    $reversalStock->year_id = $new_year_id;
+                                    $reversalStock->purchase_direct_meta_id = '0';
+                                    $reversalStock->delivery_challan_meta_id = $meta->id;
+                                    $reversalStock->stock_type = 'Delivery Challan';
+                                    $reversalStock->warehous_stock_id = $checkStock->id;
+                                    $reversalStock->quantity = $meta->quantity;
+                                    $reversalStock->type = 'Debit';
+                                    $reversalStock->remark = 'Edit time revers Delivery Challan ' . $qry->challan_number . ' from ' . $outStock->warehouse->name . ', ' . $request->remark;
+                                    $reversalStock->save();
+                                }
                             }
-                            $gst = $outStock->item->gst_rate;
+
+                            $reversalRemark = ($request->issue_type == "warehouse")
+                                ? (!is_null($checkStock) && !is_null($checkStock->warehouse) ? $checkStock->warehouse->name : 'Warehouse')
+                                : (!is_null($checkStock) && !is_null($checkStock->delivery_challan) && !is_null($checkStock->delivery_challan->project) ? $checkStock->delivery_challan->project->consumer_name : 'Project');
+                            $debitStockR = new WarehouseStockHistory();
+                            $debitStockR->year_id = $new_year_id;
+                            $debitStockR->purchase_direct_meta_id = '0';
+                            $debitStockR->delivery_challan_meta_id = $meta->id;
+                            $debitStockR->stock_type = 'Delivery Challan';
+                            $debitStockR->warehous_stock_id = $outStock->id;
+                            $debitStockR->quantity = $meta->quantity;
+                            $debitStockR->type = 'Credit';
+                            $debitStockR->remark = 'Edit time revers Delivery Challan to ' . $qry->challan_number . ' - ' . $reversalRemark . ', ' . $request->remark;
+                            $debitStockR->save();
+
+                            $freshOutStock = WarehouseStock::where('id', $outStock->id)->first();
+                            $freshOutStock->quantity = ($freshOutStock->quantity + $meta->quantity) - $value['quantity'];
+                            $outStock = $freshOutStock;
                         } else {
-                            $unit_id = ItemGroup::where('id', $value['item_group_id'])->first()->unit_id;
-                            $item_group_id = $value['item_group_id'];
-                            $outStock = WarehouseStock::where([['warehous_id', $request->warehouse_id], ['item_group_id', $value['item_group_id']], ['quantity', '>=', $quantity]])->first();
-                            if (is_null($outStock)) {
-                                DB::rollback();
-                                return response()->json(array('status_code' => 403, 'message' => 'Sorry, stock is insufficient.'));
+                            $meta = new DeliveryChallanMeta();
+                            $freshOutStock = WarehouseStock::where('id', $outStock->id)->first();
+                            $freshOutStock->quantity -= $value['quantity'];
+                            $outStock = $freshOutStock;
+                        }
+                        $result = $outStock->save();
+
+                        $meta->year_id = $new_year_id;
+                        $meta->delivery_challan_id = $qry->id;
+                        $meta->quantity = $value['quantity'];
+                        $meta->type = $value['type'];
+                        $meta->item_id = $product_id;
+                        $meta->item_group_id = $item_group_id;
+                        $meta->unit_id = $unit_id;
+                        $meta->rate = $value['rate'];
+                        $meta->gst_amount = $gst_amt;
+                        $meta->amount = $amount;
+                        $meta->save();
+                        $processedMetaIds[] = $meta->id;
+
+                        if ($request->issue_type != "warehouse") {
+                            if (isset($checkStock) && !is_null($checkStock)) {
+                                $projectStock = $checkStock;
+                                $qty = ($checkStock->quantity - $qtyR) + $value['quantity'];
+                            } else {
+                                $projectStock = new ProjectWiseStock();
+                                $qty = $value['quantity'];
+                                $projectStock->issue_type = $request->issue_type;
                             }
-                            $gst = $outStock->itemGroup->gst_rate;
+
+                            $projectStock->quantity = $qty;
+                            $projectStock->delivery_challan_id = $qry->id;
                             if ($request->issue_type == "project") {
                                 /* Project Wise  */
-                                $checkStock = ProjectWiseStock::where([['sales_master_id', $request->project_id], ['item_group_id', $value['item_group_id']]])->first();
+                                $projectStock->sales_master_id = $request->project_id;
                                 /* / Project Wise  */
-                            } else if ($request->issue_type == "warehouse") {
-                                /* warehouse Wise  */
-                                $checkStock = WarehouseStock::where([['warehous_id', $request->warehouse_id_from], ['item_group_id', $value['item_group_id']]])->first();
-                                /* / warehouse Wise  */
                             } else if ($request->issue_type == "trading") {
                                 /* trading Wise  */
 
                                 /* / trading Wise  */
                             } else {
                                 /* Installer Wise */
-                                $checkStock = ProjectWiseStock::where([['installer_id', $request->installer_id], ['item_group_id', $value['item_group_id']]])->first();
+                                $projectStock->installer_id = $request->installer_id;
                                 /* / Installer Wise */
                             }
-                        }
-                    }
-                    if (is_null($outStock)) {
-                        continue;
-                    }
-                    $qtyR = 0;
-                    $rate = $value['rate'];
-                    $amount = $rate * $quantity;
-                    $gst_amt = ($amount * $gst) / 100;
-                    if (!empty($value['delivery_challan_meta_id'])) {
-                        $meta = DeliveryChallanMeta::where('id', $value['delivery_challan_meta_id'])->first();
-                        $qtyR = $meta->quantity;
-                        if ($request->issue_type != "warehouse") {
-                            if (!is_null($checkStock)) {
-                                $stockTransactionR = new ProjectWiseStockHistory();
-                                $stockTransactionR->delivery_challan_meta_id = $meta->id;
-                                $stockTransactionR->project_wise_stock_id = $checkStock->id;
-                                $stockTransactionR->quantity = $meta->quantity;
-                                $stockTransactionR->type = 'Debit';
-                                $stockTransactionR->remark = 'Edit time Delivery Challan from ' . $qry->challan_number . ' - ' . $outStock->warehouse->name . ', ' . $request->remark;
-                                $stockTransactionR->save();
+
+                            if ($request->issue_type != "trading") {
+
+                                $projectStock->warehouse_id = $request->warehouse_id;
+                                $projectStock->type = $value['type'];
+                                $projectStock->item_id = $product_id;
+                                $projectStock->item_group_id = $item_group_id;
+                                $projectStock->unit_id = $unit_id;
+                                $projectStock->save();
+
+                                $stockTransaction = new ProjectWiseStockHistory();
+                                $stockTransaction->delivery_challan_meta_id = $meta->id;
+                                $stockTransaction->project_wise_stock_id = $projectStock->id;
+                                $stockTransaction->quantity = $value['quantity'];
+                                $stockTransaction->type = 'Credit';
+                                $stockTransaction->remark = 'Delivery Challan from ' . $qry->challan_number . ' - ' . $outStock->warehouse->name . ', ' . $request->remark;
+                                $stockTransaction->save();
                             }
                         } else {
                             if (!is_null($checkStock)) {
-                                $reversalStock = new WarehouseStockHistory();
-                                $reversalStock->year_id = $new_year_id;
-                                $reversalStock->purchase_direct_meta_id = '0';
-                                $reversalStock->delivery_challan_meta_id = $meta->id;
-                                $reversalStock->stock_type = 'Delivery Challan';
-                                $reversalStock->warehous_stock_id = $checkStock->id;
-                                $reversalStock->quantity = $meta->quantity;
-                                $reversalStock->type = 'Debit';
-                                $reversalStock->remark = 'Edit time revers Delivery Challan ' . $qry->challan_number . ' from ' . $outStock->warehouse->name . ', ' . $request->remark;
-                                $reversalStock->save();
+                                $warehouseStock = $checkStock;
+                                $qty = ($checkStock->quantity - $qtyR) + $value['quantity'];
+                            } else {
+                                $warehouseStock = new WarehouseStock();
+                                $qty = $value['quantity'];
                             }
+                            $warehouseStock->quantity = $qty;
+                            $warehouseStock->warehous_id = $request->warehouse_id_from;
+                            $warehouseStock->item_id = $product_id;
+                            $warehouseStock->item_group_id = $item_group_id;
+                            $warehouseStock->type = $value['type'];
+                            $warehouseStock->unit_id = $unit_id;
+                            $warehouseStock->save();
+
+                            $debitStock = new WarehouseStockHistory();
+                            $debitStock->year_id = $new_year_id;
+                            $debitStock->purchase_direct_meta_id = '0';
+                            $debitStock->delivery_challan_meta_id = $meta->id;
+                            $debitStock->stock_type = 'Delivery Challan';
+                            $debitStock->warehous_stock_id = $warehouseStock->id;
+                            $debitStock->quantity = $value['quantity'];
+                            $debitStock->type = 'Credit';
+                            $debitStock->remark = 'Delivery Challan to ' . $qry->challan_number . ' ' . $request->remark;
+                            $debitStock->save();
                         }
-
-                        $reversalRemark = ($request->issue_type == "warehouse")
-                            ? (!is_null($checkStock) && !is_null($checkStock->warehouse) ? $checkStock->warehouse->name : 'Warehouse')
-                            : (!is_null($checkStock) && !is_null($checkStock->delivery_challan) && !is_null($checkStock->delivery_challan->project) ? $checkStock->delivery_challan->project->consumer_name : 'Project');
-                        $debitStockR = new WarehouseStockHistory();
-                        $debitStockR->year_id = $new_year_id;
-                        $debitStockR->purchase_direct_meta_id = '0';
-                        $debitStockR->delivery_challan_meta_id = $meta->id;
-                        $debitStockR->stock_type = 'Delivery Challan';
-                        $debitStockR->warehous_stock_id = $outStock->id;
-                        $debitStockR->quantity = $meta->quantity;
-                        $debitStockR->type = 'Credit';
-                        $debitStockR->remark = 'Edit time revers Delivery Challan to ' . $qry->challan_number . ' - ' . $reversalRemark . ', ' . $request->remark;
-                        $debitStockR->save();
-
-                        $freshOutStock = WarehouseStock::where('id', $outStock->id)->first();
-                        $freshOutStock->quantity = ($freshOutStock->quantity + $meta->quantity) - $value['quantity'];
-                        $outStock = $freshOutStock;
-                    } else {
-                        $meta = new DeliveryChallanMeta();
-                        $freshOutStock = WarehouseStock::where('id', $outStock->id)->first();
-                        $freshOutStock->quantity -= $value['quantity'];
-                        $outStock = $freshOutStock;
-                    }
-                    $result = $outStock->save();
-
-                    $meta->year_id = $new_year_id;
-                    $meta->delivery_challan_id = $qry->id;
-                    $meta->quantity = $value['quantity'];
-                    $meta->type = $value['type'];
-                    $meta->item_id = $product_id;
-                    $meta->item_group_id = $item_group_id;
-                    $meta->unit_id = $unit_id;
-                    $meta->rate = $value['rate'];
-                    $meta->gst_amount = $gst_amt;
-                    $meta->amount = $amount;
-                    $meta->save();
-                    $processedMetaIds[] = $meta->id;
-
-                    if ($request->issue_type != "warehouse") {
-                        if (isset($checkStock) && !is_null($checkStock)) {
-                            $projectStock = $checkStock;
-                            $qty = ($checkStock->quantity - $qtyR) + $value['quantity'];
-                        } else {
-                            $projectStock = new ProjectWiseStock();
-                            $qty = $value['quantity'];
-                            $projectStock->issue_type = $request->issue_type;
-                        }
-
-                        $projectStock->quantity = $qty;
-                        $projectStock->delivery_challan_id = $qry->id;
-                        if ($request->issue_type == "project") {
-                            /* Project Wise  */
-                            $projectStock->sales_master_id = $request->project_id;
-                            /* / Project Wise  */
-                        } else if ($request->issue_type == "trading") {
-                            /* trading Wise  */
-
-                            /* / trading Wise  */
-                        } else {
-                            /* Installer Wise */
-                            $projectStock->installer_id = $request->installer_id;
-                            /* / Installer Wise */
-                        }
-
-                        if ($request->issue_type != "trading") {
-
-                            $projectStock->warehouse_id = $request->warehouse_id;
-                            $projectStock->type = $value['type'];
-                            $projectStock->item_id = $product_id;
-                            $projectStock->item_group_id = $item_group_id;
-                            $projectStock->unit_id = $unit_id;
-                            $projectStock->save();
-
-                            $stockTransaction = new ProjectWiseStockHistory();
-                            $stockTransaction->delivery_challan_meta_id = $meta->id;
-                            $stockTransaction->project_wise_stock_id = $projectStock->id;
-                            $stockTransaction->quantity = $value['quantity'];
-                            $stockTransaction->type = 'Credit';
-                            $stockTransaction->remark = 'Delivery Challan from ' . $qry->challan_number . ' - ' . $outStock->warehouse->name . ', ' . $request->remark;
-                            $stockTransaction->save();
-                        }
-                    } else {
-                        if (!is_null($checkStock)) {
-                            $warehouseStock = $checkStock;
-                            $qty = ($checkStock->quantity - $qtyR) + $value['quantity'];
-                        } else {
-                            $warehouseStock = new WarehouseStock();
-                            $qty = $value['quantity'];
-                        }
-                        $warehouseStock->quantity = $qty;
-                        $warehouseStock->warehous_id = $request->warehouse_id_from;
-                        $warehouseStock->item_id = $product_id;
-                        $warehouseStock->item_group_id = $item_group_id;
-                        $warehouseStock->type = $value['type'];
-                        $warehouseStock->unit_id = $unit_id;
-                        $warehouseStock->save();
-
                         $debitStock = new WarehouseStockHistory();
                         $debitStock->year_id = $new_year_id;
                         $debitStock->purchase_direct_meta_id = '0';
                         $debitStock->delivery_challan_meta_id = $meta->id;
                         $debitStock->stock_type = 'Delivery Challan';
-                        $debitStock->warehous_stock_id = $warehouseStock->id;
+                        $debitStock->warehous_stock_id = $outStock->id;
                         $debitStock->quantity = $value['quantity'];
-                        $debitStock->type = 'Credit';
-                        $debitStock->remark = 'Delivery Challan to ' . $qry->challan_number . ' ' . $request->remark;
+                        $debitStock->type = 'Debit';
+                        $debitStock->remark = 'Delivery Challan to ' . $qry->challan_number . ' , ' . $request->remark;
                         $debitStock->save();
                     }
-                    $debitStock = new WarehouseStockHistory();
-                    $debitStock->year_id = $new_year_id;
-                    $debitStock->purchase_direct_meta_id = '0';
-                    $debitStock->delivery_challan_meta_id = $meta->id;
-                    $debitStock->stock_type = 'Delivery Challan';
-                    $debitStock->warehous_stock_id = $outStock->id;
-                    $debitStock->quantity = $value['quantity'];
-                    $debitStock->type = 'Debit';
-                    $debitStock->remark = 'Delivery Challan to ' . $qry->challan_number . ' , ' . $request->remark;
-                    $debitStock->save();
                 }
-            }
 
-            DB::commit();
-            if (!is_null($result)) {
-                return response()->json($response);
+                DB::commit();
+                if (!is_null($result)) {
+                    return response()->json($response);
+                } else {
+                    DB::rollback();
+                    return response()->json(array('status_code' => 403, 'message' => 'Something went wrong. Please try again.'));
+                }
             } else {
                 DB::rollback();
-                return response()->json(array('status_code' => 403, 'message' => 'Something went wrong. Please try again.'));
+                return response()->json(array('status_code' => 500, 'message' => 'Something went wrong. Please try again.'));
             }
-			}
-			else 
-			{
-				            DB::rollback();
-            return response()->json(array('status_code' => 500, 'message' => 'Something went wrong. Please try again.'));
-			}
         } catch (\Exception $e) {
             DB::rollback();
             Log::error('Delivery Challan store/update error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
@@ -605,11 +606,9 @@ class DeliveryChallanController extends Controller
                             SerialNumberLog::where('delivery_challan_meta_id', $item->id)->delete();
                         }
 
-                        if($item->item_id != 0){
-                         $findStock = WarehouseStock::where([['warehous_id', $query->warehouse_id], ['item_id', $item->item_id]])->first();
-                        }
-                        else
-                        {
+                        if ($item->item_id != 0) {
+                            $findStock = WarehouseStock::where([['warehous_id', $query->warehouse_id], ['item_id', $item->item_id]])->first();
+                        } else {
                             $findStock = WarehouseStock::where([['warehous_id', $query->warehouse_id], ['item_group_id', $item->item_group_id]])->first();
                         }
                         if (!is_null($findStock)) {

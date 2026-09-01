@@ -19,7 +19,6 @@
                         <th>Warehouse From</th>
                         <th>Warehouse To</th>
                         <th>Project</th>
-                        <!-- <th>Total Amt.</th> -->
                         <th>Date</th>
                         <th>Remark</th>
                         <th>Projects</th>

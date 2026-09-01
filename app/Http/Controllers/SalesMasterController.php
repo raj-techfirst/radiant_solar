@@ -43,6 +43,8 @@ class SalesMasterController extends Controller
     public function __construct()
     {
         $this->middleware('permission:sales-master-list|sales-master-create|sales-master-edit|sales-master-delete', ['only' => ['index', 'store', 'show', 'view', 'documentView', 'statusView', 'paymentList', 'getComsumerUsingMobile', 'selfCertificationPdf', 'requestLetterPdf', 'modelAgreementPdf', 'declarationDCRPdf', 'agreementPdf', 'gedaAgreementPdf', 'pmsgmbyCommissioningPdf', 'netMeteringInterConnectionPdf', 'vendorFeasibilityPdf', 'netMeterPdf']]);
+        // downloadDocument is accessible to any authenticated user (route group is auth-protected)
+        $this->middleware('auth');
         $this->middleware('permission:sales-master-create', ['only' => ['create', 'import']]);
         $this->middleware('permission:sales-master-edit', ['only' => ['edit', 'update', 'applicatonSave', 'statusSave', 'removeStatus', 'declarationUpdate']]);
         $this->middleware('permission:sales-master-delete', ['only' => ['destroy']]);
@@ -865,6 +867,88 @@ class SalesMasterController extends Controller
         } else {
             return abort(404);
         }
+    }
+
+    public function downloadDocument($filename)
+    {
+        // Folders to search for the file, in order
+        $folders = [
+            'upload/document',
+            'uploads/site_visit_images',
+            'uploads/penal',
+            'uploads/invater',
+        ];
+
+        $path = null;
+        foreach ($folders as $folder) {
+            $candidate = public_path($folder . '/' . $filename);
+            if (File::exists($candidate)) {
+                $path = $candidate;
+                break;
+            }
+        }
+
+        if (!$path) {
+            return abort(404);
+        }
+
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+
+        $baseName = pathinfo($filename, PATHINFO_FILENAME);
+
+        if (in_array($ext, $imageExts)) {
+            $info = @getimagesize($path);
+            if ($info === false) {
+                return response()->download($path, $baseName . '.jpg');
+            }
+
+            $mime = $info['mime'];
+            switch ($mime) {
+                case 'image/png':
+                    $im = imagecreatefrompng($path);
+                    break;
+                case 'image/gif':
+                    $im = imagecreatefromgif($path);
+                    break;
+                case 'image/bmp':
+                    $im = imagecreatefrombmp($path);
+                    break;
+                case 'image/webp':
+                    $im = imagecreatefromwebp($path);
+                    break;
+                case 'image/jpeg':
+                default:
+                    $im = imagecreatefromjpeg($path);
+                    break;
+            }
+
+            if (!$im) {
+                return response()->download($path, $baseName . '.jpg');
+            }
+
+            // Handle transparency for PNG/GIF by filling white background
+            if (in_array($mime, ['image/png', 'image/gif'])) {
+                $bg = imagecreatetruecolor(imagesx($im), imagesy($im));
+                $white = imagecolorallocate($bg, 255, 255, 255);
+                imagefilledrectangle($bg, 0, 0, imagesx($im), imagesy($im), $white);
+                imagecopy($bg, $im, 0, 0, 0, 0, imagesx($im), imagesy($im));
+                imagedestroy($im);
+                $im = $bg;
+            }
+
+            ob_start();
+            imagejpeg($im, null, 100);
+            $jpgData = ob_get_clean();
+            imagedestroy($im);
+
+            $tempPath = sys_get_temp_dir() . '/' . uniqid('doc_') . '.jpg';
+            file_put_contents($tempPath, $jpgData);
+
+            return response()->download($tempPath, $baseName . '.jpg')->deleteFileAfterSend(true);
+        }
+
+        return response()->download($path, $filename);
     }
 
     public function statusView($id, Request $request)

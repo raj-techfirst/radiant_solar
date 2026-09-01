@@ -121,6 +121,7 @@ class PurchaseDirectController extends Controller
         try {
             if (!is_null($request->id)) {
                 $qry = PurchaseDirect::where('id', $request->id)->first();
+                $old_warehouse_id = $qry->warehous_id;
                 $new_year_id = $qry->year_id;
                 $response = array('status_code' => 200, 'data' => route('purchase-direct.index'), 'message' => 'Purchase direct update successfully.');
             } else {
@@ -157,7 +158,7 @@ class PurchaseDirectController extends Controller
                 if (isset($value['purchase_direct_meta_id']) && !is_null($value['purchase_direct_meta_id'])) {
                     $purchaseMeta = PurchaseDirectMeta::where('id', $value['purchase_direct_meta_id'])->first();
                     $remark = 'Edit time Goods Receipt from ' . $qry->supplier->name . ', ' . $qry->grn_number;
-                    $this->stockManage($value['type'], $request->warehouse_id, $purchaseMeta->item_id, $purchaseMeta->item_group_id, $purchaseMeta->quantity, $unit_id, $purchaseMeta->id, 0, 'Goods Receipt', $remark, 'Debit');
+                    $this->stockManage($value['type'], $old_warehouse_id, $purchaseMeta->item_id, $purchaseMeta->item_group_id, $purchaseMeta->quantity, $unit_id, $purchaseMeta->id, 0, 'Goods Receipt', $remark, 'Debit');
                 } else {
                     $purchaseMeta = new PurchaseDirectMeta();
                     $purchaseMeta->year_id = $new_year_id;
@@ -291,7 +292,13 @@ class PurchaseDirectController extends Controller
             $query = PurchaseDirectMeta::where('id', $request->id)->first();
             $new_year_id = $query->year_id;
             if (!is_null($query)) {
-                $checkStock = WarehouseStock::where([['warehous_id', $request->warehouse_id], ['item_id', $request->item_id]])->first();
+                $parentPurchase = PurchaseDirect::where('id', $query->purchase_direct_id)->first();
+                $actual_warehouse_id = $parentPurchase->warehous_id;
+                if ($query->type == "Item") {
+                    $checkStock = WarehouseStock::where([['warehous_id', $actual_warehouse_id], ['item_id', $query->item_id]])->first();
+                } else {
+                    $checkStock = WarehouseStock::where([['warehous_id', $actual_warehouse_id], ['item_group_id', $query->item_group_id]])->first();
+                }
                 if ($query->quantity <= $checkStock->quantity) {
                     $checkStock->quantity -= $query->quantity;
                     $checkStock->save();

@@ -49,6 +49,7 @@ class PaymentPendingExport implements FromCollection, WithHeadings, WithMapping
         }
         $query->where('installation_pending', "1");
         $query->where('payment_receveid', "0");
+        $query->where('pending_amonut',">", 0);
         if ($this->request->input('from_date') != "" && $this->request->input('to_date') == '') {
             $query->where('master_create_date', '>=', date('Y-m-d 00:00:00', strtotime($this->request->input('from_date'))));
             $query->where('master_create_date', '<=', date('Y-m-d 23:59:59'));

@@ -304,7 +304,7 @@
                                                     <td class="custom-input-group">
                                                         <input type="file" class="form-control panel-image d-none" name="file" accept="image/*">
                                                         @if($value->image != '')
-                                                        <a href="{{asset('uploads/penal/'.$value->image)}}" download="panel" class="clone_img">
+                                                        <a href="{{ route('download-document', $value->image) }}" download="panel" class="clone_img">
                                                             <button type="button" class="btn btn-sm mt-50 btn-outline-primary"><span>Download</span> <i data-feather="download" class="me-25"></i></button>
                                                         </a>
                                                         @endif
@@ -368,7 +368,7 @@
                                                     <td class="custom-input-group">
                                                         <input type="file" class="form-control inverter-image d-none" name="file" accept="image/*">
                                                         @if($value->image != '')
-                                                        <a href="{{asset('uploads/invater/'.$value->image)}}" download="inverter" class="clone_img">
+                                                        <a href="{{ route('download-document', $value->image) }}" download="inverter" class="clone_img">
                                                             <button type="button" class="btn btn-sm mt-50 btn-outline-primary"><span>Download</span> <i data-feather="download" class="me-25"></i></button>
                                                         </a>
                                                         @endif

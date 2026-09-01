@@ -151,7 +151,7 @@
                                 <label class="form-label" for="feasibility_letter">Feasibility Letter</label>
                                 <input type="file" class="form-control" name="feasibility_letter" id="feasibility_letter">
                                 @if (!is_null($salesMaster) && $salesMaster->feasibility_letter != '')
-                                    <a href="{{ asset('upload/document/' . $salesMaster->feasibility_letter) }}"
+                                    <a href="{{ route('download-document', $salesMaster->feasibility_letter) }}"
                                         download="Feasibility Letter">
                                         <button type="button" class="btn btn-sm mt-1 btn-outline-primary"><span>Feasibility Letter</span> <i data-feather="download" class="me-25"></i></button>
                                     </a>
@@ -225,7 +225,7 @@
                                 <label class="form-label" for="loan_pdf">Loan PDF</label>
                                 <input type="file" class="form-control" name="loan_pdf" id="loan_pdf">
                                 @if (!is_null($salesloan) && $salesloan->loan_pdf != '')
-                                    <a href="{{ asset('upload/document/' . $salesloan->loan_pdf) }}"
+                                    <a href="{{ route('download-document', $salesloan->loan_pdf) }}"
                                         download="Loan PDF">
                                         <button type="button" class="btn btn-sm mt-1 btn-outline-primary"><span>Loan
                                                 PDF</span> <i data-feather="download" class="me-25"></i></button>
@@ -380,7 +380,7 @@
                             <label class="form-label" for="payment_receipt">Payment Receipt</label>
                             <input type="file" class="form-control" name="payment_receipt" id="payment_receipt">
                             @if ($salesMaster->payment_receipt != '')
-                                <a href="{{ asset('upload/document/' . $salesMaster->payment_receipt) }}"
+                                <a href="{{ route('download-document', $salesMaster->payment_receipt) }}"
                                     download="Payment Receipt">
                                     <button type="button" class="btn btn-sm mt-1 btn-outline-primary"><span>Payment
                                             Receipt</span> <i data-feather="download" class="me-25"></i></button>
@@ -471,8 +471,8 @@
                                 id="meter_application_oc">
 
                             @if ($salesMaster->meter_application_oc != '')
-                                <a href="{{ asset('upload/document/' . $salesMaster->meter_application_oc) }}"
-                                    download="Meter Application OC">
+                                    <a href="{{ route('download-document', $salesMaster->meter_application_oc) }}"
+                                        download="Meter Application OC">
                                     <button type="button" class="btn btn-sm mt-1 btn-outline-primary"><span>Meter
                                             Application OC</span> <i data-feather="download"
                                             class="me-25"></i></button>

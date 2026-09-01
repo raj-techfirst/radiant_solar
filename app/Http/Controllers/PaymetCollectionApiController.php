@@ -277,7 +277,7 @@ class PaymetCollectionApiController extends Controller
         try {
             $paymetCollection = PaymetCollection::where('id', $request->id)->first();
             $sales_master_id = $paymetCollection->sales_master_id;
-            if ($request->status == 1) {
+            if ($request->status == 1 && $paymetCollection->status != 1) {
                 $paymetCollection->status = 1;
                 $paymetCollection->approved_by = Auth::id();
                 $paymetCollection->remarks = $request->remarks;
@@ -292,8 +292,12 @@ class PaymetCollectionApiController extends Controller
                     $salesMaster->dispach_pending_list = "1";
                 }
                 $salesMaster->save();
-            } else if ($paymetCollection->status == 1 && $request->status == 0) {
-                $paymetCollection->status = 0;
+            } else if ($request->status == 1 && $paymetCollection->status == 1) {
+                $paymetCollection->status = 1;
+                $paymetCollection->approved_by = Auth::id();
+                $paymetCollection->remarks = $request->remarks;
+            } else if ($paymetCollection->status == 1 && ($request->status == 0 || $request->status == 2 || $request->status == 3)) {
+                $paymetCollection->status = $request->status;
                 $salesMaster = SalesMaster::where('id', $sales_master_id)->first();
                 $rec_amt = ($paymetCollection->amount != "") ? $paymetCollection->amount : 0;
                 $final_amt = $salesMaster->pending_amonut + $rec_amt;
