@@ -134,7 +134,11 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('product', ProductController::class);
     Route::resource('employee', EmployeeController::class);
     Route::resource('sales-master', SalesMasterController::class);
-    Route::get('download-document/{filename}', [SalesMasterController::class, 'downloadDocument'])->name('download-document');
+    
+    Route::get('download-document', [SalesMasterController::class, 'downloadDocument'])->name('download-document');
+
+   
+
     Route::resource('penal-company', PenalCompanyController::class);
     Route::resource('penal-type', PenalTypeController::class);
     Route::resource('penal-watt', PenalWattController::class);

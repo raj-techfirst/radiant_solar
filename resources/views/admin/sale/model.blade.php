@@ -978,8 +978,7 @@
                                         @if ($salesMaster->document->count() > 0)
                                             @foreach ($salesMaster->document as $docVal)
                                                 @if ($docVal->image != '')
-                                                    <a href="{{ route('download-document', $docVal->image) }}"
-                                                        download="{{ $docVal->name }}">
+                                                    <a href="{{ route('download-document','file='. $docVal->image) }}">
                                                         <button type="button"
                                                             class="btn btn-sm btn-outline-primary"><span>{{ ucwords(str_replace('_', ' ', $docVal->name)) }}</span>
                                                             <i data-feather="download" class="me-25"></i></button>
@@ -989,7 +988,7 @@
                                         @endif
                                         @if (!is_null($salesMaster->lead) && $salesMaster->lead->site_visit_images != '')
                                             @foreach (explode(',', $salesMaster->lead->site_visit_images) as $siteKey => $siteImg)
-                                                <a href="{{ route('download-document', $siteImg) }}"
+                                                <a href="{{ route('download-document','file='. $siteImg) }}"
                                                     download="{{ $siteImg }}">
                                                     <button type="button"
                                                         class="btn btn-sm btn-outline-primary"><span>Site Visit
@@ -1000,7 +999,7 @@
                                         @endif
 
                                         @if (!is_null($salesMaster->feasibility_letter) && $salesMaster->feasibility_letter != '')
-                                            <a href="{{ route('download-document', $salesMaster->feasibility_letter) }}"
+                                            <a href="{{ route('download-document','file='. $salesMaster->feasibility_letter) }}"
                                                 download="Feasibility Letter">
                                                 <button type="button"
                                                     class="btn btn-sm btn-outline-primary"><span>Feasibility Letter</span>
@@ -1009,7 +1008,7 @@
                                         @endif
 
                                         @if (!is_null($salesloan) && $salesloan->loan_pdf != '')
-                                            <a href="{{ route('download-document', $salesloan->loan_pdf) }}"
+                                            <a href="{{ route('download-document','file='. $salesloan->loan_pdf) }}"
                                                 download="Loan PDF">
                                                 <button type="button" class="btn btn-sm btn-outline-primary"><span>Loan
                                                         PDF</span> <i data-feather="download" class="me-25"></i></button>
@@ -1022,7 +1021,7 @@
                                                 !is_null($salesMaster->installation->penalImage) &&
                                                 $salesMaster->installation->penalImage->count() > 0)
                                             @foreach ($salesMaster->installation->penalImage as $panel => $panelImg)
-                                                <a href="{{ route('download-document', $panelImg->image) }}"
+                                                <a href="{{ route('download-document','file='. $panelImg->image) }}"
                                                     download="{{ $panelImg->image }}">
                                                     <button type="button"
                                                         class="btn btn-sm btn-outline-primary"><span>Panel
@@ -1036,7 +1035,7 @@
                                                 !is_null($salesMaster->installation->invaterImages) &&
                                                 $salesMaster->installation->invaterImages->count() > 0)
                                             @foreach ($salesMaster->installation->invaterImages as $invater => $invaterImg)
-                                                <a href="{{ route('download-document', $invaterImg->image) }}"
+                                                <a href="{{ route('download-document','file='. $invaterImg->image) }}"
                                                     download="{{ $invaterImg->image }}">
                                                     <button type="button"
                                                         class="btn btn-sm btn-outline-primary"><span>Invater
@@ -1047,7 +1046,7 @@
                                         @endif
 
                                         @if ($salesMaster->meter_application_oc != '')
-                                            <a href="{{ route('download-document', $salesMaster->meter_application_oc) }}"
+                                            <a href="{{ route('download-document','file='. $salesMaster->meter_application_oc) }}"
                                                 download="Meter Application OC">
                                                 <button type="button" class="btn btn-sm btn-outline-primary"><span>Meter
                                                         Application OC</span> <i data-feather="download"
@@ -1056,7 +1055,7 @@
                                         @endif
 
                                         @if ($salesMaster->payment_receipt != '')
-                                            <a href="{{ route('download-document', $salesMaster->payment_receipt) }}"
+                                            <a href="{{ route('download-document','file='. $salesMaster->payment_receipt) }}"
                                                 download="Payment Receipt">
                                                 <button type="button"
                                                     class="btn btn-sm btn-outline-primary"><span>Payment
@@ -1066,7 +1065,7 @@
                                         @endif
 
                                         @if ($salesMaster->proforma_15 != '')
-                                            <a href="{{ route('download-document', $salesMaster->proforma_15) }}"
+                                            <a href="{{ route('download-document','file='. $salesMaster->proforma_15) }}"
                                                 download="Proforma 15">
                                                 <button type="button"
                                                     class="btn btn-sm btn-outline-primary"><span>Proforma

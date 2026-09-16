@@ -869,10 +869,10 @@ class SalesMasterController extends Controller
         }
     }
 
-    public function downloadDocument($filename)
+    public function downloadDocument(Request $request)
     {
         // Strip any accidental directory prefix from the filename
-        $filename = basename($filename);
+        $filename = $request->file;
 
         // Folders to search for the file, in order
         $folders = [
