@@ -871,6 +871,9 @@ class SalesMasterController extends Controller
 
     public function downloadDocument($filename)
     {
+        // Strip any accidental directory prefix from the filename
+        $filename = basename($filename);
+
         // Folders to search for the file, in order
         $folders = [
             'upload/document',
@@ -879,10 +882,17 @@ class SalesMasterController extends Controller
             'uploads/invater',
         ];
 
+        // Also try common alternate spellings so nothing breaks on the live server
+        $folders[] = 'uploads/document';
+        $folders[] = 'upload/site_visit_images';
+        $folders[] = 'uploads/panel';
+        $folders[] = 'uploads/inverter';
+        $folders[] = 'uploads/inveters';
+
         $path = null;
         foreach ($folders as $folder) {
             $candidate = public_path($folder . '/' . $filename);
-            if (File::exists($candidate)) {
+            if (is_file($candidate)) {
                 $path = $candidate;
                 break;
             }
@@ -895,59 +905,69 @@ class SalesMasterController extends Controller
         $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
         $imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
 
-        $baseName = pathinfo($filename, PATHINFO_FILENAME);
+        // Only attempt conversion for images, and only when GD is available
+        if (in_array($ext, $imageExts) && function_exists('imagejpeg')) {
+            try {
+                $info = @getimagesize($path);
+                if ($info !== false) {
+                    // Pick the loader by the actual MIME type (files are often
+                    // stored with the wrong extension), with an extension fallback.
+                    $mimeLoaders = [
+                        'image/png' => 'imagecreatefrompng',
+                        'image/gif' => 'imagecreatefromgif',
+                        'image/bmp' => 'imagecreatefrombmp',
+                        'image/webp' => 'imagecreatefromwebp',
+                        'image/jpeg' => 'imagecreatefromjpeg',
+                    ];
+                    $extLoaders = [
+                        'png' => 'imagecreatefrompng',
+                        'gif' => 'imagecreatefromgif',
+                        'bmp' => 'imagecreatefrombmp',
+                        'webp' => 'imagecreatefromwebp',
+                        'jpg' => 'imagecreatefromjpeg',
+                        'jpeg' => 'imagecreatefromjpeg',
+                    ];
+                    $loader = $mimeLoaders[$info['mime']] ?? ($extLoaders[$ext] ?? null);
 
-        if (in_array($ext, $imageExts)) {
-            $info = @getimagesize($path);
-            if ($info === false) {
-                return response()->download($path, $baseName . '.jpg');
+                    $im = ($loader && function_exists($loader)) ? @$loader($path) : false;
+
+                    if (!$im && $loader !== ($extLoaders[$ext] ?? null) && function_exists($extLoaders[$ext] ?? '')) {
+                        $im = @($extLoaders[$ext])($path);
+                    }
+
+                    if ($im) {
+                        // Handle transparency for PNG/GIF by filling white background
+                        if (in_array($ext, ['png', 'gif']) && in_array($info['mime'], ['image/png', 'image/gif'])) {
+                            $bg = imagecreatetruecolor(imagesx($im), imagesy($im));
+                            $white = imagecolorallocate($bg, 255, 255, 255);
+                            imagefilledrectangle($bg, 0, 0, imagesx($im), imagesy($im), $white);
+                            imagecopy($bg, $im, 0, 0, 0, 0, imagesx($im), imagesy($im));
+                            imagedestroy($im);
+                            $im = $bg;
+                        }
+
+                        ob_start();
+                        imagejpeg($im, null, 100);
+                        $jpgData = ob_get_clean();
+                        imagedestroy($im);
+
+                        if ($jpgData !== false && strlen($jpgData) > 0) {
+                            $baseName = pathinfo($filename, PATHINFO_FILENAME);
+                            $tempPath = sys_get_temp_dir() . '/' . uniqid('doc_') . '.jpg';
+                            if (file_put_contents($tempPath, $jpgData) !== false) {
+                                return response()->download($tempPath, $baseName . '.jpg')->deleteFileAfterSend(true);
+                            }
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                // fallthrough to original file
+            } catch (\Error $e) {
+                // fallthrough to original file
             }
-
-            $mime = $info['mime'];
-            switch ($mime) {
-                case 'image/png':
-                    $im = imagecreatefrompng($path);
-                    break;
-                case 'image/gif':
-                    $im = imagecreatefromgif($path);
-                    break;
-                case 'image/bmp':
-                    $im = imagecreatefrombmp($path);
-                    break;
-                case 'image/webp':
-                    $im = imagecreatefromwebp($path);
-                    break;
-                case 'image/jpeg':
-                default:
-                    $im = imagecreatefromjpeg($path);
-                    break;
-            }
-
-            if (!$im) {
-                return response()->download($path, $baseName . '.jpg');
-            }
-
-            // Handle transparency for PNG/GIF by filling white background
-            if (in_array($mime, ['image/png', 'image/gif'])) {
-                $bg = imagecreatetruecolor(imagesx($im), imagesy($im));
-                $white = imagecolorallocate($bg, 255, 255, 255);
-                imagefilledrectangle($bg, 0, 0, imagesx($im), imagesy($im), $white);
-                imagecopy($bg, $im, 0, 0, 0, 0, imagesx($im), imagesy($im));
-                imagedestroy($im);
-                $im = $bg;
-            }
-
-            ob_start();
-            imagejpeg($im, null, 100);
-            $jpgData = ob_get_clean();
-            imagedestroy($im);
-
-            $tempPath = sys_get_temp_dir() . '/' . uniqid('doc_') . '.jpg';
-            file_put_contents($tempPath, $jpgData);
-
-            return response()->download($tempPath, $baseName . '.jpg')->deleteFileAfterSend(true);
         }
 
+        // Fallback / non-image: serve the file as-is
         return response()->download($path, $filename);
     }
 
