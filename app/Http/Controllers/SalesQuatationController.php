@@ -301,7 +301,9 @@ class SalesQuatationController extends Controller
                 $SalesQuatation->agent_sales_person_id = $request->agent_sales_person_id;
                 $SalesQuatation->total_amount = $request->trading_total_amount;
                 $SalesQuatation->bank_id = $request->trading_bank_id;
-                 $SalesQuatation->current_status = 'active';
+                 if (is_null($request->sales_quatation_id)) {
+                     $SalesQuatation->current_status = 'active';
+                 }
                 $result = $SalesQuatation->save();
                 if ($result) {
                     if (isset($request->invoice) && count($request->invoice) > 0) {
@@ -398,7 +400,9 @@ class SalesQuatationController extends Controller
                 $SalesQuatation->meter_charges = $request->res_meter_charges;
                 $SalesQuatation->registration_fee = $request->res_registration_fee;
                 $SalesQuatation->total_amount = $request->resident_total_amount;
-                 $SalesQuatation->current_status = 'active';
+                 if (is_null($request->sales_quatation_id)) {
+                     $SalesQuatation->current_status = 'active';
+                 }
                 if (!is_null($request->sales_quatation_id)) {
                     $salesMaster = SalesMaster::where('sales_quatation_id', $request->sales_quatation_id)->first();
                     if (!is_null($salesMaster)) {
@@ -458,7 +462,9 @@ class SalesQuatationController extends Controller
                 $SalesQuatation->other_charge_amount = $request->roof_other_charge_amount;
                 $SalesQuatation->bank_id = $request->roof_bank_id;
                 $SalesQuatation->total_amount = $request->roof_span_total_project_cost_hidden;
-                 $SalesQuatation->current_status = 'active';
+                 if (is_null($request->sales_quatation_id)) {
+                     $SalesQuatation->current_status = 'active';
+                 }
                 if (!is_null($request->sales_quatation_id)) {
                     $salesMaster = SalesMaster::where('sales_quatation_id', $request->sales_quatation_id)->first();
                     if (!is_null($salesMaster)) {

@@ -48,9 +48,10 @@ class Reports extends Controller
         $totalcollectionquery->where(function ($q) {
             $q->where('installation_done',  "0")
                 ->orWhere('pending_amonut', '>', 0);
+
         });
         $paymentpendingquery = SalesMaster::selectRaw('sum(register_kw) as kw,count(id) as total')
-            ->where('payment_receveid', '0')->where('installation_pending', '1');
+            ->where('payment_receveid', '0')->where('installation_pending', '1')->where('pending_amonut', '>', 0);
         $meterChargesquery = SalesMaster::selectRaw('sum(register_kw) as kw,count(id) as total')->where('feasibility_discom_sr_number', "!=", "")->where('feasibility_amount', "!=", "");
         $dispachquery = SalesMaster::selectRaw('sum(register_kw) as kw,count(id) as total')->where('dispach_pending_list', "1");
         $dispachquery->where(function ($q) {
@@ -309,6 +310,7 @@ class Reports extends Controller
                     $query->where('file_cancel_order', '0');
                     $query->where('installation_pending', "1");
                     $query->where('payment_receveid', "0");
+					$query->where('pending_amonut', '>', 0);
                     $company = CompanyProfile::where('user_id', Auth::id())->first();
                     if ($company->user_type == 'M') {
                         $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
