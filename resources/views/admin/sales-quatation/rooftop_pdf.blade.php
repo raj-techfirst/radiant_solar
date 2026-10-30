@@ -30,13 +30,13 @@
           body {
               padding: 50px;
               padding-top: 120px;
-              padding-bottom: 100px;             
+              padding-bottom: 100px;
               background-image:  url({{ public_path('img/pdf-bg.png') }});
                background-size: cover;
                background-repeat: no-repeat;
                background-position: center;
           }
-          @page { margin:0px !important; } 
+          @page { margin:0px !important; }
           p {
                text-align: justify;
           }
@@ -52,7 +52,7 @@
                <td>Ref : {{ env('APP_SORT') }}/EPC/{{str_pad($sales_data->id, 2, '0', STR_PAD_LEFT)}}</td>
                <td class="text_right"><b>Date : {{date('d-m-Y', strtotime($sales_data->created_at))}} </b></td>
           <tr>
-          
+
           <tr>
                <td colspan="6" style="text-align: left; padding-left: 5px;padding-top:20px;"><b>To : </b></td>
           </tr>
@@ -79,7 +79,7 @@
      <!-- <div class="page-break"></div>
      <h2>WORK IN GUJARAT</h2>
      <h2>Our Valuable Client Network</h2> -->
-    
+
      <div class="page-break"></div>
      <h2>Commercial Offer</h2>
      <table border="1">
@@ -100,7 +100,7 @@
           <tr>
                <td colspan="4" class="text_right">Meter Charge (Approx)</td>
                <td class="text_right">
-                    
+
                     {!! isset($sales_data) && ($sales_data->meter_charges_extra == 'Yes') ? 'Extra' : '<span style="font-family: DejaVu Sans; sans-serif;">&#8377;</span> '.number_format($sales_data->meter_charges,2) !!}
                </td>
           </tr>
@@ -119,12 +119,20 @@
                <td class="text_right"><span style="font-family: DejaVu Sans; sans-serif;">&#8377;</span> {{number_format($sales_data->total_amount,2)}}</td>
           </tr>
           <tr>
-               <td colspan="4" class="text_right"><b>Total Subsidy</b></td>
+               <td colspan="4" class="text_right"><b>Central Gov. Subsidy</b></td>
                <td class="text_right"><span style="font-family: DejaVu Sans; sans-serif;">&#8377;</span> {{number_format($sales_data->subsidy,2)}}</td>
+          </tr>
+           <tr>
+               <td colspan="4" class="text_right"><b>State Gov. Subsidy</b></td>
+               <td class="text_right"><span style="font-family: DejaVu Sans; sans-serif;">&#8377;</span> {{number_format($sales_data->state_subsidy,2)}}</td>
+          </tr>
+           <tr>
+               <td colspan="4" class="text_right"><b>Total Subsidy</b></td>
+               <td class="text_right"><span style="font-family: DejaVu Sans; sans-serif;">&#8377;</span> {{number_format($sales_data->subsidy + $sales_data->state_subsidy,2)}}</td>
           </tr>
           <tr>
                <td colspan="4" class="text_right"><b>Net Customer Price</b></td>
-               <td class="text_right"><span style="font-family: DejaVu Sans; sans-serif;">&#8377;</span> {{number_format($sales_data->total_amount - $sales_data->subsidy,2)}}</td>
+               <td class="text_right"><span style="font-family: DejaVu Sans; sans-serif;">&#8377;</span> {{number_format($sales_data->total_amount - $sales_data->subsidy - $sales_data->state_subsidy,2)}}</td>
           </tr>
      </table>
 
@@ -150,7 +158,7 @@
                                    <td>
                                         <center>
                                              @if($item['logo'] != '')
-                                             @php 
+                                             @php
                                              $imagePath = public_path('upload/company/'.$item['logo']);
                                              $imageData = base64_encode(file_get_contents($imagePath));
                                              $imageMime = mime_content_type($imagePath);
@@ -163,7 +171,7 @@
                                    </td>
                               @endforeach
                               </tr>
-                         </table>                              
+                         </table>
                     </b>
                </td>
           </tr>
@@ -267,7 +275,7 @@
  @endif
      <h2>Terms And Conditions</h2>
      {!! $policy_data->policy !!}
-     
+
      <p><b>Bank Account Details</b></p>
      <p><b>Name: -</b> {{$sales_data->holder_name}}<br /> <b>Bank Name : -</b> {{$sales_data->bank_name}}<br />
      <b>Account Number: -</b> {{$sales_data->account_number}} <br />

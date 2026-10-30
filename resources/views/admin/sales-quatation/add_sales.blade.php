@@ -100,10 +100,8 @@
                                     <option value="ItemGroup" {{ (isset($meta) && ($record->type == 'ItemGroup') ? 'selected' : '')}}>Panel/Inverter</option>
                                 </select>
                             </div>
-
                             <div class="col-12 col-md-2 col-lg-3 mb-1 custom-input-group type-item {{ (isset($meta) && ($record->type != 'Item') ? 'd-none' : '')}}">
                                 <label class="form-label" for="item_id">{{ __('message.Item') }} <span class="text-danger">*</span></label>
-
                                 <select class="form-control item_id" name="item_id" id="item_id" required>
                                     <option selected disabled value="">{{ __('message.-- Select --') }}</option>
                                     @foreach($product as $value)
@@ -451,6 +449,15 @@
                         <input type="number" class="form-control" name="res_other_charge_amount" id="res_other_charge_amount" placeholder="Other Charge Amount" value="{{ ((isset($sales_quatation) && isset($sales_quatation->other_charge_amount)) ? $sales_quatation->other_charge_amount : '')  }}">
                         <span class="invalid-feedback d-block" id="error_res_other_charge_amount" role="alert"></span>
                     </div>
+                    <div class="col-12 col-md-4 col-lg-4 mb-1 custom-input-group">
+                                <label class="form-label" for="item_id">For State Gov. Subsidy<span class="text-danger">*</span></label>
+                                <select class="form-select custom-select2 state_subsidy_select" id="state_subsidy_select" name="state_subsidy_select" required>
+                                    <option value="general" {{ (isset($sales_quatation) && $sales_quatation->state_subsidy_cast ==  "general") ? 'selected' : '' }}>GENERAL</option>
+                                    <option value="sc_st" {{ (isset($sales_quatation) && $sales_quatation->state_subsidy_cast ==  "sc_st") ? 'selected' : '' }}>SC/ST</option>
+                                    <option value="give_up_subsidy" {{ (isset($sales_quatation) && $sales_quatation->state_subsidy_cast ==  "") ? 'selected' : '' }}>Give up subsidy</option>
+                                </select>
+                            </div>
+
                     <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
                         <label class="form-label" for="res_bank_id">Bank<span class="text-danger">*</span></label>
                         <select class="form-control form-select select2 custom-select2 res_bank_id" name="res_bank_id" id="res_bank_id">
@@ -505,12 +512,24 @@
                                         <td id="span_total_project_cost">{{ ((isset($sales_quatation) && isset($sales_quatation->total_system_cost)) ? number_format(floatval($sales_quatation->total_system_cost) + floatval($sales_quatation->meter_charges) + floatval($sales_quatation->registration_fee) + floatval($sales_quatation->other_charge_amount),2, '.', '') : 0)  }}</td>
                                     </tr>
                                     <tr>
-                                        <td colspan="4" align="right"><b>Total Subsidy</b></td>
+                                        <td colspan="4" align="right"><b>Central Gov. Subsidy</b></td>
                                         <td><input type="text" id="span_subsidy" class="form-control p-50" name="span_subsidy" value="{{ ((isset($sales_quatation) && isset($sales_quatation->subsidy)) ? number_format($sales_quatation->subsidy,2, '.', '') : 0)  }}"></td>
                                     </tr>
+
+                                      <tr>
+                                        <td colspan="4" align="right"><b>State Gov. Subsidy</b></td>
+                                        <td><input type="text" id="span_state_subsidy" class="form-control p-50" name="span_state_subsidy" value="{{ ((isset($sales_quatation) && isset($sales_quatation->state_subsidy)) ? number_format($sales_quatation->state_subsidy,2, '.', '') : 0)  }}"></td>
+                                    </tr>
+
+
+                                      <tr>
+                                        <td colspan="4" align="right"><b>Total Subsidy</b></td>
+                                        <td><span id="span_total_subsidy">{{ ((isset($sales_quatation) && isset($sales_quatation->subsidy)) ? number_format($sales_quatation->subsidy,2, '.', '') : 0) + ((isset($sales_quatation) && isset($sales_quatation->state_subsidy)) ? number_format($sales_quatation->state_subsidy,2, '.', '') : 0)  }}</span></td>
+                                    </tr>
+
                                     <tr>
                                         <td colspan="4" align="right"><b>Net Customer Price</b></td>
-                                        <td id="span_net_customer_price">{{ ((isset($sales_quatation) && isset($sales_quatation->total_system_cost)) ? number_format((floatval($sales_quatation->total_system_cost) + floatval($sales_quatation->meter_charges) + floatval($sales_quatation->registration_fee) + floatval($sales_quatation->other_charge_amount)) - floatval($sales_quatation->subsidy),2, '.', '') : 0)  }}</td>
+                                        <td id="span_net_customer_price">{{ ((isset($sales_quatation) && isset($sales_quatation->total_system_cost)) ? number_format((floatval($sales_quatation->total_system_cost) + floatval($sales_quatation->meter_charges) + floatval($sales_quatation->registration_fee) + floatval($sales_quatation->other_charge_amount)) - floatval($sales_quatation->subsidy) - floatval($sales_quatation->state_subsidy),2, '.', '') : 0)  }}</td>
                                     </tr>
                                 </table>
                             </div>
@@ -1067,7 +1086,9 @@
             $('#span_total_project_cost').text(total);
 
             var subsidy = $('#span_subsidy').val();
-            net_customer_price = parseFloat(total) - parseFloat(subsidy);
+            var state_subsidy = $('#span_state_subsidy').val();
+
+            net_customer_price = parseFloat(total) - parseFloat(subsidy) - parseFloat(state_subsidy);
             $('#span_net_customer_price').text(net_customer_price);
             // table total param
         });
@@ -1160,7 +1181,7 @@
     $(document).on('keyup', '#res_penal_nos', function() {
         calculationres();
     });
-    $(document).on('change', '#res_penal_watt_id,.res_common_meter', function() {
+    $(document).on('change', '#res_penal_watt_id,.res_common_meter,#state_subsidy_select', function() {
         calculationres();
     });
 
@@ -1169,17 +1190,62 @@
         var penal_watt_id = ($('#res_penal_watt_id option:selected').text() == '') ? 0 : $('#res_penal_watt_id option:selected').text();
         pv_capacity_kw = ((parseFloat(penal_watt_id) * parseFloat(penal_nos)) / 1000).toFixed(3);
         $('#res_pv_capacity_kw').val(pv_capacity_kw);
-        // table value
         $('#span_pv_capacity_kw').text(pv_capacity_kw);
-        // table value
-        tableCalculation();
+
+        stateSubsidyCalculation();
         subsidyCalculation();
+        tableCalculation();
+
     }
     // table display calculation
     $(document).on('keyup', '#res_total_system_cost', function() {
-        tableCalculation();
+
+        stateSubsidyCalculation();
         subsidyCalculation();
+         tableCalculation();
     });
+
+
+
+
+function stateSubsidyCalculation() {
+    var subsidyType = $('select[name="state_subsidy_select"]').val();
+
+    var capacity = parseFloat($('#res_pv_capacity_kw').val()) || 0;
+    var subsidy = 0;
+
+    // Give up State Government subsidy
+    if (subsidyType === 'give_up_subsidy') {
+        subsidy = 0;
+    }
+    // Subsidy is not applicable above 2.18 kW
+    else if (capacity > 2.18 || capacity <= 0) {
+        subsidy = 0;
+    }
+    else if (subsidyType === 'general') {
+        var firstKw = Math.min(capacity, 1);
+        var secondKw = Math.min(Math.max(capacity - 1, 0), 1);
+        var remainingKw = Math.max(capacity - 2, 0);
+
+        subsidy =
+            (firstKw * 15000) +
+            (secondKw * 15000) +
+            (remainingKw * 22500);
+    }
+    else if (subsidyType === 'sc_st') {
+        var firstKw = Math.min(capacity, 1);
+        var secondKw = Math.min(Math.max(capacity - 1, 0), 1);
+        var remainingKw = Math.max(capacity - 2, 0);
+
+        subsidy =
+            (firstKw * 17500) +
+            (secondKw * 17500) +
+            (remainingKw * 24750);
+    }
+
+    $('#span_state_subsidy').val(subsidy.toFixed(2));
+}
+
 
     function tableCalculation() {
         var res_total_system_cost = ($('#res_total_system_cost').val() == '') ? 0 : $('#res_total_system_cost').val();
@@ -1198,8 +1264,14 @@
         $('#span_total_project_cost').text(total_project_cos);
 
         var subsidy = $('#span_subsidy').val();
-        net_customer_price = parseFloat(total_project_cos) - parseFloat(subsidy);
+        var state_subsidy = $('#span_state_subsidy').val();
+
+
+        $('#span_total_subsidy').html(parseFloat(state_subsidy) + parseFloat(subsidy));
+
+        net_customer_price = parseFloat(total_project_cos) - parseFloat(subsidy) - parseFloat(state_subsidy);
         $('#span_net_customer_price').text(net_customer_price);
+
     }
     // table display calculation
     // Resident Subsidy calculation

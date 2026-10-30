@@ -128,10 +128,10 @@ class SalesQuatationController extends Controller
                 })
                  ->editColumn('current_status', function ($row) {
                     if (Gate::check('sales-quatation-edit') && $row->current_status != 'dispatch') {
-						
+
                         $payStatus = getSalesQuotationStatusClass($row->current_status);
 
-                        $btn = "btn-outline-" . $payStatus['class'] ?? 'warning'; 
+                        $btn = "btn-outline-" . $payStatus['class'] ?? 'warning';
                         $title = $payStatus['status'] ?? 'active';
 
                         $html = '<div class="">
@@ -418,6 +418,8 @@ class SalesQuatationController extends Controller
                 $SalesQuatation->other_charge_name = $request->res_other_charge_name;
                 $SalesQuatation->other_charge_amount = $request->res_other_charge_amount;
                 $SalesQuatation->subsidy = $request->span_subsidy;
+                $SalesQuatation->state_subsidy_cast = $request->state_subsidy_select;
+                $SalesQuatation->state_subsidy = $request->span_state_subsidy;
                 $SalesQuatation->bank_id = $request->res_bank_id;
                 $result = $SalesQuatation->save();
 
