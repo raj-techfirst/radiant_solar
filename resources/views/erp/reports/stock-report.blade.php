@@ -29,8 +29,8 @@
                 <div class="col-12 col-md-3 col-lg-3 m-0">
                     <label class="form-label" for="type">Panel/Inverter</label>
                     <select class="form-select select2" name="type" id="type">
-                        <option value="" disabled>-- All --</option>
-                        <option value="panel" selected>Panel</option>
+                        <option value="" selected>-- All --</option>
+                        <option value="panel">Panel</option>
                         <option value="inverter">Inverter</option>
                     </select>
                 </div>

@@ -32,7 +32,7 @@ class DeliveryChallanMeta extends Model
 
     public function delivery_challan()
     {
-        return $this->hasOne(DeliveryChallan::class, 'id', 'delivery_challan_id');
+        return $this->hasOne(DeliveryChallan::class, 'id', 'delivery_challan_id')->withTrashed();
     }
 
     public function serial_numbers_count()

@@ -767,18 +767,18 @@ class ReportsController extends Controller
     {
         if (request()->ajax()) {
             $query = "SELECT ws.id as ws_ids,p.category_id,w.id as w_id,w.name as warehouse_name,ws.type,ws.item_id, ws.item_group_id,c.category_name,p.item_code,p.name,ig.group_type,pc.name AS penal_company,pw.name AS penal_watt,pt.name AS penal_type,ic.name AS invarter_name,ig.inveter_kw,ig.inverter_type,ws.warehous_id,ws.type,ws.quantity,u.unit_name,st.price,st.gst_tax,ig.p_type,
-                (ws.quantity * st.price) AS total_value,(((ws.quantity * st.price) * st.gst_tax) /100) AS gst_amount,((ws.quantity * st.price) + (((ws.quantity * st.price) * st.gst_tax) /100)) AS total_amount
+                (ws.quantity * COALESCE(st.price, 0)) AS total_value,(((ws.quantity * COALESCE(st.price, 0)) * COALESCE(st.gst_tax, 0)) /100) AS gst_amount,((ws.quantity * COALESCE(st.price, 0)) + (((ws.quantity * COALESCE(st.price, 0)) * COALESCE(st.gst_tax, 0)) /100)) AS total_amount
             FROM warehouse_stocks ws
-            JOIN(
-                SELECT w1.* FROM warehouse_stock_histories w1
-                INNER JOIN(
-                    SELECT warehous_stock_id, MAX(created_at) AS latest_entry
-                    FROM warehouse_stock_histories
-                    WHERE `type` = 'Credit' and price != 0 AND deleted_at IS NULL
-                    GROUP BY warehous_stock_id
-                ) w2
-            ON w1.warehous_stock_id = w2.warehous_stock_id AND w1.created_at = w2.latest_entry
-            WHERE w1.type = 'Credit' AND w1.deleted_at IS NULL) st ON ws.id = st.warehous_stock_id
+            LEFT JOIN warehouse_stock_histories st ON st.id = (
+                SELECT w1.id
+                FROM warehouse_stock_histories w1
+                WHERE w1.warehous_stock_id = ws.id
+                  AND w1.`type` = 'Credit'
+                  AND w1.price != 0
+                  AND w1.deleted_at IS NULL
+                ORDER BY w1.created_at DESC, w1.id DESC
+                LIMIT 1
+            )
             LEFT JOIN units AS u ON u.id = ws.unit_id
             LEFT JOIN products AS p ON p.id = ws.item_id
             LEFT JOIN item_groups AS ig ON ig.id = ws.item_group_id
@@ -790,20 +790,25 @@ class ReportsController extends Controller
             LEFT JOIN warehouses AS w ON w.id = ws.warehous_id";
 
             $query .= " WHERE ws.quantity > 0 AND ws.deleted_at IS NULL AND u.deleted_at IS NULL AND p.deleted_at IS NULL AND ig.deleted_at IS NULL AND w.deleted_at IS NULL";
+
+            $bindings = [];
             if (request()->input('warehouse_id') != "" && request()->input('warehouse_id') != "0") {
-                $query .= " AND  ws.warehous_id = " . request()->input('warehouse_id');
+                $query .= " AND ws.warehous_id = ?";
+                $bindings[] = request()->input('warehouse_id');
             }
             if (request()->input('category_id') != "") {
-                $query .= " AND  c.id = " . request()->input('category_id');
+                $query .= " AND c.id = ?";
+                $bindings[] = request()->input('category_id');
             }
             if (request()->input('type') != "") {
-                $query .= " AND  ig.group_type = '" . request()->input('type') . "'";
+                $query .= " AND ig.group_type = ?";
+                $bindings[] = request()->input('type');
             }
 
-            $query .= " ORDER BY c.id ASC;";
+            $query .= " ORDER BY c.id ASC";
 
             if (request()->input('downloadtype') == "pdf") {
-                $data = DB::select(DB::raw($query));
+                $data = DB::select($query, $bindings);
 
                 $ndata = [];
                 if (count($data) > 0) {
@@ -818,7 +823,7 @@ class ReportsController extends Controller
                 $pdf = Pdf::loadView('erp.reports.stock-report-rander', compact('ndata'));
                 return $pdf->download('stock-report.pdf');
             } else if (request()->input('downloadtype') == "excel") {
-                $data = DB::select(DB::raw($query));
+                $data = DB::select($query, $bindings);
 
 
                 if (count($data) > 0) {
@@ -838,7 +843,7 @@ class ReportsController extends Controller
                 }
                 return Excel::download(new StockExport($data), 'stock-report.xlsx');
             } else {
-                return DataTables::of(DB::select(DB::raw($query)))
+                return DataTables::of(DB::select($query, $bindings))
                     ->addIndexColumn()
                     ->editColumn('category_name', function ($row) {
                         if ($row->item_id != 0) {

@@ -275,55 +275,73 @@ class DeliveryChallanReturnApiController extends Controller
     public function destroy(Request $request)
     {
         try {
+            DB::beginTransaction();
             $query = DeliveryChallanReturn::with('delivery_challan_return_meta')->where('id', $request->id)->first();
             if (!is_null($query)) {
                 $new_year_id = $query->year_id;
                 if (count($query->delivery_challan_return_meta) > 0) {
                     foreach ($query->delivery_challan_return_meta as $item) {
-                        $findStock = WarehouseStock::where([['warehous_id', $query->warehouse_id], ['item_id', $item->item_id]])->first();
-                        if (!is_null($findStock)) {
-                            $checkStock = ProjectWiseStock::where([['sales_master_id', $query->sales_master_id], ['item_id', $item->item_id]])->first();
-                            if (!is_null($checkStock)) {
-
-                                $checkStock->quantity += $item->quantity;
-                                $checkStock->save();
-
-                                $stockTransactionP = new ProjectWiseStockHistory();
-                                $stockTransactionP->delivery_challan_return_meta_id = $item->id;
-                                $stockTransactionP->project_wise_stock_id = $checkStock->id;
-                                $stockTransactionP->quantity = $item->quantity;
-                                $stockTransactionP->type = 'Credit';
-                                $stockTransactionP->remark = 'Edit time remove Delivery Challan Return than reverse stock';
-                                $stockTransactionP->save();
-
-                                $findStock->quantity -= $item->quantity;
-                                $findStock->save();
-
-                                $stockTransactionW = new WarehouseStockHistory();
-                                $stockTransactionW->year_id = $new_year_id;
-                                $stockTransactionW->purchase_direct_meta_id = 0;
-                                $stockTransactionW->delivery_challan_return_meta_id = $item->id;
-                                $stockTransactionW->stock_type = 'Delivery Challan';
-                                $stockTransactionW->warehous_stock_id = $findStock->id;
-                                $stockTransactionW->quantity = $item->quantity;
-                                $stockTransactionW->type = 'Debit';
-                                $stockTransactionW->remark = 'Edit time remove Delivery Challan Return than reverse stock';
-                                $stockTransactionW->save();
-                                $item->delete();
-                            } else {
-                                return response([
-                                    'status' => false,
-                                    'message' => 'Project wise stock not available'
-                                ], 404);
-                            }
+                        if ($item->item_group_id == 0) {
+                            $findStock = WarehouseStock::where([['warehous_id', $query->warehouse_id], ['item_id', $item->item_id]])->first();
                         } else {
+                            $findStock = WarehouseStock::where([['warehous_id', $query->warehouse_id], ['item_group_id', $item->item_group_id]])->first();
+                        }
+                        if (is_null($findStock)) {
+                            DB::rollback();
                             return response([
                                 'status' => false,
                                 'message' => 'Warehouse stock not available'
                             ], 404);
                         }
+                        if ($query->issue_type == "project") {
+                            if ($item->item_group_id == 0) {
+                                $checkStock = ProjectWiseStock::where([['sales_master_id', $query->sales_master_id], ['item_id', $item->item_id]])->first();
+                            } else {
+                                $checkStock = ProjectWiseStock::where([['sales_master_id', $query->sales_master_id], ['item_group_id', $item->item_group_id]])->first();
+                            }
+                        } else {
+                            if ($item->item_group_id == 0) {
+                                $checkStock = ProjectWiseStock::where([['installer_id', $query->installer_id], ['item_id', $item->item_id]])->first();
+                            } else {
+                                $checkStock = ProjectWiseStock::where([['installer_id', $query->installer_id], ['item_group_id', $item->item_group_id]])->first();
+                            }
+                        }
+                        if (is_null($checkStock)) {
+                            DB::rollback();
+                            return response([
+                                'status' => false,
+                                'message' => 'Project wise stock not available'
+                            ], 404);
+                        }
+
+                        $checkStock->quantity += $item->quantity;
+                        $checkStock->save();
+
+                        $stockTransactionP = new ProjectWiseStockHistory();
+                        $stockTransactionP->delivery_challan_return_meta_id = $item->id;
+                        $stockTransactionP->project_wise_stock_id = $checkStock->id;
+                        $stockTransactionP->quantity = $item->quantity;
+                        $stockTransactionP->type = 'Credit';
+                        $stockTransactionP->remark = 'Delete time remove Delivery Challan Return than reverse stock';
+                        $stockTransactionP->save();
+
+                        $findStock->quantity -= $item->quantity;
+                        $findStock->save();
+
+                        $stockTransactionW = new WarehouseStockHistory();
+                        $stockTransactionW->year_id = $new_year_id;
+                        $stockTransactionW->purchase_direct_meta_id = 0;
+                        $stockTransactionW->delivery_challan_return_meta_id = $item->id;
+                        $stockTransactionW->stock_type = 'Delivery Challan Return';
+                        $stockTransactionW->warehous_stock_id = $findStock->id;
+                        $stockTransactionW->quantity = $item->quantity;
+                        $stockTransactionW->type = 'Debit';
+                        $stockTransactionW->remark = 'Delete time remove Delivery Challan Return than reverse stock';
+                        $stockTransactionW->save();
+                        $item->delete();
                     }
                     $query->delete();
+                    DB::commit();
                     return response([
                         'status' => true,
                         'message' => 'Deleted successfully'
@@ -335,13 +353,15 @@ class DeliveryChallanReturnApiController extends Controller
                     ], 404);
                 }
             } else {
+                DB::rollback();
                 return response([
                     'status' => false,
                     'message' => 'Delivery challan return not available'
                 ], 404);
             }
         } catch (\Exception $e) {
-            Log::error('Error fetching: ' . $e->getMessage());
+            DB::rollback();
+            Log::error('Error deleting delivery challan return: ' . $e->getMessage());
 
             return response([
                 'status' => false,
