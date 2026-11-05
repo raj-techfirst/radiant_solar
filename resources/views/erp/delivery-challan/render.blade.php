@@ -18,7 +18,7 @@
             <select class="form-select product_id custom-select2" name="item_id" required>
                 <option value="" selected disabled>-- Select --</option>
                 @foreach ($warehouseStock as $k => $v)
-                <option value="{{ $v['id'] }}" data-price="{{ $v['price'] }}" data-unit="{{ $v['unit'] }}" data-gst="{{ $v['gst_rate'] }}" data-stock="{{ $v['stock'] + (($item->item_id == $v['id']) ? $item->quantity : 0) }}" {{ ($item->item_id == $v['id'] ) ? 'selected' : '' }}>{{ $v['name'] }}</option>
+                <option value="{{ $v['id'] }}" data-price="{{ ($quotationsId != 0 && $item->item_id == $v['id']) ? $item->rate : $v['price'] }}" data-unit="{{ $v['unit'] }}" data-gst="{{ $v['gst_rate'] }}" data-stock="{{ $v['stock'] + (($item->item_id == $v['id']) ? $item->quantity : 0) }}" {{ ($item->item_id == $v['id'] ) ? 'selected' : '' }}>{{ $v['name'] }}</option>
                 @endforeach
             </select>
         </div>
@@ -28,7 +28,7 @@
             <select class="form-select item_group_id custom-select2" name="item_group_id" required>
                 <option value="" selected disabled>-- Select --</option>
                 @foreach ($warehouseStockItemGroup as $k => $v)
-                <option value="{{ $v['id'] }}"  data-price="{{ $v['price'] }}" data-unit="{{ $v['unit'] }}" data-gst="{{ $v['gst_rate'] }}" data-stock="{{ $v['stock'] + (($item->item_group_id == $v['id']) ? $item->quantity : 0) }}" {{ ($item->item_group_id == $v['id'] ) ? 'selected' : '' }}>{{ $v['name'] }}</option>
+                <option value="{{ $v['id'] }}"  data-price="{{ ($quotationsId != 0 && $item->item_group_id == $v['id']) ? $item->rate : $v['price'] }}" data-unit="{{ $v['unit'] }}" data-gst="{{ $v['gst_rate'] }}" data-stock="{{ $v['stock'] + (($item->item_group_id == $v['id']) ? $item->quantity : 0) }}" {{ ($item->item_group_id == $v['id'] ) ? 'selected' : '' }}>{{ $v['name'] }}</option>
                 @endforeach
             </select>
         </div>
@@ -44,16 +44,16 @@
             <span class="input-group-text unit_type"></span>
         </div>
     </td>
-    <td class="custom-input-group d-none">
+    <td class="custom-input-group @if($quotationsId == 0) d-none @endif">
         <input type="text" class="form-control gst" value="" readonly>
     </td>
-    <td class="custom-input-group d-none">
+    <td class="custom-input-group @if($quotationsId == 0) d-none @endif">
         <input type="number" min="1" class="form-control rate number" name="rate" placeholder="Rate" value="{{$item->rate}}" required>
     </td>
-    <td class="custom-input-group d-none">
+    <td class="custom-input-group @if($quotationsId == 0) d-none @endif">
         <input type="number" class="form-control gst-amt number" name="gst_amt" value="" readonly>
     </td>
-    <td class="custom-input-group d-none">
+    <td class="custom-input-group @if($quotationsId == 0) d-none @endif">
         <input type="number" class="form-control amount number" name="amount" placeholder="Amount" value="" readonly>
     </td>
     <td class="text-center">

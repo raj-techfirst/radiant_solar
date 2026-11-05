@@ -1490,14 +1490,14 @@ class ReportsController extends Controller
 
         $where = "dc.issue_type = 'trading' AND dc.deleted_at IS NULL
                     AND sq.current_status = 'dispatch' AND sq.deleted_at IS NULL
-                    AND DATE_FORMAT(sq.created_at, '%Y-%m') BETWEEN '" . date('Y-m', strtotime($from)) . "' AND '" . date('Y-m', strtotime($to)) . "'";
+                    AND DATE_FORMAT(dc.created_at, '%Y-%m') BETWEEN '" . date('Y-m', strtotime($from)) . "' AND '" . date('Y-m', strtotime($to)) . "'";
         if (count($agentIds) > 0) {
             $where .= " AND sq.agent_sales_person_id IN (" . implode(',', $agentIds) . ")";
         }
 
         $query = "SELECT sq.agent_sales_person_id, asp.name AS agent_name,
-                    DATE_FORMAT(sq.created_at, '%b-%y') AS month_label,
-                    DATE_FORMAT(sq.created_at, '%Y-%m') AS month_key,
+                    DATE_FORMAT(dc.created_at, '%b-%y') AS month_label,
+                    DATE_FORMAT(dc.created_at, '%Y-%m') AS month_key,
             ROUND(SUM(
                 CASE
                     WHEN dcm.type = 'ItemGroup' AND ig.group_type = 'panel'

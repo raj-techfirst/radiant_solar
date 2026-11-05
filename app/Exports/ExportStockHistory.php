@@ -37,16 +37,31 @@ class ExportStockHistory implements FromCollection, WithHeadings, WithColumnForm
                 $balance -= $item->quantity;
             }
 
-            if ($item->purchase_direct_meta_id == 0 && $item->delivery_challan_meta_id == 0) {
-                $doc_no = $party_name = $party_no = '-';
-            } elseif ($item->purchase_direct_meta_id != 0) {
-                $doc_no = $item->purchase_direct_meta->purchase_direct->grn_number;
-                $party_name = $item->purchase_direct_meta->purchase_direct->supplier->name;
-                $party_no = $item->purchase_direct_meta->purchase_direct->supplier_number;
+            $doc_no = $party_name = $party_no = '-';
+
+            if ($item->purchase_direct_meta_id != 0) {
+                $purchaseDirect = $item->purchase_direct_meta?->purchase_direct;
+                $doc_no = $purchaseDirect?->grn_number ?? '-';
+                $party_name = $purchaseDirect?->supplier?->name ?? '-';
+                $party_no = $purchaseDirect?->supplier_number ?? '-';
             } elseif ($item->delivery_challan_meta_id != 0) {
-                $doc_no = $item->delivery_challan_meta->delivery_challan->challan_number;
-                $party_name = $item->delivery_challan_meta->delivery_challan->project->consumer_name;
-                $party_no = $item->delivery_challan_meta->delivery_challan->project->consumer_number;
+                $challan = $item->delivery_challan_meta?->delivery_challan;
+                $doc_no = $challan?->challan_number ?? '-';
+
+                if ($challan) {
+                    if ($challan->issue_type == 'project' && $challan->project) {
+                        $party_name = $challan->project->consumer_name ?? '-';
+                        $party_no = $challan->project->consumer_number ?? '-';
+                    } elseif ($challan->issue_type == 'installer' && $challan->installer) {
+                        $party_name = trim(($challan->installer->name ?? '') . ' ' . ($challan->installer->last_name ?? '')) ?: '-';
+                        $party_no = $challan->installer->mobile ?? '-';
+                    } elseif ($challan->issue_type == 'warehouse' && $challan->warehouse_from) {
+                        $party_name = $challan->warehouse_from->name ?? '-';
+                    } elseif ($challan->issue_type == 'trading' && $challan->salesQuatation) {
+                        $party_name = $challan->salesQuatation->name ?? '-';
+                        $party_no = $challan->salesQuatation->mobile ?? '-';
+                    }
+                }
             }
 
             $data[] = [

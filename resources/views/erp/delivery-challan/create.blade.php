@@ -266,6 +266,7 @@
                         $('#table_col').removeClass('d-none');
                         $(".sub_data").html('');
                         $(".sub_data").html(response.html);
+                        reindexRepeaterInputs();
                         $('.product_id').select2();
                         var issue_type = $("input[name='issue_type']:checked").val();
                         if (issue_type != "trading") {
@@ -362,6 +363,21 @@
                     }
                 }
             }
+        });
+    }
+
+    function reindexRepeaterInputs() {
+        $(".sub_data [data-repeater-item]").each(function(index) {
+            $(this).find("[name]").each(function() {
+                var name = $(this).attr("name");
+                var parts = name.match(/\[[^\]]+\]/g);
+                var field = parts ? parts[parts.length - 1].replace(/\[|\]/g, "") : name;
+                var newName = "invoice[" + index + "][" + field + "]";
+                if ($(this).is(":checkbox") || $(this).attr("multiple")) {
+                    newName += "[]";
+                }
+                $(this).attr("name", newName);
+            });
         });
     }
 
@@ -763,6 +779,7 @@
                         $('#table_col').removeClass('d-none');
                         $(".sub_data").html('');
                         $(".sub_data").html(response.html);
+                        reindexRepeaterInputs();
                         $('.product_id').select2();
                         // if (temp == 0) {
                         //     clone();
@@ -831,6 +848,7 @@
                         $('#table_col').removeClass('d-none');
                         $(".sub_data").html('');
                         $(".sub_data").html(response.html);
+                        reindexRepeaterInputs();
                         $('.product_id').select2();
                         // if (temp == 0) {
                         //     clone();
@@ -898,6 +916,7 @@
                         $('#table_col').removeClass('d-none');
                         $(".sub_data").html('');
                         $(".sub_data").html(response.html);
+                        reindexRepeaterInputs();
                         $('.product_id').select2();
                         if (temp == 0) {
                             clone();
