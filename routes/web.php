@@ -133,6 +133,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('category', CategoryController::class);
     Route::resource('product', ProductController::class);
     Route::resource('employee', EmployeeController::class);
+    Route::get('sales-master/consumer-preview', [SalesMasterController::class, 'consumerPreviewPage'])->name('sales-master-consumer-preview');
+    Route::post('sales-master/consumer-preview', [SalesMasterController::class, 'consumerPreviewUpload'])->name('sales-master-consumer-preview-upload');
+    Route::post('sales-master/update-records', [SalesMasterController::class, 'updateRecords'])->name('sales-master-update-records');
     Route::resource('sales-master', SalesMasterController::class);
     
     Route::get('download-document', [SalesMasterController::class, 'downloadDocument'])->name('download-document');

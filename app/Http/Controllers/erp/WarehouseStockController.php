@@ -129,7 +129,17 @@ class WarehouseStockController extends Controller
     public function exportStockHistory($id)
     {
         $query = WarehouseStock::select('id', 'warehous_id', 'type', 'item_id', 'item_group_id', 'quantity')
-            ->with('warehouse', 'item', 'warehouse_stock_history', 'itemGroup')
+            ->with([
+                'warehouse',
+                'item',
+                'itemGroup',
+                'warehouse_stock_history.delivery_challan_meta.delivery_challan.installer',
+                'warehouse_stock_history.delivery_challan_meta.delivery_challan.project',
+                'warehouse_stock_history.delivery_challan_meta.delivery_challan.warehouse',
+                'warehouse_stock_history.delivery_challan_meta.delivery_challan.warehouse_from',
+                'warehouse_stock_history.delivery_challan_meta.delivery_challan.salesQuatation',
+                'warehouse_stock_history.purchase_direct_meta.purchase_direct.supplier',
+            ])
             ->where('id', $id)->first();
 
         ob_end_clean();

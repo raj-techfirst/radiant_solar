@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Exports\SalesOrderExport;
 use App\Imports\PaymentImport;
+use App\Imports\SalesMasterConsumerPreview;
+use App\Imports\SalesMasterUpdateImport;
 use App\Imports\Salesorder;
 use App\Models\AgentSalesPerson;
 use App\Models\Bank;
@@ -33,9 +35,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\HeadingRowImport;
 use Yajra\DataTables\Facades\DataTables;
 
 class SalesMasterController extends Controller
@@ -46,9 +50,9 @@ class SalesMasterController extends Controller
         // downloadDocument is accessible to any authenticated user (route group is auth-protected)
         $this->middleware('auth');
         $this->middleware('permission:sales-master-create', ['only' => ['create', 'import']]);
-        $this->middleware('permission:sales-master-edit', ['only' => ['edit', 'update', 'applicatonSave', 'statusSave', 'removeStatus', 'declarationUpdate']]);
+        $this->middleware('permission:sales-master-edit', ['only' => ['edit', 'update', 'applicatonSave', 'statusSave', 'removeStatus', 'declarationUpdate', 'updateRecords']]);
         $this->middleware('permission:sales-master-delete', ['only' => ['destroy']]);
-        $this->middleware('permission:sales-master-list', ['only' => ['salesOrderReport']]);
+        $this->middleware('permission:sales-master-list', ['only' => ['salesOrderReport', 'consumerPreviewPage', 'consumerPreviewUpload']]);
     }
 
     public function index()
@@ -1377,6 +1381,202 @@ class SalesMasterController extends Controller
             $response = ['status' => false, 'server_error' => 'Something went wrong. Please try again.'];
 
             return response()->json($response);
+        }
+    }
+
+    public function consumerPreviewPage()
+    {
+        return view('admin.sale.consumer-preview-page', [
+            'preview' => session('sales_master_consumer_preview'),
+        ]);
+    }
+
+    public function consumerPreviewUpload(Request $request)
+    {
+        $request->validate([
+            'excel_file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+        ], [
+            'excel_file.required' => 'Please select an Excel file.',
+            'excel_file.mimes' => 'Only xlsx, xls and csv files are allowed.',
+            'excel_file.max' => 'Excel file may not be larger than 10 MB.',
+        ]);
+
+        try {
+            $filePath = $request->file('excel_file')->store('sales-master-updates');
+
+            $import = new SalesMasterConsumerPreview();
+            Excel::import($import, Storage::path($filePath));
+
+            if ($import->error() !== null) {
+                Storage::delete($filePath);
+
+                return redirect()->back()->withErrors(['excel_file' => $import->error()])->withInput();
+            }
+
+            $rows = $import->rows();
+            $numbers = array_values(array_unique(array_filter(array_column($rows, 'number'), function ($number) {
+                return $number !== '';
+            })));
+
+            $salesByNumber = collect();
+
+            if (count($numbers) > 0) {
+                $placeholders = implode(',', array_fill(0, count($numbers), '?'));
+                $salesByNumber = SalesMaster::whereRaw(
+                    "REPLACE(REPLACE(consumer_number, ' ', ''), CHAR(39), '') IN ({$placeholders})",
+                    $numbers
+                )->get()->keyBy(function ($salesMaster) {
+                    return SalesMasterConsumerPreview::normalizeNumber($salesMaster->consumer_number);
+                });
+            }
+
+            $matched = [];
+            $unmatched = [];
+
+            foreach ($rows as $index => $row) {
+                $preview = [
+                    'row' => $index + 2,
+                    'consumer_name' => $row['consumer_name'],
+                    'consumer_number' => $row['consumer_number'],
+                ];
+
+                $key = $row['number'];
+
+                if ($key !== '' && $salesByNumber->has($key)) {
+                    $salesMaster = $salesByNumber->get($key);
+                    $preview['sales_master_id'] = $salesMaster->id;
+                    $preview['db_consumer_name'] = $salesMaster->consumer_name;
+                    $preview['db_consumer_number'] = $salesMaster->consumer_number;
+                    $matched[] = $preview;
+                } else {
+                    $unmatched[] = $preview;
+                }
+            }
+
+            $oldFilePath = $request->session()->get('sales_master_consumer_preview.file_path');
+
+            $request->session()->put('sales_master_consumer_preview', [
+                'matched' => $matched,
+                'unmatched' => $unmatched,
+                'file_path' => $filePath,
+                'file_name' => $request->file('excel_file')->getClientOriginalName(),
+                'generated_at' => now()->format('d-m-Y H:i:s'),
+            ]);
+
+            if ($oldFilePath && $oldFilePath !== $filePath) {
+                Storage::delete($oldFilePath);
+            }
+
+            return redirect()->route('sales-master-consumer-preview')
+                ->with('message', 'Excel preview generated.');
+        } catch (\Throwable $e) {
+            if (isset($filePath)) {
+                Storage::delete($filePath);
+            }
+
+            return redirect()->back()
+                ->withErrors(['excel_file' => 'Unable to read the Excel file. Please check the file format.'])
+                ->withInput();
+        }
+    }
+
+    public function updateRecords(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'sales_master_ids' => 'required|array|min:1',
+            'sales_master_ids.*' => 'integer|min:1',
+        ], [
+            'sales_master_ids.required' => 'Please select at least one matched record.',
+            'sales_master_ids.min' => 'Please select at least one matched record.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'updated_count' => 0,
+                'skipped_count' => 0,
+                'not_found' => [],
+                'errors' => $validator->errors()->all(),
+            ], 422);
+        }
+
+        $preview = $request->session()->get('sales_master_consumer_preview');
+
+        if (! $preview || empty($preview['file_path']) || ! Storage::exists($preview['file_path'])) {
+            return response()->json([
+                'success' => false,
+                'updated_count' => 0,
+                'skipped_count' => 0,
+                'not_found' => [],
+                'errors' => ['Please generate an Excel preview before updating records.'],
+            ], 422);
+        }
+
+        $selectedIds = array_map('intval', $request->input('sales_master_ids', []));
+        $rowNumbers = collect($preview['matched'] ?? [])
+            ->filter(function ($row) use ($selectedIds) {
+                return in_array((int) ($row['sales_master_id'] ?? 0), $selectedIds, true);
+            })
+            ->pluck('row')
+            ->map(function ($row) {
+                return (int) $row;
+            })
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if (empty($rowNumbers)) {
+            return response()->json([
+                'success' => false,
+                'updated_count' => 0,
+                'skipped_count' => 0,
+                'not_found' => [],
+                'errors' => ['Selected records are no longer available in the preview. Please upload the file again.'],
+            ], 422);
+        }
+
+        try {
+            $path = Storage::path($preview['file_path']);
+            $headingRows = Excel::toCollection(new HeadingRowImport(), $path);
+            $headings = $headingRows->isNotEmpty() && $headingRows->first()->isNotEmpty()
+                ? $headingRows->first()->first()->all()
+                : [];
+            $missingHeaders = SalesMasterUpdateImport::missingHeaders($headings);
+
+            if (! empty($missingHeaders)) {
+                return response()->json([
+                    'success' => false,
+                    'updated_count' => 0,
+                    'skipped_count' => 0,
+                    'not_found' => [],
+                    'errors' => ['Missing required headers: ' . implode(', ', $missingHeaders)],
+                ], 422);
+            }
+
+            $import = new SalesMasterUpdateImport($rowNumbers);
+            Excel::import($import, $path);
+
+            Storage::delete($preview['file_path']);
+            $request->session()->forget('sales_master_consumer_preview');
+
+            return response()->json([
+                'success' => true,
+                'updated_count' => $import->updatedCount(),
+                'skipped_count' => $import->skippedCount(),
+                'not_found' => $import->notFound(),
+                'errors' => $import->errors(),
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'updated_count' => 0,
+                'skipped_count' => 0,
+                'not_found' => [],
+                'errors' => ['Unable to complete the update. Please generate the preview again.'],
+            ], 500);
         }
     }
 
