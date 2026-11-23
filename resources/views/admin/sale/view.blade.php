@@ -11,12 +11,6 @@
                     <i data-feather="upload" class="me-25"></i> Excel Upload
                 </a>
                 @endcan
-                @can('sales-master-edit')
-                <a role="button" class="btn btn-sm btn-outline-success ms-1"
-                    href="{{ route('sales-master-consumer-preview') }}">
-                    <i data-feather="edit-2" class="me-25"></i> Update Record
-                </a>
-                @endcan
                 @can('sales-master-create')
                 <a role="button" class="btn btn-sm btn-primary" href="{{ route('sales-master.create') }}"><i
                         class="fa fa-plus me-25"></i> {{ __('message.Add New') }}</a>

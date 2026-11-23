@@ -1397,6 +1397,7 @@ class SalesMasterController extends Controller
             'excel_file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
         ], [
             'excel_file.required' => 'Please select an Excel file.',
+            'excel_file.file' => 'Please select a valid Excel file.',
             'excel_file.mimes' => 'Only xlsx, xls and csv files are allowed.',
             'excel_file.max' => 'Excel file may not be larger than 10 MB.',
         ]);
@@ -1482,12 +1483,34 @@ class SalesMasterController extends Controller
 
     public function updateRecords(Request $request)
     {
+        @set_time_limit(0);
+
+        $salesMasterIds = $request->input('sales_master_ids', []);
+
+        if (is_string($salesMasterIds)) {
+            $decodedIds = json_decode($salesMasterIds, true);
+
+            $salesMasterIds = is_array($decodedIds)
+                ? $decodedIds
+                : array_values(array_filter(array_map('trim', explode(',', $salesMasterIds)), function ($id) {
+                    return $id !== '';
+                }));
+        }
+
+        $request->merge(['sales_master_ids' => is_array($salesMasterIds) ? $salesMasterIds : []]);
+
         $validator = Validator::make($request->all(), [
             'sales_master_ids' => 'required|array|min:1',
             'sales_master_ids.*' => 'integer|min:1',
+            'update_mode' => 'required|in:default,recommend',
+            'recommended_fields' => 'required_if:update_mode,recommend|array',
+            'recommended_fields.*' => Rule::in(array_keys(SalesMasterUpdateImport::RECOMMENDED_FIELDS)),
         ], [
             'sales_master_ids.required' => 'Please select at least one matched record.',
             'sales_master_ids.min' => 'Please select at least one matched record.',
+            'update_mode.required' => 'Please select an update mode.',
+            'recommended_fields.required_if' => 'Please select at least one recommend field.',
+            'recommended_fields.min' => 'Please select at least one recommend field.',
         ]);
 
         if ($validator->fails()) {
@@ -1497,6 +1520,21 @@ class SalesMasterController extends Controller
                 'skipped_count' => 0,
                 'not_found' => [],
                 'errors' => $validator->errors()->all(),
+            ], 422);
+        }
+
+        $mode = $request->input('update_mode', 'default');
+        $recommendedFields = $mode === 'recommend'
+            ? array_values($request->input('recommended_fields', []))
+            : [];
+
+        if ($mode === 'recommend' && empty($recommendedFields)) {
+            return response()->json([
+                'success' => false,
+                'updated_count' => 0,
+                'skipped_count' => 0,
+                'not_found' => [],
+                'errors' => ['Please select at least one recommend field.'],
             ], 422);
         }
 
@@ -1513,18 +1551,19 @@ class SalesMasterController extends Controller
         }
 
         $selectedIds = array_map('intval', $request->input('sales_master_ids', []));
-        $rowNumbers = collect($preview['matched'] ?? [])
-            ->filter(function ($row) use ($selectedIds) {
-                return in_array((int) ($row['sales_master_id'] ?? 0), $selectedIds, true);
+        $selectedIdSet = array_fill_keys($selectedIds, true);
+        $salesMasterIdsByRow = collect($preview['matched'] ?? [])
+            ->filter(function ($row) use ($selectedIdSet) {
+                return isset($selectedIdSet[(int) ($row['sales_master_id'] ?? 0)]);
             })
-            ->pluck('row')
-            ->map(function ($row) {
-                return (int) $row;
+            ->mapWithKeys(function ($row) {
+                return [(int) $row['row'] => (int) $row['sales_master_id']];
             })
-            ->filter()
-            ->unique()
-            ->values()
+            ->filter(function ($salesMasterId, $rowNumber) {
+                return $rowNumber > 0 && $salesMasterId > 0;
+            })
             ->all();
+        $rowNumbers = array_keys($salesMasterIdsByRow);
 
         if (empty($rowNumbers)) {
             return response()->json([
@@ -1542,7 +1581,7 @@ class SalesMasterController extends Controller
             $headings = $headingRows->isNotEmpty() && $headingRows->first()->isNotEmpty()
                 ? $headingRows->first()->first()->all()
                 : [];
-            $missingHeaders = SalesMasterUpdateImport::missingHeaders($headings);
+            $missingHeaders = SalesMasterUpdateImport::missingHeaders($headings, $recommendedFields);
 
             if (! empty($missingHeaders)) {
                 return response()->json([
@@ -1554,8 +1593,10 @@ class SalesMasterController extends Controller
                 ], 422);
             }
 
-            $import = new SalesMasterUpdateImport($rowNumbers);
-            Excel::import($import, $path);
+            $import = new SalesMasterUpdateImport($rowNumbers, $recommendedFields, $salesMasterIdsByRow);
+            DB::transaction(function () use ($import, $path) {
+                Excel::import($import, $path);
+            });
 
             Storage::delete($preview['file_path']);
             $request->session()->forget('sales_master_consumer_preview');

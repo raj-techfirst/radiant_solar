@@ -17,16 +17,17 @@
         <div class="col-12">
             <div class="card p-1">
                 <form action="{{ route('sales-master-consumer-preview-upload') }}" method="POST"
-                    enctype="multipart/form-data">
+                    enctype="multipart/form-data" novalidate>
                     @csrf
                     <div class="row">
                         <div class="col-md-6 mb-1">
                             <label class="form-label" for="excel_file">Excel File<sup class="error">*</sup></label>
                             <input type="file" class="form-control @error('excel_file') is-invalid @enderror"
-                                id="excel_file" name="excel_file" accept=".xlsx,.xls,.csv" required>
+                                id="excel_file" name="excel_file" accept=".xlsx,.xls,.csv">
                             <small class="text-muted">Required column: Consumer Number. Optional column: Consumer Name.</small>
                             @error('excel_file')
-                                <span class="invalid-feedback d-block" role="alert">{{ $message }}</span>
+                                <span class="invalid-feedback d-block fw-bold text-danger" role="alert"
+                                    style="font-size:1.05rem;">{{ $message }}</span>
                             @enderror
                         </div>
                         <div class="col-md-6 d-flex align-items-end justify-content-end mb-1">
@@ -249,8 +250,8 @@
                     return $('<div>').text(value == null ? '' : value).html();
                 }
 
-                function renderList(items) {
-                    var html = '<ul class="mb-0 small ps-3">';
+                function renderList(items, extraClass, inlineStyle) {
+                    var html = '<ul class="mb-0 ps-3 ' + (extraClass || 'small') + '"' + (inlineStyle || '') + '>';
 
                     $.each(items || [], function(_, item) {
                         if (item && typeof item === 'object') {
@@ -273,11 +274,21 @@
                         text: message,
                         icon: 'error',
                         customClass: {
-                            confirmButton: 'btn btn-primary'
+                            confirmButton: 'btn btn-primary',
+                            htmlContainer: 'text-danger fs-6'
                         },
                         buttonsStyling: false
                     });
                 }
+
+                function syncUpdateMode() {
+                    var mode = $('input[name="update_mode"]:checked').val() || 'default';
+                    $('#default-update-fields').toggleClass('d-none', mode !== 'default');
+                    $('#recommend-update-fields').toggleClass('d-none', mode !== 'recommend');
+                }
+
+                $(document).on('change', 'input[name="update_mode"]', syncUpdateMode);
+                syncUpdateMode();
 
                 function selectedSalesMasterIds() {
                     return $('.preview-row-checkbox[data-preview-group="matched"]:checked')
@@ -303,13 +314,21 @@
                         return;
                     }
 
+                    var updateMode = $('input[name="update_mode"]:checked').val() || 'default';
+
+                    if (updateMode === 'recommend' && !$('input[name="recommended_fields[]"]:checked').length) {
+                        showError('Please select at least one recommend field.');
+                        showSwalError('Please select at least one recommend field.');
+                        return;
+                    }
+
                     $('#update-record-error').addClass('d-none').html('');
                     $('#update-record-summary').addClass('d-none').html('');
                     $submit.prop('disabled', true)
                         .html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Updating...');
 
                     var data = $form.serialize() + '&' + $.param({
-                        sales_master_ids: selectedIds
+                        sales_master_ids: JSON.stringify(selectedIds)
                     });
 
                     $.ajax({
@@ -331,7 +350,8 @@
                                 }
 
                                 if ((response.errors || []).length) {
-                                    html += '<div class="small fw-bold mt-1">Errors:</div>' + renderList(response.errors);
+                                    html += '<div class="fw-bold mt-2 text-danger" style="font-size:1.05rem;">Errors:</div>' +
+                                        renderList(response.errors, 'text-danger', ' style="font-size:1.05rem;"');
                                 }
 
                                 $('#update-record-summary').html(html).removeClass('d-none');
@@ -345,8 +365,6 @@
                                         confirmButton: 'btn btn-primary'
                                     },
                                     buttonsStyling: false
-                                }).then(function() {
-                                    window.location.reload();
                                 });
                             } else {
                                 var message = (response.errors || ['Unable to complete the update.']).join(' ');
@@ -357,7 +375,7 @@
                         error: function(xhr) {
                             var errors = xhr.responseJSON && xhr.responseJSON.errors
                                 ? xhr.responseJSON.errors
-                                : ['Unable to complete the update. Please try again.'];
+                                : ['Unable to complete the update (HTTP ' + xhr.status + '). Please try again.'];
                             var message = errors.join(' ');
                             showError(message);
                             showSwalError(message);
@@ -370,6 +388,9 @@
 
                 $('#updateRecordModal').on('hidden.bs.modal', function() {
                     $('#update-record-form')[0].reset();
+                    $('#update_mode_default').prop('checked', true);
+                    $('input[name="recommended_fields[]"]').prop('checked', false);
+                    syncUpdateMode();
                     $('#update-record-error').addClass('d-none').html('');
                     $('#update-record-summary').addClass('d-none').html('');
                     $('#update-record-submit').prop('disabled', false).html(originalSubmitHtml);
