@@ -1,13 +1,197 @@
 @php
     $matchedCount = count($matched);
     $unmatchedCount = count($unmatched);
+    $recommendedFields = [
+        'consumer_name' => 'Consumer Name',
+        'discom_name' => 'DISCOM',
+        'circle_name' => 'Circle',
+        'division_name' => 'Division',
+        'sub_division_name' => 'Sub Division',
+    ];
+    $recommendedValue = function ($row, $source, $field) {
+        return trim((string) ($row[$source][$field] ?? ''));
+    };
+    $sameRecommendedValue = function ($first, $second) {
+        $first = preg_replace('/\s+/', ' ', trim((string) $first));
+        $second = preg_replace('/\s+/', ' ', trim((string) $second));
+
+        return strcasecmp($first, $second) === 0;
+    };
 @endphp
+
+<style>
+    #preview-matched-section .preview-table-scroll,
+    #preview-unmatched-section .preview-table-scroll {
+        max-height: calc(100vh - 260px);
+        min-height: 300px;
+        overflow: auto;
+        scrollbar-width: thin;
+    }
+
+    .preview-table-scroll::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    .preview-table-scroll::-webkit-scrollbar-thumb {
+        background: #c9c9c9;
+        border-radius: 4px;
+    }
+
+    .preview-compact-table {
+        margin-bottom: 0;
+        min-width: 760px;
+    }
+
+    #consumer-preview-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    #consumer-preview-tabs .nav-link {
+        white-space: nowrap;
+    }
+
+    .preview-compact-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background-color: #f4f5f7;
+        padding: 0.35rem 0.5rem;
+        font-size: 0.82rem;
+        text-transform: uppercase;
+        letter-spacing: .02em;
+        white-space: nowrap;
+        box-shadow: inset 0 -1px 0 #dee2e6;
+    }
+
+    .preview-compact-table tbody td {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.9rem;
+        line-height: 1.25;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .preview-compact-table tbody tr:nth-child(even) {
+        background-color: #fafafa;
+    }
+
+    .preview-compact-table tbody tr:hover {
+        background-color: #fff6ec;
+    }
+
+    .preview-compact-table th.pv-num,
+    .preview-compact-table td.pv-num {
+        width: clamp(90px, 8vw, 110px);
+        max-width: clamp(90px, 8vw, 110px);
+        padding-left: 0.35rem;
+        padding-right: 0.35rem;
+    }
+
+    .preview-compact-table th.pv-num {
+        white-space: normal;
+        line-height: 1.1;
+    }
+
+    .pv-cell {
+        max-width: clamp(120px, 15vw, 220px);
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .pv-cell.pv-name {
+        width: clamp(110px, 12vw, 160px);
+        max-width: clamp(110px, 12vw, 160px);
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        line-height: 1.2;
+    }
+
+    /* per-column widths */
+    .pv-col-discom_name .pv-cell {
+        max-width: clamp(160px, 20vw, 300px);
+    }
+
+    .pv-col-circle_name .pv-cell,
+    .pv-col-division_name .pv-cell {
+        max-width: clamp(100px, 10vw, 140px);
+    }
+
+    .pv-db {
+        color: #dc3545;
+        font-size: 0.82rem;
+    }
+
+    .pv-tag {
+        display: inline-block;
+        margin-right: 3px;
+        padding: 0 3px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #fff;
+        background: #dc3545;
+        border-radius: 3px;
+        line-height: 1.2;
+    }
+
+    /* tablets */
+    @media (max-width: 991.98px) {
+        #preview-matched-section .preview-table-scroll,
+        #preview-unmatched-section .preview-table-scroll {
+            max-height: calc(100vh - 220px);
+        }
+
+        .preview-compact-table thead th {
+            font-size: 0.76rem;
+        }
+
+        .preview-compact-table tbody td {
+            font-size: 0.84rem;
+        }
+
+        .pv-db {
+            font-size: 0.76rem;
+        }
+    }
+
+    /* phones */
+    @media (max-width: 575.98px) {
+        #preview-matched-section .preview-table-scroll,
+        #preview-unmatched-section .preview-table-scroll {
+            max-height: calc(100vh - 200px);
+            min-height: 220px;
+        }
+
+        .preview-compact-table thead th {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.35rem;
+        }
+
+        .preview-compact-table tbody td {
+            font-size: 0.78rem;
+            padding: 0.15rem 0.35rem;
+        }
+
+        .pv-db {
+            font-size: 0.7rem;
+        }
+
+        #preview-matched-section h5,
+        #preview-unmatched-section h5 {
+            font-size: 1rem;
+        }
+    }
+</style>
 
 <ul class="nav nav-tabs mb-2" id="consumer-preview-tabs" role="tablist">
     <li class="nav-item" role="presentation">
         <button class="nav-link active" id="preview-matched-tab" type="button" role="tab"
             data-preview-filter="matched">
-            Matched: {{ $matchedCount }}
+            Recommended Update: {{ $matchedCount }}
         </button>
     </li>
     <li class="nav-item" role="presentation">
@@ -21,37 +205,56 @@
 <div id="preview-matched-section">
     <div class="row">
         <div class="col-12">
-            <h5 class="mb-1">Matched Records</h5>
-            <div class="table-responsive">
-                <table class="table table-sm table-bordered">
+            <h5 class="mb-1">Recommended Update Records</h5>
+            <div class="table-responsive preview-table-scroll">
+                <table class="table table-sm table-bordered preview-compact-table">
                     <thead>
                         <tr>
                             <th style="width: 30px;">
                                 <input type="checkbox" class="preview-select-all" data-preview-select-all="matched"
-                                    title="Select all visible matched records">
+                                    title="Select all visible recommended updates">
                             </th>
                             <th>#</th>
-                            <th>Excel Consumer Name</th>
-                            <th>DB Consumer Name</th>
-                            <th>DB Consumer Number</th>
+                            <th class="pv-num">Consumer Number</th>
+                            @foreach ($recommendedFields as $field => $label)
+                                <th class="pv-col-{{ $field }}">{{ $label }}</th>
+                            @endforeach
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($matched as $key => $row)
-                            <tr data-preview-name="{{ trim(($row['consumer_name'] ?? '') . ' ' . ($row['db_consumer_name'] ?? '')) }}"
+                            @php
+                                $previewName = trim(implode(' ', array_merge(
+                                    array_values($row['excel_recommended'] ?? []),
+                                    array_values($row['db_recommended'] ?? [])
+                                )));
+                            @endphp
+                            <tr data-preview-name="{{ $previewName }}"
                                 data-preview-number="{{ $row['db_consumer_number'] ?? '' }}">
                                 <td>
                                     <input type="checkbox" class="preview-row-checkbox" data-preview-group="matched"
                                         value="{{ $row['sales_master_id'] ?? '' }}">
                                 </td>
                                 <td>{{ $key + 1 }}</td>
-                                <td>{{ $row['consumer_name'] ?: '-' }}</td>
-                                <td>{{ $row['db_consumer_name'] ?: '-' }}</td>
-                                <td>{{ $row['db_consumer_number'] ?: '-' }}</td>
+                                <td class="pv-num">{{ $row['db_consumer_number'] ?: ($row['consumer_number'] ?? '-') }}</td>
+                                @foreach ($recommendedFields as $field => $label)
+                                    @php
+                                        $excelText = $recommendedValue($row, 'excel_recommended', $field);
+                                        $dbText = $recommendedValue($row, 'db_recommended', $field);
+                                    @endphp
+                                    <td class="pv-col-{{ $field }}">
+                                        <div class="pv-cell {{ $field === 'consumer_name' ? 'pv-name' : '' }}"
+                                            title="Excel: {{ $excelText }}">{{ $excelText ?: '-' }}</div>
+                                        @unless ($sameRecommendedValue($excelText, $dbText))
+                                            <div class="pv-cell pv-db {{ $field === 'consumer_name' ? 'pv-name' : '' }}"
+                                                title="DB: {{ $dbText }}"><span class="pv-tag">DB</span>{{ $dbText ?: '-' }}</div>
+                                        @endunless
+                                    </td>
+                                @endforeach
                             </tr>
                         @empty
                             <tr data-preview-empty="1">
-                                <td colspan="5" class="text-center">No matched records.</td>
+                                <td colspan="{{ 3 + count($recommendedFields) }}" class="text-center">No recommended updates.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -64,9 +267,14 @@
 <div id="preview-unmatched-section" class="mt-2 d-none">
     <div class="row">
         <div class="col-12">
-            <h5 class="mb-1">Not Matched Records</h5>
-            <div class="table-responsive">
-                <table class="table table-sm table-bordered">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <h5 class="mb-0">Not Matched Records</h5>
+                <button type="button" class="btn btn-sm btn-outline-danger d-none" id="preview-ignore-selected-btn">
+                    <i data-feather="eye-off" class="me-25"></i> Ignore Selected
+                </button>
+            </div>
+            <div class="table-responsive preview-table-scroll">
+                <table class="table table-sm table-bordered preview-compact-table">
                     <thead>
                         <tr>
                             <th style="width: 30px;">
@@ -75,7 +283,7 @@
                             </th>
                             <th>#</th>
                             <th>Consumer Name</th>
-                            <th>Consumer Number</th>
+                            <th class="pv-num">Consumer Number</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -88,7 +296,7 @@
                                 </td>
                                 <td>{{ $key + 1 }}</td>
                                 <td>{{ $row['consumer_name'] ?: '-' }}</td>
-                                <td>{{ $row['consumer_number'] ?: '-' }}</td>
+                                <td class="pv-num">{{ $row['consumer_number'] ?: '-' }}</td>
                             </tr>
                         @empty
                             <tr data-preview-empty="1">

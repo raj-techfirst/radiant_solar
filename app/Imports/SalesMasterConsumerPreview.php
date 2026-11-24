@@ -7,10 +7,19 @@ use Maatwebsite\Excel\Concerns\ToCollection;
 
 class SalesMasterConsumerPreview implements ToCollection
 {
+    private const RECOMMENDED_ALIASES = [
+        'consumer_name' => ['consumer_name', 'customername', 'name'],
+        'discom_name' => ['discom_name', 'discomname', 'discom'],
+        'circle_name' => ['circle_name', 'circlename', 'circle'],
+        'division_name' => ['division_name', 'divisionname', 'division'],
+        'sub_division_name' => ['sub_division_name', 'subdivision_name', 'sub_division', 'subdivision'],
+    ];
+
     private $rows = [];
     private $error = null;
     private $consumerNumberIndex = null;
     private $consumerNameIndex = null;
+    private $recommendedIndexes = [];
 
     public function collection(Collection $rows)
     {
@@ -32,6 +41,12 @@ class SalesMasterConsumerPreview implements ToCollection
             if (in_array($key, ['consumer_name', 'customername', 'name'])) {
                 $this->consumerNameIndex = $index;
             }
+
+            foreach (self::RECOMMENDED_ALIASES as $field => $aliases) {
+                if (in_array($key, $aliases, true)) {
+                    $this->recommendedIndexes[$field] = $index;
+                }
+            }
         }
 
         if (is_null($this->consumerNumberIndex)) {
@@ -48,9 +63,16 @@ class SalesMasterConsumerPreview implements ToCollection
                 continue;
             }
 
+            $recommended = [];
+
+            foreach (self::RECOMMENDED_ALIASES as $field => $aliases) {
+                $recommended[$field] = $this->cell($row, $this->recommendedIndexes[$field] ?? null);
+            }
+
             $this->rows[] = [
                 'consumer_name' => $name,
                 'consumer_number' => $number,
+                'recommended' => $recommended,
                 'number' => self::normalizeNumber($number),
             ];
         }

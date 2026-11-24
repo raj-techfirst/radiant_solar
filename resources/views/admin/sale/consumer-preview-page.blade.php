@@ -98,6 +98,36 @@
                             <small class="text-muted">{{ $preview['generated_at'] }}</small>
                         @endif
                     </div>
+                    @php
+                        $defaultUpdate = $preview['default_update'] ?? [];
+                        $defaultUpdateStatus = $defaultUpdate['status'] ?? 'skipped';
+                        $defaultUpdateErrors = $defaultUpdate['errors'] ?? [];
+                    @endphp
+                    @if (in_array($defaultUpdateStatus, ['pending', 'done'], true))
+                        <div id="preview-default-update-alert"
+                            class="alert alert-dismissible fade show py-1 px-2 small mb-1 {{ $defaultUpdateStatus === 'done' ? (!empty($defaultUpdateErrors) ? 'alert-warning' : 'alert-success') : 'alert-info' }}"
+                            role="alert" data-pending="{{ $defaultUpdateStatus === 'pending' ? '1' : '0' }}">
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            <div class="pe-3">
+                                <div id="preview-default-update-message">
+                                    @if ($defaultUpdateStatus === 'pending')
+                                        <span class="spinner-border spinner-border-sm me-1" role="status"
+                                            aria-hidden="true"></span>
+                                        Applying default field updates...
+                                    @else
+                                        {{ $defaultUpdate['message'] ?? 'Default fields updated.' }}
+                                    @endif
+                                </div>
+                                <div id="preview-default-update-errors"
+                                    class="mt-1 fw-bold text-danger {{ empty($defaultUpdateErrors) ? 'd-none' : '' }}"
+                                    style="font-size:1.05rem;">
+                                    @foreach ($defaultUpdateErrors as $error)
+                                        <div>{{ $error }}</div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                     @include('admin.sale.consumer-preview', [
                         'matched' => $preview['matched'],
                         'unmatched' => $preview['unmatched'],
@@ -119,6 +149,110 @@
 @section('pagescript')
     @if ($preview)
         <script>
+            function renderDefaultUpdateErrors(errors) {
+                var $error = $('#preview-default-update-errors');
+
+                if (!$error.length) {
+                    return;
+                }
+
+                $error.empty();
+
+                if (!errors || !errors.length) {
+                    $error.addClass('d-none');
+                    return;
+                }
+
+                $.each(errors, function(index, message) {
+                    $error.append($('<div>').text(message));
+                });
+
+                $error.removeClass('d-none');
+            }
+
+            function runPreviewDefaultUpdates() {
+                var $status = $('#preview-default-update-alert');
+                var $message = $('#preview-default-update-message');
+
+                if (!$status.length || !$message.length || String($status.data('pending')) !== '1' || $status.data('running') === 1) {
+                    return;
+                }
+
+                renderDefaultUpdateErrors([]);
+
+                $status.data('running', 1)
+                    .removeClass('alert-success alert-warning alert-danger')
+                    .addClass('alert-info');
+                $message.html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>Applying default field updates...');
+
+                $.ajax({
+                    url: '{{ route('sales-master-consumer-preview-apply-default') }}',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}'
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (!response.success) {
+                            var failureMessage = response.message || 'Default fields could not be updated.';
+
+                            $status.data('pending', 0)
+                                .removeClass('alert-info alert-success alert-warning')
+                                .addClass('alert-danger');
+                            $message.html(failureMessage);
+                            renderDefaultUpdateErrors([failureMessage]);
+
+                            return;
+                        }
+
+                        var hasErrors = response.errors && response.errors.length;
+
+                        renderDefaultUpdateErrors(response.errors || []);
+
+                        $status.data('pending', 0)
+                            .removeClass('alert-info alert-danger alert-warning alert-success')
+                            .addClass(hasErrors ? 'alert-warning' : 'alert-success');
+                        $message.html(response.message);
+
+                        if (response.updated_count > 0 && !hasErrors && typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                toast: true,
+                                position: 'top-end',
+                                icon: 'success',
+                                title: response.message,
+                                showConfirmButton: false,
+                                timer: 1800
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        var message = 'Default fields could not be updated.';
+
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+
+                        renderDefaultUpdateErrors([message]);
+
+                        $status.data('pending', 1)
+                            .removeClass('alert-info alert-success alert-warning')
+                            .addClass('alert-danger');
+                        $message.html(message + ' <button type="button" class="btn btn-sm btn-outline-danger ms-2" id="retry-default-update">Retry</button>');
+                    },
+                    complete: function() {
+                        $status.data('running', 0);
+                    }
+                });
+            }
+
+            $(function() {
+                runPreviewDefaultUpdates();
+            });
+
+            $(document).on('click', '#retry-default-update', function() {
+                runPreviewDefaultUpdates();
+            });
+
             function updatePreviewSelectAllState(group) {
                 var $checkboxes = $('#preview-' + group + '-section tbody tr')
                     .not('[data-preview-empty]')
@@ -131,9 +265,11 @@
                 $selectAll.prop('indeterminate', $checked.length > 0 && $checked.length < $checkboxes.length);
 
                 var hasMatchedSelection = $('.preview-row-checkbox[data-preview-group="matched"]:checked').length > 0;
+                var hasUnmatchedSelection = $('.preview-row-checkbox[data-preview-group="unmatched"]:checked').length > 0;
                 var activeTab = $('#consumer-preview-tabs .nav-link.active').data('preview-filter');
 
                 $('#preview-update-record-wrapper').toggleClass('d-none', !hasMatchedSelection || activeTab !== 'matched');
+                $('#preview-ignore-selected-btn').toggleClass('d-none', !hasUnmatchedSelection || activeTab !== 'unmatched');
             }
 
             function applyConsumerPreviewFilter() {
@@ -190,7 +326,7 @@
                     }
                 });
 
-                $('#preview-matched-tab').html('Matched: ' + matchedCount);
+                $('#preview-matched-tab').html('Recommended Update: ' + matchedCount);
                 $('#preview-unmatched-tab').html('Not matched: ' + unmatchedCount);
 
                 updatePreviewSelectAllState('matched');
@@ -219,6 +355,59 @@
 
             $(document).on('change', '.preview-row-checkbox', function() {
                 updatePreviewSelectAllState($(this).data('preview-group'));
+            });
+
+            $(document).on('click', '#preview-ignore-selected-btn', function() {
+                var $selected = $('.preview-row-checkbox[data-preview-group="unmatched"]:checked');
+                var consumerNumbers = $selected.map(function() {
+                    return $(this).val();
+                }).get();
+
+                if (!consumerNumbers.length) {
+                    return;
+                }
+
+                $.ajax({
+                    url: '{{ route('sales-master-consumer-preview-ignore') }}',
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',
+                        consumer_numbers: consumerNumbers
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        $selected.closest('tr').remove();
+
+                        if ($('#preview-unmatched-section tbody tr').not('[data-preview-empty]').length === 0) {
+                            $('#preview-unmatched-section tbody').html(
+                                '<tr data-preview-empty="1"><td colspan="4" class="text-center">No unmatched records.</td></tr>'
+                            );
+                        }
+
+                        applyConsumerPreviewFilter();
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Ignored',
+                            text: response.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    },
+                    error: function(xhr) {
+                        var message = 'Unable to ignore selected records.';
+
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            message = xhr.responseJSON.message;
+                        }
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: message
+                        });
+                    }
+                });
             });
 
             $(document).on('click', '#consumer-preview-tabs [data-preview-filter]', function() {
@@ -281,15 +470,6 @@
                     });
                 }
 
-                function syncUpdateMode() {
-                    var mode = $('input[name="update_mode"]:checked').val() || 'default';
-                    $('#default-update-fields').toggleClass('d-none', mode !== 'default');
-                    $('#recommend-update-fields').toggleClass('d-none', mode !== 'recommend');
-                }
-
-                $(document).on('change', 'input[name="update_mode"]', syncUpdateMode);
-                syncUpdateMode();
-
                 function selectedSalesMasterIds() {
                     return $('.preview-row-checkbox[data-preview-group="matched"]:checked')
                         .map(function() {
@@ -314,9 +494,7 @@
                         return;
                     }
 
-                    var updateMode = $('input[name="update_mode"]:checked').val() || 'default';
-
-                    if (updateMode === 'recommend' && !$('input[name="recommended_fields[]"]:checked').length) {
+                    if (!$('input[name="recommended_fields[]"]:checked').length) {
                         showError('Please select at least one recommend field.');
                         showSwalError('Please select at least one recommend field.');
                         return;
@@ -388,9 +566,7 @@
 
                 $('#updateRecordModal').on('hidden.bs.modal', function() {
                     $('#update-record-form')[0].reset();
-                    $('#update_mode_default').prop('checked', true);
                     $('input[name="recommended_fields[]"]').prop('checked', false);
-                    syncUpdateMode();
                     $('#update-record-error').addClass('d-none').html('');
                     $('#update-record-summary').addClass('d-none').html('');
                     $('#update-record-submit').prop('disabled', false).html(originalSubmitHtml);

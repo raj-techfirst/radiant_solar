@@ -7,7 +7,7 @@
             <div class="float-end">
                 @can('sales-master-list')
                 <a role="button" class="btn btn-sm btn-outline-primary ms-1"
-                    href="{{ route('sales-master-consumer-preview') }}">
+                    href="{{ route('sales-master-consumer-preview') }}" target="_blank" rel="noopener noreferrer">
                     <i data-feather="upload" class="me-25"></i> Excel Upload
                 </a>
                 @endcan

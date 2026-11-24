@@ -135,6 +135,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::resource('employee', EmployeeController::class);
     Route::get('sales-master/consumer-preview', [SalesMasterController::class, 'consumerPreviewPage'])->name('sales-master-consumer-preview');
     Route::post('sales-master/consumer-preview', [SalesMasterController::class, 'consumerPreviewUpload'])->name('sales-master-consumer-preview-upload');
+    Route::post('sales-master/consumer-preview/ignore', [SalesMasterController::class, 'ignoreUnmatched'])->name('sales-master-consumer-preview-ignore');
+    Route::post('sales-master/consumer-preview/apply-default', [SalesMasterController::class, 'applyPreviewDefaultUpdates'])->name('sales-master-consumer-preview-apply-default');
     Route::post('sales-master/update-records', [SalesMasterController::class, 'updateRecords'])->name('sales-master-update-records');
     Route::resource('sales-master', SalesMasterController::class);
     

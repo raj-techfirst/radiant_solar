@@ -7,44 +7,9 @@
             </div>
             <form id="update-record-form" action="{{ route('sales-master-update-records') }}" method="POST">
                 @csrf
+                <input type="hidden" name="update_mode" value="recommend">
                 <div class="modal-body p-2">
-                    <div class="d-flex flex-wrap gap-3 mb-2">
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="update_mode" id="update_mode_default"
-                                value="default" checked>
-                            <label class="form-check-label" for="update_mode_default">Default Update Field</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="update_mode" id="update_mode_recommend"
-                                value="recommend">
-                            <label class="form-check-label" for="update_mode_recommend">Recommend Field</label>
-                        </div>
-                    </div>
-
-                    <div id="default-update-fields">
-                        <div class="d-flex flex-wrap gap-1 mb-2">
-                            @foreach ([
-                                'Registration Date',
-                                'Registration Number',
-                                'Address',
-                                'District',
-                                'Contracted Load',
-                                'Register KW',
-                                'Application Submitted At',
-                                'Loan Portal',
-                                'Loan Sanction Date',
-                                'Feasibility Date',
-                                'Meter Application Date',
-                                'Subsidy Request Date',
-                                'Subsidy Verify Date',
-                                'Subsidy Disbursal Date',
-                            ] as $field)
-                                <span class="badge bg-light-primary border text-primary fw-normal">{{ $field }}</span>
-                            @endforeach
-                        </div>
-                    </div>
-
-                    <div id="recommend-update-fields" class="d-none mb-2">
+                    <div id="recommend-update-fields" class="mb-2">
                         <div class="small fw-bold mb-1">Recommend Field</div>
                         <div class="d-flex flex-wrap gap-2">
                             @foreach ([

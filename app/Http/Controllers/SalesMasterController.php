@@ -10,6 +10,7 @@ use App\Imports\Salesorder;
 use App\Models\AgentSalesPerson;
 use App\Models\Bank;
 use App\Models\CompanyProfile;
+use App\Models\ConsumerIgnore;
 use App\Models\Discom;
 use App\Models\District;
 use App\Models\Document;
@@ -52,7 +53,7 @@ class SalesMasterController extends Controller
         $this->middleware('permission:sales-master-create', ['only' => ['create', 'import']]);
         $this->middleware('permission:sales-master-edit', ['only' => ['edit', 'update', 'applicatonSave', 'statusSave', 'removeStatus', 'declarationUpdate', 'updateRecords']]);
         $this->middleware('permission:sales-master-delete', ['only' => ['destroy']]);
-        $this->middleware('permission:sales-master-list', ['only' => ['salesOrderReport', 'consumerPreviewPage', 'consumerPreviewUpload']]);
+        $this->middleware('permission:sales-master-list', ['only' => ['salesOrderReport', 'consumerPreviewPage', 'consumerPreviewUpload', 'ignoreUnmatched', 'applyPreviewDefaultUpdates']]);
     }
 
     public function index()
@@ -1393,6 +1394,8 @@ class SalesMasterController extends Controller
 
     public function consumerPreviewUpload(Request $request)
     {
+        @set_time_limit(0);
+
         $request->validate([
             'excel_file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
         ], [
@@ -1431,6 +1434,20 @@ class SalesMasterController extends Controller
                 });
             }
 
+            $subDivisionIds = $salesByNumber->pluck('sub_division_id')->filter()->unique()->values()->all();
+            $subDivisionNames = count($subDivisionIds) > 0
+                ? SubDivision::whereIn('id', $subDivisionIds)->pluck('name', 'id')
+                : collect();
+
+            $ignoredNumbers = ConsumerIgnore::query()
+                ->pluck('consumer_number')
+                ->map(function ($number) {
+                    return SalesMasterConsumerPreview::normalizeNumber($number);
+                })
+                ->filter()
+                ->all();
+            $ignoredNumberSet = array_fill_keys($ignoredNumbers, true);
+
             $matched = [];
             $unmatched = [];
 
@@ -1445,23 +1462,55 @@ class SalesMasterController extends Controller
 
                 if ($key !== '' && $salesByNumber->has($key)) {
                     $salesMaster = $salesByNumber->get($key);
+                    $excelRecommended = $row['recommended'] ?? [];
+                    $dbRecommended = [
+                        'consumer_name' => $salesMaster->consumer_name,
+                        'discom_name' => $salesMaster->discom,
+                        'circle_name' => $salesMaster->circle,
+                        'division_name' => $salesMaster->division,
+                        'sub_division_name' => $subDivisionNames->get($salesMaster->sub_division_id),
+                    ];
+
                     $preview['sales_master_id'] = $salesMaster->id;
                     $preview['db_consumer_name'] = $salesMaster->consumer_name;
                     $preview['db_consumer_number'] = $salesMaster->consumer_number;
+                    $preview['excel_recommended'] = $excelRecommended;
+                    $preview['db_recommended'] = $dbRecommended;
+                    $preview['changed_fields'] = $this->changedRecommendedFields($excelRecommended, $dbRecommended);
                     $matched[] = $preview;
                 } else {
+                    if ($key !== '' && isset($ignoredNumberSet[$key])) {
+                        continue;
+                    }
+
                     $unmatched[] = $preview;
                 }
+            }
+
+            $recommendedMatched = array_values(array_filter($matched, function ($preview) {
+                return ! empty($preview['changed_fields']);
+            }));
+
+            $defaultImportMap = [];
+
+            foreach ($matched as $preview) {
+                $defaultImportMap[(int) $preview['row']] = (int) $preview['sales_master_id'];
             }
 
             $oldFilePath = $request->session()->get('sales_master_consumer_preview.file_path');
 
             $request->session()->put('sales_master_consumer_preview', [
-                'matched' => $matched,
+                'matched' => $recommendedMatched,
                 'unmatched' => $unmatched,
                 'file_path' => $filePath,
                 'file_name' => $request->file('excel_file')->getClientOriginalName(),
                 'generated_at' => now()->format('d-m-Y H:i:s'),
+                'default_update' => [
+                    'status' => empty($defaultImportMap) ? 'skipped' : 'pending',
+                    'row_map' => $defaultImportMap,
+                    'updated_count' => 0,
+                    'errors' => [],
+                ],
             ]);
 
             if ($oldFilePath && $oldFilePath !== $filePath) {
@@ -1479,6 +1528,204 @@ class SalesMasterController extends Controller
                 ->withErrors(['excel_file' => 'Unable to read the Excel file. Please check the file format.'])
                 ->withInput();
         }
+    }
+
+    public function ignoreUnmatched(Request $request)
+    {
+        $request->validate([
+            'consumer_numbers' => 'required|array|min:1',
+            'consumer_numbers.*' => 'required|string|max:255',
+        ]);
+
+        $now = now();
+        $numbers = collect($request->input('consumer_numbers'))
+            ->map(function ($number) {
+                return SalesMasterConsumerPreview::normalizeNumber($number);
+            })
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($numbers->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No valid consumer numbers selected.',
+            ], 422);
+        }
+
+        $records = $numbers->map(function ($number) use ($now) {
+            return [
+                'consumer_number' => $number,
+                'ignore_date' => $now->format('Y-m-d'),
+                'timestep' => $now->format('Y-m-d H:i:s'),
+                'created_at' => $now->format('Y-m-d H:i:s'),
+                'updated_at' => $now->format('Y-m-d H:i:s'),
+            ];
+        })->all();
+
+        ConsumerIgnore::query()->upsert(
+            $records,
+            ['consumer_number'],
+            ['ignore_date', 'timestep', 'updated_at']
+        );
+
+        $preview = $request->session()->get('sales_master_consumer_preview');
+
+        if (is_array($preview) && array_key_exists('unmatched', $preview)) {
+            $preview['unmatched'] = array_values(array_filter($preview['unmatched'], function ($row) use ($numbers) {
+                $number = SalesMasterConsumerPreview::normalizeNumber($row['consumer_number'] ?? '');
+
+                return $number === '' || ! $numbers->contains($number);
+            }));
+
+            $request->session()->put('sales_master_consumer_preview', $preview);
+        }
+
+        return response()->json([
+            'success' => true,
+            'ignored_count' => $numbers->count(),
+            'message' => $numbers->count() . ' record(s) added to ignore list.',
+        ]);
+    }
+
+    public function applyPreviewDefaultUpdates(Request $request)
+    {
+        @set_time_limit(0);
+
+        $preview = $request->session()->get('sales_master_consumer_preview');
+
+        if (! is_array($preview) || empty($preview['file_path']) || ! Storage::exists($preview['file_path'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Preview file not found. Please upload the Excel file again.',
+            ], 422);
+        }
+
+        $defaultUpdate = $preview['default_update'] ?? [];
+        $status = $defaultUpdate['status'] ?? 'skipped';
+
+        if ($status === 'done') {
+            return response()->json([
+                'success' => true,
+                'already_done' => true,
+                'message' => $defaultUpdate['message'] ?? 'Default fields already updated.',
+                'updated_count' => $defaultUpdate['updated_count'] ?? 0,
+                'errors' => $defaultUpdate['errors'] ?? [],
+            ]);
+        }
+
+        $rowMap = $defaultUpdate['row_map'] ?? [];
+
+        if (empty($rowMap)) {
+            $preview['default_update'] = [
+                'status' => 'skipped',
+                'row_map' => [],
+                'updated_count' => 0,
+                'errors' => [],
+                'message' => 'No default fields to update.',
+            ];
+            $request->session()->put('sales_master_consumer_preview', $preview);
+
+            return response()->json([
+                'success' => true,
+                'skipped' => true,
+                'message' => 'No default fields to update.',
+                'updated_count' => 0,
+                'errors' => [],
+            ]);
+        }
+
+        try {
+            $path = Storage::path($preview['file_path']);
+            $headingRows = Excel::toCollection(new HeadingRowImport(), $path);
+            $headings = $headingRows->isNotEmpty() && $headingRows->first()->isNotEmpty()
+                ? $headingRows->first()->first()->all()
+                : [];
+
+            if (! empty(SalesMasterUpdateImport::missingHeaders($headings))) {
+                $preview['default_update'] = [
+                    'status' => 'skipped',
+                    'row_map' => [],
+                    'updated_count' => 0,
+                    'errors' => [],
+                    'message' => 'Default columns not found in Excel. Default fields skipped.',
+                ];
+                $request->session()->put('sales_master_consumer_preview', $preview);
+
+                return response()->json([
+                    'success' => true,
+                    'skipped' => true,
+                    'message' => 'Default columns not found in Excel. Default fields skipped.',
+                    'updated_count' => 0,
+                    'errors' => [],
+                ]);
+            }
+
+            $import = new SalesMasterUpdateImport(array_keys($rowMap), [], $rowMap);
+
+            DB::transaction(function () use ($import, $path) {
+                Excel::import($import, $path);
+            });
+
+            $updatedCount = $import->updatedCount();
+            $errors = $import->errors();
+            $message = $updatedCount > 0
+                ? 'Default fields updated: ' . $updatedCount . ' record(s).'
+                : 'Default fields checked; no changes needed.';
+
+            if (! empty($errors)) {
+                $message .= ' Some records were skipped.';
+            }
+
+            $preview['default_update'] = [
+                'status' => 'done',
+                'row_map' => [],
+                'updated_count' => $updatedCount,
+                'errors' => $errors,
+                'message' => $message,
+            ];
+            $request->session()->put('sales_master_consumer_preview', $preview);
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'updated_count' => $updatedCount,
+                'errors' => $errors,
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Default fields could not be updated. Please retry.',
+            ], 500);
+        }
+    }
+
+    private function changedRecommendedFields(array $excel, array $db): array
+    {
+        $changed = [];
+
+        foreach (SalesMasterUpdateImport::RECOMMENDED_FIELDS as $field => $label) {
+            $excelValue = $this->normalizeRecommendedValue($excel[$field] ?? null);
+
+            if ($excelValue === '') {
+                continue;
+            }
+
+            $dbValue = $this->normalizeRecommendedValue($db[$field] ?? null);
+
+            if (strcasecmp($excelValue, $dbValue) !== 0) {
+                $changed[] = $field;
+            }
+        }
+
+        return $changed;
+    }
+
+    private function normalizeRecommendedValue($value): string
+    {
+        return preg_replace('/\s+/', ' ', trim((string) $value));
     }
 
     public function updateRecords(Request $request)
