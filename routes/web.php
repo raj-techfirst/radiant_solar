@@ -137,6 +137,8 @@ Route::group(['middleware' => ['auth']], function () {
     Route::post('sales-master/consumer-preview', [SalesMasterController::class, 'consumerPreviewUpload'])->name('sales-master-consumer-preview-upload');
     Route::post('sales-master/consumer-preview/ignore', [SalesMasterController::class, 'ignoreUnmatched'])->name('sales-master-consumer-preview-ignore');
     Route::post('sales-master/consumer-preview/apply-default', [SalesMasterController::class, 'applyPreviewDefaultUpdates'])->name('sales-master-consumer-preview-apply-default');
+    Route::get('sales-master/consumer-preview/create-from-unmatched', [SalesMasterController::class, 'createFromUnmatchedPage'])->name('sales-master-consumer-preview-create-from-unmatched-page');
+    Route::post('sales-master/consumer-preview/create-from-unmatched', [SalesMasterController::class, 'createFromUnmatched'])->name('sales-master-consumer-preview-create-from-unmatched');
     Route::post('sales-master/update-records', [SalesMasterController::class, 'updateRecords'])->name('sales-master-update-records');
     Route::resource('sales-master', SalesMasterController::class);
     

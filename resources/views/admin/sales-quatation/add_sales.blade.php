@@ -13,6 +13,9 @@
         <input type="hidden" id="operation_type" value="add">
         <h4 class="card-title mb-1">{{ __('message.Add Sales Quatation') }}</h4>
         @endif
+        @php
+            $leadRequired = ! (isset($sales_quatation) && $sales_quatation->created_from_unmatched_preview);
+        @endphp
     </div>
     <div class="col-12">
         <div class="card p-1">
@@ -290,7 +293,7 @@
                     </script>
                     @endif
                     <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
-                        <label class="form-label" for="res_lead_master_id">{{ __('message.Lead') }} <span class="text-danger">*</span></label>
+                        <label class="form-label" for="res_lead_master_id">{{ __('message.Lead') }} @if($leadRequired)<span class="text-danger">*</span>@endif</label>
                         <select class="form-control anlayst form-select select2 custom-select2" name="res_lead_master_id" id="res_lead_master_id">
                             <option selected disabled value="">{{ __('message.-- Select --') }}</option>
                             @foreach($lead_complete as $value)
@@ -1505,9 +1508,11 @@ function stateSubsidyCalculation() {
 
         $("#res_form").validate({
             rules: {
+                @if($leadRequired)
                 res_lead_master_id: {
                     required: true
                 },
+                @endif
                 res_name: {
                     required: true
                 },

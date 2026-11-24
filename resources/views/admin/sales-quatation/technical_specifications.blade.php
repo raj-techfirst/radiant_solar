@@ -27,18 +27,18 @@
             <td>
                 <input type="hidden" name="{{ $type }}_type[]" value="{{ $techValue['type'] }}" />
                 @if ($techValue['type'] == 'structure')
-                <textarea class="editor" name="{{ $type }}_itemDescription[]">{{ $techValue['itemDescription'] }}</textarea>
+                <textarea class="editor" name="{{ $type }}_itemDescription[]" placeholder="Enter description">{{ $techValue['itemDescription'] }}</textarea>
                 @else
-                <input type="text" class="form-control" name="{{ $type }}_itemDescription[]" value="{{ $techValue['itemDescription'] }}">
+                <input type="text" class="form-control" name="{{ $type }}_itemDescription[]" value="{{ $techValue['itemDescription'] }}" placeholder="Enter item description">
                 @endif
             </td>
-            <td><input type="text" class="form-control" name="{{ $type }}_qty[]" value="{{ $techValue['qty'] }}"></td>
+            <td><input type="text" class="form-control" name="{{ $type }}_qty[]" value="{{ $techValue['qty'] }}" placeholder="Enter qty"></td>
 
            
-            <td><input type="text" class="form-control  {{ ($techValue['type'] == 'structure') ? $type.'_structure_size' : '' }}" name="{{ $type }}_size[]" value="{{ $techValue['size'] }}"></td>
+            <td><input type="text" class="form-control  {{ ($techValue['type'] == 'structure') ? $type.'_structure_size' : '' }}" name="{{ $type }}_size[]" value="{{ $techValue['size'] }}" placeholder="Enter size"></td>
            
 
-            <td><input type="text" class="form-control" name="{{ $type }}_make[]" value="{{ $techValue['make'] }}"></td>
+            <td><input type="text" class="form-control" name="{{ $type }}_make[]" value="{{ $techValue['make'] }}" placeholder="Enter make"></td>
             <td>
                 @if ($techValue['type'] != 'structure')
                 <button type="button" class="badge badge-light-danger border-0 variant-delete" data-type="tech_{{ $type }}" data-id="{{ $sr_no }}">
@@ -68,7 +68,7 @@
                 <br>
                 <h5><b>Note :</b></h5>
                 <input type="hidden" name="{{ $type }}_type[]" value="{{ $techValue['type'] }}" />
-                <textarea class="editor" name="{{ $type }}_itemDescription[]">{{ $techValue['itemDescription'] }}</textarea>
+                <textarea class="editor" name="{{ $type }}_itemDescription[]" placeholder="Enter description">{{ $techValue['itemDescription'] }}</textarea>
                 <input type="hidden" name="{{ $type }}_qty[]" value="{{ $techValue['qty'] }}" />
                 <input type="hidden" name="{{ $type }}_size[]" value="{{ $techValue['size'] }}" />
                 <input type="hidden" name="{{ $type }}_make[]" value="{{ $techValue['make'] }}" />

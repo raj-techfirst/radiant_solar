@@ -269,34 +269,46 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-1">
                 <h5 class="mb-0">Not Matched Records</h5>
-                <button type="button" class="btn btn-sm btn-outline-danger d-none" id="preview-ignore-selected-btn">
-                    <i data-feather="eye-off" class="me-25"></i> Ignore Selected
-                </button>
             </div>
             <div class="table-responsive preview-table-scroll">
                 <table class="table table-sm table-bordered preview-compact-table">
                     <thead>
                         <tr>
-                            <th style="width: 30px;">
-                                <input type="checkbox" class="preview-select-all" data-preview-select-all="unmatched"
-                                    title="Select all visible not matched records">
-                            </th>
                             <th>#</th>
                             <th>Consumer Name</th>
                             <th class="pv-num">Consumer Number</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($unmatched as $key => $row)
+                            @php
+                                $rowRecommended = $row['recommended'] ?? [];
+                            @endphp
                             <tr data-preview-name="{{ $row['consumer_name'] ?? '' }}"
-                                data-preview-number="{{ $row['consumer_number'] ?? '' }}">
-                                <td>
-                                    <input type="checkbox" class="preview-row-checkbox" data-preview-group="unmatched"
-                                        value="{{ $row['consumer_number'] ?? '' }}">
-                                </td>
+                                data-preview-number="{{ $row['consumer_number'] ?? '' }}"
+                                data-preview-row="{{ $row['row'] ?? '' }}"
+                                data-discom="{{ $rowRecommended['discom_name'] ?? '' }}"
+                                data-circle="{{ $rowRecommended['circle_name'] ?? '' }}"
+                                data-division="{{ $rowRecommended['division_name'] ?? '' }}"
+                                data-sub-division="{{ $rowRecommended['sub_division_name'] ?? '' }}"
+                                data-sub-division-id="{{ $row['sub_division_id'] ?? '' }}">
                                 <td>{{ $key + 1 }}</td>
                                 <td>{{ $row['consumer_name'] ?: '-' }}</td>
                                 <td class="pv-num">{{ $row['consumer_number'] ?: '-' }}</td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a class="btn btn-sm btn-outline-primary preview-create-row"
+                                            href="{{ route('sales-master-consumer-preview-create-from-unmatched-page', ['row' => $row['row'] ?? '', 'consumer_number' => $row['consumer_number'] ?? '']) }}"
+                                            title="Create quotation and/or sales order">
+                                            <i data-feather="plus" class="me-25"></i> Create
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger preview-ignore-row"
+                                            title="Ignore this record">
+                                            <i data-feather="eye-off" class="me-25"></i> Ignore
+                                        </button>
+                                    </div>
+                                </td>
                             </tr>
                         @empty
                             <tr data-preview-empty="1">

@@ -12,7 +12,9 @@ class SalesQuatation extends Model
     protected $table = 'sales_quatations';
     protected $primarykey = 'id';
     protected $guarded = ['id'];
-
+    protected $casts = [
+        'created_from_unmatched_preview' => 'boolean',
+    ];
 
     public function salesQuatationMeta()
     {

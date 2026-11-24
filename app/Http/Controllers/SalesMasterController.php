@@ -23,6 +23,7 @@ use App\Models\LeadMaster;
 use App\Models\Loandata;
 use App\Models\PaymetCollection;
 use App\Models\PenalCompany;
+use App\Models\PenalType;
 use App\Models\PenalWatt;
 use App\Models\SalesMaster;
 use App\Models\SalesQuatation;
@@ -30,6 +31,7 @@ use App\Models\SubDivision;
 use App\Models\Taluka;
 use App\Models\User;
 use App\Models\UserCommission;
+use App\Services\UnmatchedRecordCreatorService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -50,7 +52,7 @@ class SalesMasterController extends Controller
         $this->middleware('permission:sales-master-list|sales-master-create|sales-master-edit|sales-master-delete', ['only' => ['index', 'store', 'show', 'view', 'documentView', 'statusView', 'paymentList', 'getComsumerUsingMobile', 'selfCertificationPdf', 'requestLetterPdf', 'modelAgreementPdf', 'declarationDCRPdf', 'agreementPdf', 'gedaAgreementPdf', 'pmsgmbyCommissioningPdf', 'netMeteringInterConnectionPdf', 'vendorFeasibilityPdf', 'netMeterPdf']]);
         // downloadDocument is accessible to any authenticated user (route group is auth-protected)
         $this->middleware('auth');
-        $this->middleware('permission:sales-master-create', ['only' => ['create', 'import']]);
+        $this->middleware('permission:sales-master-create', ['only' => ['create', 'import', 'createFromUnmatched', 'createFromUnmatchedPage']]);
         $this->middleware('permission:sales-master-edit', ['only' => ['edit', 'update', 'applicatonSave', 'statusSave', 'removeStatus', 'declarationUpdate', 'updateRecords']]);
         $this->middleware('permission:sales-master-delete', ['only' => ['destroy']]);
         $this->middleware('permission:sales-master-list', ['only' => ['salesOrderReport', 'consumerPreviewPage', 'consumerPreviewUpload', 'ignoreUnmatched', 'applyPreviewDefaultUpdates']]);
@@ -1392,6 +1394,84 @@ class SalesMasterController extends Controller
         ]);
     }
 
+    public function createFromUnmatchedPage(Request $request)
+    {
+        abort_unless(Gate::allows('sales-master-create'), 403);
+
+        $preview = $request->session()->get('sales_master_consumer_preview');
+        $row = (int) $request->query('row', 0);
+        $consumerNumber = (string) $request->query('consumer_number', '');
+        $normalizedNumber = SalesMasterConsumerPreview::normalizeNumber($consumerNumber);
+        $record = null;
+
+        foreach (($preview['unmatched'] ?? []) as $candidate) {
+            $candidateRow = (int) ($candidate['row'] ?? 0);
+            $candidateNumber = SalesMasterConsumerPreview::normalizeNumber($candidate['consumer_number'] ?? '');
+
+            if ($row > 0 && $candidateRow === $row) {
+                $record = $candidate;
+                break;
+            }
+
+            if ($normalizedNumber !== '' && $candidateNumber === $normalizedNumber) {
+                $record = $candidate;
+            }
+        }
+
+        if (! $record) {
+            return redirect()->route('sales-master-consumer-preview')
+                ->with('message', 'The selected unmatched record is no longer available.');
+        }
+
+        return view('admin.sale.create-from-unmatched', [
+            'unmatchedRecord' => $record,
+            'unmatchedCreateOptions' => $this->unmatchedCreateOptions(),
+        ]);
+    }
+
+    private function unmatchedCreateOptions(): array
+    {
+        $company = CompanyProfile::where('user_id', Auth::id())->first();
+        $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
+        $agentSalesPerson = collect();
+
+        if ($company && $agent) {
+            $agentWhere = '';
+
+            if ($company->user_type === 'M') {
+                $agentWhere .= 'company_profiles.user_id = ' . Auth::id() . ' OR company_profiles.manager_id = ' . $company->id;
+            }
+
+            if ($company->user_type === 'S') {
+                $agentWhere .= 'company_profiles.id = ' . $company->id . ' OR company_profiles.id = ' . $company->manager_id;
+            }
+
+            $query = CompanyProfile::select('agent_sales_people.*')
+                ->leftJoin('agent_sales_people', 'agent_sales_people.user_id', 'company_profiles.user_id');
+
+            if ($agentWhere !== '') {
+                $query->whereRaw($agentWhere);
+            }
+
+            $agentSalesPerson = $query->get();
+        } elseif (! $company) {
+            $agentSalesPerson = AgentSalesPerson::get();
+        }
+
+        return [
+            'agentSalesPersons' => $agentSalesPerson,
+            'penalCompanies' => PenalCompany::get(),
+            'penalTypes' => PenalType::get(),
+            'penalWatts' => PenalWatt::get(),
+            'inverterCompanies' => InveterCompany::get(),
+            'banks' => Bank::get(),
+            'districts' => District::get(),
+            'talukas' => Taluka::get(),
+            'subDivisions' => SubDivision::get(),
+            'boms' => BOM::get(),
+        ];
+    }
+
     public function consumerPreviewUpload(Request $request)
     {
         @set_time_limit(0);
@@ -1438,6 +1518,11 @@ class SalesMasterController extends Controller
             $subDivisionNames = count($subDivisionIds) > 0
                 ? SubDivision::whereIn('id', $subDivisionIds)->pluck('name', 'id')
                 : collect();
+            $subDivisionIdsByName = SubDivision::query()
+                ->pluck('id', 'name')
+                ->mapWithKeys(function ($id, $name) {
+                    return [mb_strtolower(trim((string) $name)) => (int) $id];
+                });
 
             $ignoredNumbers = ConsumerIgnore::query()
                 ->pluck('consumer_number')
@@ -1483,6 +1568,12 @@ class SalesMasterController extends Controller
                         continue;
                     }
 
+                    $recommended = $row['recommended'] ?? [];
+                    $subDivisionName = mb_strtolower(trim((string) ($recommended['sub_division_name'] ?? '')));
+                    $preview['recommended'] = $recommended;
+                    $preview['sub_division_id'] = $subDivisionName !== ''
+                        ? $subDivisionIdsByName->get($subDivisionName)
+                        : null;
                     $unmatched[] = $preview;
                 }
             }
@@ -1586,6 +1677,167 @@ class SalesMasterController extends Controller
             'ignored_count' => $numbers->count(),
             'message' => $numbers->count() . ' record(s) added to ignore list.',
         ]);
+    }
+
+    public function createFromUnmatched(Request $request, UnmatchedRecordCreatorService $creator)
+    {
+        abort_unless(Gate::allows('sales-master-create'), 403);
+
+        $target = 'both';
+
+        $rules = [
+            'preview_row' => 'nullable|integer',
+            'consumer_number' => 'required|string|max:255',
+            'consumer_name' => 'required|string|max:255',
+            'mobile' => 'required|string|max:10|regex:/^[6-9][0-9]{9}$/',
+            'address' => 'required|string',
+            'agent_sales_person_id' => 'required',
+            'penal_company_id' => 'required',
+            'penal_type_id' => 'required',
+            'penal_watt_id' => 'required',
+            'penal_nos' => 'required|numeric',
+            'pv_capacity_kw' => 'required|numeric',
+            'inveter_company_id' => 'required',
+            'inveter_capacity' => 'required',
+            'no_of_inveter' => 'required|numeric',
+            'structure' => 'required|string',
+            'common_meter' => 'nullable|in:Yes,No',
+            'total_system_cost' => 'required|numeric',
+            'meter_charges_extra' => 'nullable|in:Yes,No',
+            'meter_charges' => 'required|numeric',
+            'registration_fee' => 'nullable|numeric',
+            'other_charge_name' => 'nullable|string|max:255',
+            'other_charge_amount' => 'nullable|numeric',
+            'subsidy' => 'nullable|numeric',
+            'state_subsidy' => 'nullable|numeric',
+            'state_subsidy_select' => 'required|in:general,sc_st,give_up_subsidy',
+            'bank_id' => 'nullable',
+            'total_amount' => 'required|numeric',
+            'consumer_type' => 'required',
+            'district_id' => 'required',
+            'taluka_id' => 'required',
+            'pin_code' => 'required|string|size:6|regex:/^[0-9]{6}$/',
+            'contact_number' => 'required|string|max:10|regex:/^[6-9][0-9]{9}$/',
+            'email' => 'nullable|email|max:255',
+            'gst_number' => 'nullable|string|max:15',
+            'aadhaar_number' => 'nullable|string|max:12',
+            'bank_name' => 'nullable|string|max:255',
+            'bank_account' => 'nullable|string|max:50',
+            'ifsc_code' => 'nullable|string|max:20',
+            'contracted_load' => 'nullable|string|max:20',
+            'phase' => 'nullable|in:Single phase,Three phase',
+            'sub_division_id' => 'nullable',
+            'division' => 'nullable|string|max:255',
+            'circle' => 'nullable|string|max:255',
+            'discom' => 'nullable|string|max:255',
+            'bom_id' => 'nullable',
+            'file_type' => 'nullable|in:C,L',
+            'remark' => 'nullable|string|max:1000',
+            'res_itemDescription' => 'nullable|array',
+            'res_itemDescription.*' => 'nullable|string|max:2000',
+            'res_qty' => 'nullable|array',
+            'res_qty.*' => 'nullable|string|max:255',
+            'res_size' => 'nullable|array',
+            'res_size.*' => 'nullable|string|max:255',
+            'res_make' => 'nullable|array',
+            'res_make.*' => 'nullable|string|max:255',
+            'res_type' => 'nullable|array',
+            'res_type.*' => 'nullable|string|max:255',
+            'document' => 'nullable|array|max:10',
+            'document.*.name' => 'nullable|string|max:255',
+            'document.*.image' => 'nullable|file|max:10240',
+            'document_name' => 'nullable|string|max:255',
+            'document_file' => 'nullable|file|max:10240',
+        ];
+
+        $validator = Validator::make($request->all(), $rules, [
+            'consumer_number.required' => 'Enter Consumer Number.',
+            'consumer_name.required' => 'Enter Consumer Name.',
+            'mobile.required' => 'Enter Mobile Number.',
+            'mobile.regex' => 'Enter Valid Mobile Number.',
+            'address.required' => 'Enter Address.',
+            'agent_sales_person_id.required' => 'Select Agent/Sales Person.',
+            'penal_company_id.required' => 'Select Panel Company.',
+            'penal_type_id.required' => 'Select Panel Type.',
+            'penal_watt_id.required' => 'Select Panel Watt.',
+            'penal_nos.required' => 'Enter Panel Nos.',
+            'pv_capacity_kw.required' => 'Enter PV Capacity.',
+            'inveter_company_id.required' => 'Select Inverter Company.',
+            'inveter_capacity.required' => 'Enter Inverter Capacity.',
+            'no_of_inveter.required' => 'Enter No. Of Inverter.',
+            'structure.required' => 'Select Structure.',
+            'total_system_cost.required' => 'Enter Total System Cost.',
+            'meter_charges.required' => 'Enter Meter Charges.',
+            'state_subsidy_select.required' => 'Select State Subsidy Type.',
+            'total_amount.required' => 'Enter Total Amount.',
+            'consumer_type.required' => 'Select Consumer Type.',
+            'district_id.required' => 'Select District.',
+            'taluka_id.required' => 'Select Taluka.',
+            'pin_code.required' => 'Enter Pincode.',
+            'pin_code.size' => 'Enter Valid Pincode.',
+            'pin_code.regex' => 'Enter Valid Pincode.',
+            'contact_number.required' => 'Enter Contact Number.',
+            'contact_number.regex' => 'Enter Valid Contact Number.',
+            'document.max' => 'You can upload up to 10 documents.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please input proper data.',
+                'errors' => $validator->errors()->all(),
+            ], 422);
+        }
+
+        if ($creator->consumerNumberExists((string) $request->input('consumer_number'))) {
+            return response()->json([
+                'success' => false,
+                'message' => 'The Consumer Number has already been taken.',
+                'errors' => ['The Consumer Number has already been taken.'],
+            ], 422);
+        }
+
+        try {
+            $result = $creator->create($request->all(), $target);
+
+            $preview = $request->session()->get('sales_master_consumer_preview');
+
+            if (is_array($preview) && array_key_exists('unmatched', $preview)) {
+                $normalizedNumber = SalesMasterConsumerPreview::normalizeNumber($request->input('consumer_number'));
+                $previewRow = (int) $request->input('preview_row');
+
+                $preview['unmatched'] = array_values(array_filter($preview['unmatched'], function ($row) use ($normalizedNumber, $previewRow) {
+                    $rowNumber = SalesMasterConsumerPreview::normalizeNumber($row['consumer_number'] ?? '');
+
+                    if ($normalizedNumber !== '' && $rowNumber === $normalizedNumber) {
+                        return false;
+                    }
+
+                    return $previewRow <= 0 || (int) ($row['row'] ?? 0) !== $previewRow;
+                }));
+
+                $request->session()->put('sales_master_consumer_preview', $preview);
+            }
+
+            $messages = [
+                'quotation' => 'Quotation created successfully.',
+                'sales_order' => 'Sales order created successfully.',
+                'both' => 'Quotation and sales order created successfully.',
+            ];
+
+            return response()->json(array_merge($result, [
+                'success' => true,
+                'message' => $messages[$target],
+            ]));
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to create the selected record(s). Please try again.',
+                'errors' => ['Unable to create the selected record(s). Please try again.'],
+            ], 500);
+        }
     }
 
     public function applyPreviewDefaultUpdates(Request $request)

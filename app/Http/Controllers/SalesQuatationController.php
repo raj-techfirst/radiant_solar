@@ -381,7 +381,7 @@ class SalesQuatationController extends Controller
                 }
             }
             if ($request->form_type == 'resident') {
-                $SalesQuatation->lead_master_id = $request->res_lead_master_id;
+                $SalesQuatation->lead_master_id = $request->res_lead_master_id ?: null;
                 $SalesQuatation->name = strtoupper($request->res_name);
                 $SalesQuatation->mobile = $request->res_mobile;
                 $SalesQuatation->address = $request->res_address;

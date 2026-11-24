@@ -265,11 +265,9 @@
                 $selectAll.prop('indeterminate', $checked.length > 0 && $checked.length < $checkboxes.length);
 
                 var hasMatchedSelection = $('.preview-row-checkbox[data-preview-group="matched"]:checked').length > 0;
-                var hasUnmatchedSelection = $('.preview-row-checkbox[data-preview-group="unmatched"]:checked').length > 0;
                 var activeTab = $('#consumer-preview-tabs .nav-link.active').data('preview-filter');
 
                 $('#preview-update-record-wrapper').toggleClass('d-none', !hasMatchedSelection || activeTab !== 'matched');
-                $('#preview-ignore-selected-btn').toggleClass('d-none', !hasUnmatchedSelection || activeTab !== 'unmatched');
             }
 
             function applyConsumerPreviewFilter() {
@@ -357,13 +355,11 @@
                 updatePreviewSelectAllState($(this).data('preview-group'));
             });
 
-            $(document).on('click', '#preview-ignore-selected-btn', function() {
-                var $selected = $('.preview-row-checkbox[data-preview-group="unmatched"]:checked');
-                var consumerNumbers = $selected.map(function() {
-                    return $(this).val();
-                }).get();
+            $(document).on('click', '.preview-ignore-row', function() {
+                var $row = $(this).closest('tr');
+                var consumerNumber = $row.attr('data-preview-number') || '';
 
-                if (!consumerNumbers.length) {
+                if (consumerNumber === '') {
                     return;
                 }
 
@@ -372,11 +368,11 @@
                     type: 'POST',
                     data: {
                         _token: '{{ csrf_token() }}',
-                        consumer_numbers: consumerNumbers
+                        consumer_numbers: [consumerNumber]
                     },
                     dataType: 'json',
                     success: function(response) {
-                        $selected.closest('tr').remove();
+                        $row.remove();
 
                         if ($('#preview-unmatched-section tbody tr').not('[data-preview-empty]').length === 0) {
                             $('#preview-unmatched-section tbody').html(
@@ -395,7 +391,7 @@
                         });
                     },
                     error: function(xhr) {
-                        var message = 'Unable to ignore selected records.';
+                        var message = 'Unable to ignore the selected record.';
 
                         if (xhr.responseJSON && xhr.responseJSON.message) {
                             message = xhr.responseJSON.message;
