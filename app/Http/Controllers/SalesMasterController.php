@@ -1389,8 +1389,24 @@ class SalesMasterController extends Controller
 
     public function consumerPreviewPage()
     {
+        $ignored = ConsumerIgnore::query()
+            ->orderByDesc('id')
+            ->get(['consumer_name', 'consumer_number', 'ignore_date'])
+            ->map(function ($record) {
+                $ignoreDate = trim((string) ($record->ignore_date ?? ''));
+
+                return [
+                    'consumer_name' => $record->consumer_name ?? '',
+                    'consumer_number' => $record->consumer_number ?? '',
+                    'ignore_date' => $ignoreDate !== '' ? date('d-m-Y', strtotime($ignoreDate)) : '',
+                ];
+            })
+            ->all();
+
         return view('admin.sale.consumer-preview-page', [
             'preview' => session('sales_master_consumer_preview'),
+            'missingInExcel' => session('sales_master_consumer_preview.missing_in_excel', []),
+            'ignored' => $ignored,
         ]);
     }
 
@@ -1418,14 +1434,38 @@ class SalesMasterController extends Controller
             }
         }
 
+        if (! $record && $normalizedNumber !== '') {
+            $ignored = ConsumerIgnore::query()
+                ->get(['consumer_number', 'consumer_name'])
+                ->first(function ($item) use ($normalizedNumber) {
+                    return SalesMasterConsumerPreview::normalizeNumber($item->consumer_number) === $normalizedNumber;
+                });
+
+            if ($ignored) {
+                $record = [
+                    'row' => 0,
+                    'consumer_number' => $ignored->consumer_number,
+                    'consumer_name' => $ignored->consumer_name ?? '',
+                    'recommended' => [],
+                    'fields' => [
+                        'consumer_number' => $ignored->consumer_number,
+                        'consumer_name' => $ignored->consumer_name ?? '',
+                    ],
+                ];
+            }
+        }
+
         if (! $record) {
             return redirect()->route('sales-master-consumer-preview')
-                ->with('message', 'The selected unmatched record is no longer available.');
+                ->with('message', 'The selected record is no longer available.');
         }
+
+        $options = $this->unmatchedCreateOptions();
 
         return view('admin.sale.create-from-unmatched', [
             'unmatchedRecord' => $record,
-            'unmatchedCreateOptions' => $this->unmatchedCreateOptions(),
+            'unmatchedCreateOptions' => $options,
+            'unmatchedPrefill' => $this->buildUnmatchedPrefill($record, $options),
         ]);
     }
 
@@ -1472,6 +1512,169 @@ class SalesMasterController extends Controller
         ];
     }
 
+    private function buildUnmatchedPrefill(array $record, array $options): array
+    {
+        $fields = $record['fields'] ?? [];
+        $recommended = $record['recommended'] ?? [];
+        $value = function (string $key) use ($fields, $recommended): string {
+            $fieldValue = trim((string) ($fields[$key] ?? ''));
+
+            if ($fieldValue !== '') {
+                return $fieldValue;
+            }
+
+            return trim((string) ($recommended[$key] ?? ''));
+        };
+
+        $mobile = $this->unmatchedValidMobile($value('mobile'));
+        $penalCompany = $this->unmatchedFindModel($options['penalCompanies'] ?? collect(), $value('pv_module_make'));
+        $penalWatt = $this->unmatchedFindModel($options['penalWatts'] ?? collect(), $value('module_capacity_wp'));
+        $inverterCompany = $this->unmatchedFindModel($options['inverterCompanies'] ?? collect(), $value('inverter_make'));
+        $bank = $this->unmatchedFindModel($options['banks'] ?? collect(), $value('loan_applied_at_bank'));
+        $district = $this->unmatchedFindModel($options['districts'] ?? collect(), $value('district_name'));
+        $subDivision = $this->unmatchedFindModel($options['subDivisions'] ?? collect(), $value('sub_division_name'), true);
+
+        if (! $subDivision && ! empty($record['sub_division_id'])) {
+            $subDivision = $this->unmatchedFindModelById($options['subDivisions'] ?? collect(), $record['sub_division_id']);
+        }
+
+        $prefill = [];
+        $add = function (string $key, $val) use (&$prefill): void {
+            if ($val !== null && $val !== '') {
+                $prefill[$key] = $val;
+            }
+        };
+
+        $add('consumer_name', $value('consumer_name'));
+        $add('mobile', $mobile);
+        $add('address', $value('address'));
+        $add('penal_company_id', $penalCompany->id ?? null);
+        $add('penal_watt_id', $penalWatt->id ?? null);
+        $add('penal_nos', $this->unmatchedNumber($value('module_quantity')));
+        $add('pv_capacity_kw', $this->unmatchedNumber($value('proposed_pv_capacity')));
+        $add('inveter_company_id', $inverterCompany->id ?? null);
+        $add('inveter_capacity', $value('inverter_capacity'));
+        $add('no_of_inveter', $this->unmatchedNumber($value('inverter_quantity')));
+        $add('subsidy', $this->unmatchedMoney($value('subsidy_amount')));
+        $add('consumer_type', $this->unmatchedConsumerType($value('connection_category')));
+        $add('contact_number', $mobile);
+        $add('email', $value('email'));
+        $add('district_id', $district->id ?? null);
+        $add('bank_name', $value('loan_applied_at_bank'));
+        $add('bank_id', $bank->id ?? null);
+        $add('contracted_load', $this->unmatchedNumber($value('sanction_load')));
+        $add('sub_division_id', $subDivision->id ?? null);
+        $add('division', $value('division_name') ?: ($subDivision->division_name ?? ''));
+        $add('circle', $value('circle_name') ?: ($subDivision->circle_name ?? ''));
+        $add('discom', $value('discom_name') ?: ($subDivision->discom ?? ''));
+        $add('remark', $value('last_comment'));
+
+        $loanTaken = mb_strtolower(trim($value('loan_taken')));
+
+        if (str_starts_with($loanTaken, 'y')) {
+            $prefill['file_type'] = 'L';
+        } elseif (str_starts_with($loanTaken, 'n')) {
+            $prefill['file_type'] = 'C';
+        }
+
+        return $prefill;
+    }
+
+    private function unmatchedFindModel($collection, string $value, bool $subDivision = false)
+    {
+        $target = $this->unmatchedNormalizeName($value, $subDivision);
+
+        if ($target === '') {
+            return null;
+        }
+
+        foreach ($collection as $model) {
+            if ($this->unmatchedNormalizeName($model->name ?? '', $subDivision) === $target) {
+                return $model;
+            }
+        }
+
+        return null;
+    }
+
+    private function unmatchedFindModelById($collection, $id)
+    {
+        foreach ($collection as $model) {
+            if ((int) ($model->id ?? 0) === (int) $id) {
+                return $model;
+            }
+        }
+
+        return null;
+    }
+
+    private function unmatchedNormalizeName($value, bool $subDivision = false): string
+    {
+        $value = mb_strtolower(trim((string) $value));
+        $value = str_replace(["'", '’'], '', $value);
+        $value = preg_replace('/[^a-z0-9]+/', ' ', $value);
+        $value = trim((string) preg_replace('/\s+/', ' ', $value));
+
+        if ($subDivision) {
+            $value = (string) preg_replace('/\b(sub division|subdivision|s d|sdn|sd)\b/', ' ', $value);
+            $value = trim((string) preg_replace('/\s+/', ' ', $value));
+        }
+
+        return $value;
+    }
+
+    private function unmatchedValidMobile($value): string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $value);
+
+        return preg_match('/^[6-9][0-9]{9}$/', (string) $digits) ? (string) $digits : '';
+    }
+
+    private function unmatchedNumber($value): string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '' || ! is_numeric($value)) {
+            return $value;
+        }
+
+        return rtrim(rtrim(number_format((float) $value, 3, '.', ''), '0'), '.');
+    }
+
+    private function unmatchedMoney($value): string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '' || ! is_numeric(str_replace(',', '', $value))) {
+            return $value;
+        }
+
+        return number_format((float) str_replace(',', '', $value), 2, '.', '');
+    }
+
+    private function unmatchedConsumerType($value): string
+    {
+        $value = mb_strtolower(trim((string) $value));
+
+        if ($value === '') {
+            return '';
+        }
+
+        if (strpos($value, 'industrial') !== false) {
+            return 'Industrial';
+        }
+
+        if (strpos($value, 'commercial') !== false) {
+            return 'Commercial';
+        }
+
+        if (strpos($value, 'resident') !== false || strpos($value, 'domestic') !== false || strpos($value, 'rwa') !== false) {
+            return 'Resident';
+        }
+
+        return '';
+    }
+
     public function consumerPreviewUpload(Request $request)
     {
         @set_time_limit(0);
@@ -1502,17 +1705,29 @@ class SalesMasterController extends Controller
                 return $number !== '';
             })));
 
-            $salesByNumber = collect();
-
-            if (count($numbers) > 0) {
-                $placeholders = implode(',', array_fill(0, count($numbers), '?'));
-                $salesByNumber = SalesMaster::whereRaw(
-                    "REPLACE(REPLACE(consumer_number, ' ', ''), CHAR(39), '') IN ({$placeholders})",
-                    $numbers
-                )->get()->keyBy(function ($salesMaster) {
+            $salesByNumber = SalesMaster::query()
+                ->get(['id', 'consumer_name', 'consumer_number', 'district_id', 'sub_division_id', 'discom', 'circle', 'division'])
+                ->filter(function ($salesMaster) {
+                    return SalesMasterConsumerPreview::normalizeNumber($salesMaster->consumer_number) !== '';
+                })
+                ->keyBy(function ($salesMaster) {
                     return SalesMasterConsumerPreview::normalizeNumber($salesMaster->consumer_number);
                 });
-            }
+
+            $excelNumberSet = array_fill_keys($numbers, true);
+            $missingInExcel = $salesByNumber
+                ->filter(function ($salesMaster, $number) use ($excelNumberSet) {
+                    return ! isset($excelNumberSet[$number]);
+                })
+                ->map(function ($salesMaster) {
+                    return [
+                        'id' => (int) $salesMaster->id,
+                        'consumer_name' => $salesMaster->consumer_name ?? '',
+                        'consumer_number' => $salesMaster->consumer_number ?? '',
+                    ];
+                })
+                ->values()
+                ->all();
 
             $subDivisionIds = $salesByNumber->pluck('sub_division_id')->filter()->unique()->values()->all();
             $subDivisionNames = count($subDivisionIds) > 0
@@ -1541,6 +1756,7 @@ class SalesMasterController extends Controller
                     'row' => $index + 2,
                     'consumer_name' => $row['consumer_name'],
                     'consumer_number' => $row['consumer_number'],
+                    'fields' => $row['fields'] ?? [],
                 ];
 
                 $key = $row['number'];
@@ -1593,6 +1809,7 @@ class SalesMasterController extends Controller
             $request->session()->put('sales_master_consumer_preview', [
                 'matched' => $recommendedMatched,
                 'unmatched' => $unmatched,
+                'missing_in_excel' => $missingInExcel,
                 'file_path' => $filePath,
                 'file_name' => $request->file('excel_file')->getClientOriginalName(),
                 'generated_at' => now()->format('d-m-Y H:i:s'),
@@ -1626,6 +1843,8 @@ class SalesMasterController extends Controller
         $request->validate([
             'consumer_numbers' => 'required|array|min:1',
             'consumer_numbers.*' => 'required|string|max:255',
+            'consumer_names' => 'nullable|array',
+            'consumer_names.*' => 'nullable|string|max:255',
         ]);
 
         $now = now();
@@ -1636,6 +1855,22 @@ class SalesMasterController extends Controller
             ->filter()
             ->unique()
             ->values();
+        $names = collect($request->input('consumer_names', []))->values();
+        $preview = $request->session()->get('sales_master_consumer_preview');
+        $namesByNumber = [];
+
+        if (is_array($preview)) {
+            foreach (['matched', 'unmatched'] as $group) {
+                foreach ($preview[$group] ?? [] as $row) {
+                    $previewNumber = SalesMasterConsumerPreview::normalizeNumber($row['consumer_number'] ?? '');
+                    $previewName = trim((string) ($row['consumer_name'] ?? ''));
+
+                    if ($previewNumber !== '' && $previewName !== '' && ! isset($namesByNumber[$previewNumber])) {
+                        $namesByNumber[$previewNumber] = $previewName;
+                    }
+                }
+            }
+        }
 
         if ($numbers->isEmpty()) {
             return response()->json([
@@ -1644,9 +1879,16 @@ class SalesMasterController extends Controller
             ], 422);
         }
 
-        $records = $numbers->map(function ($number) use ($now) {
+        $records = $numbers->map(function ($number, $index) use ($now, $names, $namesByNumber) {
+            $name = trim((string) ($names->get($index) ?? ''));
+
+            if ($name === '') {
+                $name = $namesByNumber[$number] ?? '';
+            }
+
             return [
                 'consumer_number' => $number,
+                'consumer_name' => $name !== '' ? $name : null,
                 'ignore_date' => $now->format('Y-m-d'),
                 'timestep' => $now->format('Y-m-d H:i:s'),
                 'created_at' => $now->format('Y-m-d H:i:s'),
@@ -1657,10 +1899,8 @@ class SalesMasterController extends Controller
         ConsumerIgnore::query()->upsert(
             $records,
             ['consumer_number'],
-            ['ignore_date', 'timestep', 'updated_at']
+            ['consumer_name', 'ignore_date', 'timestep', 'updated_at']
         );
-
-        $preview = $request->session()->get('sales_master_consumer_preview');
 
         if (is_array($preview) && array_key_exists('unmatched', $preview)) {
             $preview['unmatched'] = array_values(array_filter($preview['unmatched'], function ($row) use ($numbers) {
@@ -1675,6 +1915,15 @@ class SalesMasterController extends Controller
         return response()->json([
             'success' => true,
             'ignored_count' => $numbers->count(),
+            'ignored' => collect($records)->map(function ($record) {
+                $ignoreDate = trim((string) ($record['ignore_date'] ?? ''));
+
+                return [
+                    'consumer_name' => $record['consumer_name'] ?? '',
+                    'consumer_number' => $record['consumer_number'] ?? '',
+                    'ignore_date' => $ignoreDate !== '' ? date('d-m-Y', strtotime($ignoreDate)) : '',
+                ];
+            })->all(),
             'message' => $numbers->count() . ' record(s) added to ignore list.',
         ]);
     }
@@ -1800,10 +2049,22 @@ class SalesMasterController extends Controller
         try {
             $result = $creator->create($request->all(), $target);
 
+            $normalizedNumber = SalesMasterConsumerPreview::normalizeNumber($request->input('consumer_number'));
+
+            if ($normalizedNumber !== '') {
+                ConsumerIgnore::query()
+                    ->get(['id', 'consumer_number'])
+                    ->filter(function ($item) use ($normalizedNumber) {
+                        return SalesMasterConsumerPreview::normalizeNumber($item->consumer_number) === $normalizedNumber;
+                    })
+                    ->each(function ($item) {
+                        $item->delete();
+                    });
+            }
+
             $preview = $request->session()->get('sales_master_consumer_preview');
 
             if (is_array($preview) && array_key_exists('unmatched', $preview)) {
-                $normalizedNumber = SalesMasterConsumerPreview::normalizeNumber($request->input('consumer_number'));
                 $previewRow = (int) $request->input('preview_row');
 
                 $preview['unmatched'] = array_values(array_filter($preview['unmatched'], function ($row) use ($normalizedNumber, $previewRow) {

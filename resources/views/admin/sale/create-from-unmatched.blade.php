@@ -2,9 +2,9 @@
 @section('title', 'Create From Unmatched Record')
 @section('content')
     @php
-        $recommended = $unmatchedRecord['recommended'] ?? [];
-        $selectedBank = old('bank_id', $unmatchedCreateOptions['banks']->firstWhere('default', 1)->id ?? '');
-        $selectedSubDivision = old('sub_division_id', $unmatchedRecord['sub_division_id'] ?? '');
+        $prefill = $unmatchedPrefill ?? [];
+        $selectedBank = old('bank_id', $prefill['bank_id'] ?? ($unmatchedCreateOptions['banks']->firstWhere('default', 1)->id ?? ''));
+        $selectedSubDivision = old('sub_division_id', $prefill['sub_division_id'] ?? ($unmatchedRecord['sub_division_id'] ?? ''));
         $documentOptions = ['light_bill' => 'Light Bill', 'bank_details' => 'Bank Details', 'aadhaar_card' => 'Aadhaar Card', 'pancard' => 'Pancard', 'dastavej' => 'Dastavej', 'gst_certificate' => 'GST Certificate', 'udyam_registration' => 'Udyam Registration', 'customer_signture' => 'Customer Signature', 'passport_size_photo' => 'Passport Size Photo', 'sales_invoice' => 'Sales Invoice', 'application_acknowledgement_form' => 'Application Acknowledgement / Form', 'dcr_certificate' => 'DCR Certificate', 'other_document' => 'Other Document'];
         $oldDocuments = old('document');
 
@@ -28,20 +28,19 @@
     @endphp
 
     <div class="row">
-        <div class="col-12 mb-1">
-            <h4 class="content-header-title float-start">Create From Unmatched Record</h4>
-            <div class="float-end">
-                <a class="btn btn-sm btn-outline-secondary" href="{{ route('sales-master-consumer-preview') }}">
-                    <i data-feather="arrow-left" class="me-25"></i> Back to Preview
-                </a>
-            </div>
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h4 class="card-title mb-1">Add Sales Order</h4>
+            <a class="btn btn-sm btn-outline-secondary" href="{{ route('sales-master-consumer-preview') }}">
+                <i data-feather="arrow-left" class="me-25"></i> Back to Preview
+            </a>
         </div>
     </div>
 
     <div class="row">
         <div class="col-12">
-            <div class="card p-2">
-                <form id="unmatched-create-form" action="{{ route('sales-master-consumer-preview-create-from-unmatched') }}"
+            <div class="card border-1 border-secondary p-1">
+                <form id="unmatched-create-form" class="form"
+                    action="{{ route('sales-master-consumer-preview-create-from-unmatched') }}"
                     method="POST" enctype="multipart/form-data" novalidate
                     data-preview-url="{{ route('sales-master-consumer-preview') }}"
                     data-validation-errors='@json(($errors ?? null) ? $errors->all() : [])'>
@@ -51,169 +50,306 @@
                     <input type="hidden" name="consumer_number" id="unmatched_consumer_number" value="{{ old('consumer_number', $unmatchedRecord['consumer_number'] ?? '') }}">
                     <input type="hidden" name="consumer_name" id="unmatched_consumer_name" value="{{ old('consumer_name', $unmatchedRecord['consumer_name'] ?? '') }}">
 
-                    <div class="row mb-2">
-                        <div class="col-md-6">
-                            <label class="form-label">Excel Consumer Name</label>
-                            <input type="text" class="form-control" id="unmatched_excel_name" value="{{ $unmatchedRecord['consumer_name'] ?? '' }}" placeholder="Excel consumer name" readonly>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Excel Consumer Number</label>
-                            <input type="text" class="form-control" id="unmatched_excel_number" value="{{ $unmatchedRecord['consumer_number'] ?? '' }}" placeholder="Excel consumer number" readonly>
-                        </div>
-                    </div>
-
-                    <h6 class="fw-bold mt-2">Common And Resident Quotation Details</h6>
-                    <hr class="my-1">
                     <div class="row">
-                        <div class="col-md-4 mb-1">
-                            <label class="form-label" for="unmatched_name">Customer Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="consumer_name_display" id="unmatched_name"
-                                value="{{ old('consumer_name', $unmatchedRecord['consumer_name'] ?? '') }}"
-                                placeholder="Enter customer name"
-                                oninput="this.value = this.value.toUpperCase()">
+                        <div class="col-lg-12 mb-1">
+                            <div class="alert alert-info py-1 mb-0 small">
+                                Excel Record: <strong>{{ $unmatchedRecord['consumer_name'] ?? '' }}</strong>
+                                @if (($unmatchedRecord['consumer_number'] ?? '') !== '')
+                                    / <strong>{{ $unmatchedRecord['consumer_number'] }}</strong>
+                                @endif
+                                <span class="float-end">A quotation will be created with this sales order.</span>
+                            </div>
                         </div>
-                        <div class="col-md-4 mb-1">
-                            <label class="form-label" for="unmatched_mobile">Mobile <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="mobile" id="unmatched_mobile" value="{{ old('mobile') }}" placeholder="Enter mobile number">
+
+                        <div class="col-lg-12 mt-50 mb-50">
+                            <h5 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);"> Application Details</h5>
+                            <hr class="m-0">
                         </div>
-                        <div class="col-md-6 mb-1">
-                            <label class="form-label" for="unmatched_address">Address <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="address" id="unmatched_address" value="{{ old('address') }}" placeholder="Enter address">
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_excel_number">Consumer Number<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="unmatched_excel_number" value="{{ old('consumer_number', $unmatchedRecord['consumer_number'] ?? '') }}" placeholder="Consumer Number" readonly>
                         </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_reference">Reference</label>
-                            <input type="text" class="form-control" name="reference" id="unmatched_reference"
-                                value="{{ old('reference', $unmatchedRecord['consumer_number'] ?? '') }}" placeholder="Consumer number" readonly>
+                        <div class="col-12 col-md-6 col-lg-5 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_name">Consumer Name<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="consumer_name_display" id="unmatched_name" value="{{ old('consumer_name', $prefill['consumer_name'] ?? '') }}" placeholder="Consumer Name" oninput="this.value = this.value.toUpperCase()">
                         </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_agent_sales_person_id">Agent/Sales Person <span class="text-danger">*</span></label>
-                            <select class="form-select" name="agent_sales_person_id" id="unmatched_agent_sales_person_id" data-placeholder="Select agent/sales person">
+                        <div class="col-12 col-md-3 col-lg-2 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_consumer_type">Consumer Type<span class="text-danger">*</span></label>
+                            <select class="form-control form-select select2 custom-select2" name="consumer_type" id="unmatched_consumer_type" data-placeholder="-- Select --">
                                 <option value="">-- Select --</option>
-                                @foreach ($unmatchedCreateOptions['agentSalesPersons'] as $agent)
-                                    <option value="{{ $agent->id }}" @selected(old('agent_sales_person_id') == $agent->id)>{{ $agent->name }}</option>
-                                @endforeach
+                                <option value="Resident" @selected((string) old('consumer_type', $prefill['consumer_type'] ?? '') === 'Resident')>Resident</option>
+                                <option value="Industrial" @selected((string) old('consumer_type', $prefill['consumer_type'] ?? '') === 'Industrial')>Industrial</option>
+                                <option value="Commercial" @selected((string) old('consumer_type', $prefill['consumer_type'] ?? '') === 'Commercial')>Commercial</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3 col-lg-2 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_file_type">Payment Type</label>
+                            <select class="form-control form-select select2 custom-select2" name="file_type" id="unmatched_file_type" data-placeholder="-- Select --">
+                                <option value="C" @selected((string) old('file_type', $prefill['file_type'] ?? 'C') === 'C')>Cash</option>
+                                <option value="L" @selected((string) old('file_type', $prefill['file_type'] ?? 'C') === 'L')>Loan</option>
                             </select>
                         </div>
 
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_penal_company_id">Panel Company <span class="text-danger">*</span></label>
-                            <select class="form-select" name="penal_company_id" id="unmatched_penal_company_id" data-placeholder="Select panel company">
+                        <div class="col-lg-12 mt-50 mb-50">
+                            <h5 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);"> Contact Details</h5>
+                            <hr class="m-0">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_contact_number">Contact Number<span class="text-danger">*</span></label>
+                            <input type="text" maxlength="10" class="form-control" name="contact_number" id="unmatched_contact_number" value="{{ old('contact_number', $prefill['contact_number'] ?? '') }}" placeholder="Contact Number">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_mobile">Mobile<span class="text-danger">*</span></label>
+                            <input type="text" maxlength="10" class="form-control" name="mobile" id="unmatched_mobile" value="{{ old('mobile', $prefill['mobile'] ?? '') }}" placeholder="Mobile Number">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_email">Email</label>
+                            <input type="email" class="form-control" name="email" id="unmatched_email" value="{{ old('email', $prefill['email'] ?? '') }}" placeholder="Email Address">
+                        </div>
+                        <div class="col-12 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_address">Address</label>
+                            <input type="text" class="form-control" name="address" id="unmatched_address" value="{{ old('address', $prefill['address'] ?? '') }}" placeholder="Address">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_district_id">District<span class="text-danger">*</span></label>
+                            <select class="form-control form-select select2 custom-select2" name="district_id" id="unmatched_district_id" data-placeholder="-- Select --">
                                 <option value="">-- Select --</option>
-                                @foreach ($unmatchedCreateOptions['penalCompanies'] as $panelCompany)
-                                    <option value="{{ $panelCompany->id }}" @selected(old('penal_company_id') == $panelCompany->id)>{{ $panelCompany->name }}</option>
+                                @foreach ($unmatchedCreateOptions['districts'] as $district)
+                                    <option value="{{ $district->id }}" @selected(old('district_id', $prefill['district_id'] ?? '') == $district->id)>{{ $district->name }}</option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_penal_type_id">Panel Type <span class="text-danger">*</span></label>
-                            <select class="form-select" name="penal_type_id" id="unmatched_penal_type_id" data-placeholder="Select panel type">
+                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_taluka_id">Taluka<span class="text-danger">*</span></label>
+                            <select class="form-control form-select select2 custom-select2" name="taluka_id" id="unmatched_taluka_id" data-placeholder="-- Select --">
                                 <option value="">-- Select --</option>
-                                @foreach ($unmatchedCreateOptions['penalTypes'] as $panelType)
-                                    <option value="{{ $panelType->id }}" @selected(old('penal_type_id') == $panelType->id)>{{ $panelType->name }}</option>
+                                @foreach ($unmatchedCreateOptions['talukas'] as $taluka)
+                                    <option value="{{ $taluka->id }}" data-district-id="{{ $taluka->district_id }}" @selected(old('taluka_id') == $taluka->id)>{{ $taluka->name }}</option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-2 mb-1">
-                            <label class="form-label" for="unmatched_penal_watt_id">Panel Watt <span class="text-danger">*</span></label>
-                            <select class="form-select" name="penal_watt_id" id="unmatched_penal_watt_id" data-placeholder="Select panel watt">
-                                <option value="">-- Select --</option>
-                                @foreach ($unmatchedCreateOptions['penalWatts'] as $panelWatt)
-                                    <option value="{{ $panelWatt->id }}" @selected(old('penal_watt_id') == $panelWatt->id)>{{ $panelWatt->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-2 mb-1">
-                            <label class="form-label" for="unmatched_penal_nos">Panel Nos <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" name="penal_nos" id="unmatched_penal_nos" value="{{ old('penal_nos') }}" placeholder="Enter panel nos">
-                        </div>
-                        <div class="col-md-2 mb-1">
-                            <label class="form-label" for="unmatched_pv_capacity_kw">PV Capacity KW <span class="text-danger">*</span></label>
-                            <input type="number" step="any" class="form-control" name="pv_capacity_kw" id="unmatched_pv_capacity_kw" value="{{ old('pv_capacity_kw') }}" placeholder="Calculated capacity in KW" readonly>
+                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_pin_code">Pincode<span class="text-danger">*</span></label>
+                            <input type="text" maxlength="6" class="form-control" name="pin_code" id="unmatched_pin_code" value="{{ old('pin_code') }}" placeholder="Pincode">
                         </div>
 
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_inveter_company_id">Inverter Company <span class="text-danger">*</span></label>
-                            <select class="form-select" name="inveter_company_id" id="unmatched_inveter_company_id" data-placeholder="Select inverter company">
-                                <option value="">-- Select --</option>
-                                @foreach ($unmatchedCreateOptions['inverterCompanies'] as $inverterCompany)
-                                    <option value="{{ $inverterCompany->id }}" @selected(old('inveter_company_id') == $inverterCompany->id)>{{ $inverterCompany->name }}</option>
-                                @endforeach
-                            </select>
+                        <div class="col-lg-12 mt-50 mb-50">
+                            <h5 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);"> Bank Details</h5>
+                            <hr class="m-0">
                         </div>
-                        <div class="col-md-2 mb-1">
-                            <label class="form-label" for="unmatched_inveter_capacity">Inverter Capacity <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="inveter_capacity" id="unmatched_inveter_capacity" value="{{ old('inveter_capacity') }}" placeholder="Enter inverter capacity">
-                        </div>
-                        <div class="col-md-2 mb-1">
-                            <label class="form-label" for="unmatched_no_of_inveter">No. Of Inverter <span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" name="no_of_inveter" id="unmatched_no_of_inveter" value="{{ old('no_of_inveter') }}" placeholder="Enter inverter count">
-                        </div>
-                        <div class="col-md-2 mb-1">
-                            <label class="form-label" for="unmatched_structure">Structure <span class="text-danger">*</span></label>
-                            <select class="form-select" name="structure" id="unmatched_structure" data-placeholder="Select structure">
-                                <option value="">-- Select --</option>
-                                @foreach (['6ft * 8ft', '8ft * 10ft', '10ft * 12ft', 'As Per Design'] as $structure)
-                                    <option value="{{ $structure }}" @selected(old('structure') === $structure)>{{ $structure }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_common_meter">Common Meter</label>
-                            <select class="form-select" name="common_meter" id="unmatched_common_meter" data-placeholder="Select common meter">
-                                <option value="No" @selected(old('common_meter', 'No') === 'No')>No</option>
-                                <option value="Yes" @selected(old('common_meter') === 'Yes')>Yes</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-2 mb-1">
-                            <label class="form-label" for="unmatched_total_system_cost">Total System Cost <span class="text-danger">*</span></label>
-                            <input type="number" step="any" class="form-control" name="total_system_cost" id="unmatched_total_system_cost" value="{{ old('total_system_cost') }}" placeholder="Enter system cost">
-                        </div>
-                        <div class="col-md-2 mb-1">
-                            <label class="form-label" for="unmatched_meter_charges_extra">Meter Charge Extra</label>
-                            <select class="form-select" name="meter_charges_extra" id="unmatched_meter_charges_extra" data-placeholder="Select meter charge option">
-                                <option value="No" @selected(old('meter_charges_extra', 'No') === 'No')>No</option>
-                                <option value="Yes" @selected(old('meter_charges_extra') === 'Yes')>Yes</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2 mb-1">
-                            <label class="form-label" for="unmatched_meter_charges">Meter Charges <span class="text-danger">*</span></label>
-                            <input type="number" step="any" class="form-control" name="meter_charges" id="unmatched_meter_charges" value="{{ old('meter_charges') }}" placeholder="Enter meter charges">
-                        </div>
-                        <div class="col-md-2 mb-1">
-                            <label class="form-label" for="unmatched_registration_fee">Registration Fee</label>
-                            <input type="number" step="any" class="form-control" name="registration_fee" id="unmatched_registration_fee" value="{{ old('registration_fee') }}" placeholder="Enter registration fee">
-                        </div>
-                        <div class="col-md-2 mb-1">
-                            <label class="form-label" for="unmatched_other_charge_name">Other Charge Name</label>
-                            <input type="text" class="form-control" name="other_charge_name" id="unmatched_other_charge_name" value="{{ old('other_charge_name') }}" placeholder="Enter charge name">
-                        </div>
-                        <div class="col-md-2 mb-1">
-                            <label class="form-label" for="unmatched_other_charge_amount">Other Charge Amount</label>
-                            <input type="number" step="any" class="form-control" name="other_charge_amount" id="unmatched_other_charge_amount" value="{{ old('other_charge_amount') }}" placeholder="Enter charge amount">
-                        </div>
-
-                        <div class="col-md-3 mb-1">
+                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
                             <label class="form-label" for="unmatched_bank_id">Bank</label>
-                            <select class="form-select" name="bank_id" id="unmatched_bank_id" data-placeholder="Select bank">
+                            <select class="form-control form-select select2 custom-select2" name="bank_id" id="unmatched_bank_id" data-placeholder="-- Select --">
                                 <option value="">-- Select --</option>
                                 @foreach ($unmatchedCreateOptions['banks'] as $bank)
                                     <option value="{{ $bank->id }}" @selected((string) $selectedBank === (string) $bank->id)>{{ $bank->name }}</option>
                                 @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_state_subsidy_select">State Subsidy Type <span class="text-danger">*</span></label>
-                            <select class="form-select" name="state_subsidy_select" id="unmatched_state_subsidy_select" data-placeholder="Select state subsidy type">
+                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_bank_name">Bank Name</label>
+                            <input type="text" class="form-control" name="bank_name" id="unmatched_bank_name" value="{{ old('bank_name', $prefill['bank_name'] ?? '') }}" placeholder="Bank Name">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_bank_account">Bank Account</label>
+                            <input type="text" maxlength="50" class="form-control" name="bank_account" id="unmatched_bank_account" value="{{ old('bank_account') }}" placeholder="Bank Account">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_ifsc_code">IFSC Code</label>
+                            <input type="text" class="form-control" name="ifsc_code" id="unmatched_ifsc_code" value="{{ old('ifsc_code') }}" placeholder="IFSC Code">
+                        </div>
+
+                        <div class="col-lg-12 mt-50 mb-50">
+                            <h5 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);"> Division Details</h5>
+                            <hr class="m-0">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_sub_division_id">Sub Division</label>
+                            <select class="form-control form-select select2 custom-select2" name="sub_division_id" id="unmatched_sub_division_id" data-placeholder="-- Select --">
+                                <option value="">-- Select --</option>
+                                @foreach ($unmatchedCreateOptions['subDivisions'] as $subDivision)
+                                    <option value="{{ $subDivision->id }}"
+                                        data-division="{{ $subDivision->division_name }}"
+                                        data-circle="{{ $subDivision->circle_name }}"
+                                        data-discom="{{ $subDivision->discom }}"
+                                        @selected((string) $selectedSubDivision === (string) $subDivision->id)>{{ $subDivision->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_division">Division</label>
+                            <input type="text" class="form-control" name="division" id="unmatched_division" value="{{ old('division', $prefill['division'] ?? '') }}" placeholder="Division" readonly>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_circle">Circle</label>
+                            <input type="text" class="form-control" name="circle" id="unmatched_circle" value="{{ old('circle', $prefill['circle'] ?? '') }}" placeholder="Circle" readonly>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_discom">DISCOM</label>
+                            <input type="text" class="form-control" name="discom" id="unmatched_discom" value="{{ old('discom', $prefill['discom'] ?? '') }}" placeholder="DISCOM" readonly>
+                        </div>
+
+                        <div class="col-lg-12 mt-50 mb-50">
+                            <h5 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);"> Other Details</h5>
+                            <hr class="m-0">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_gst_number">GST Number</label>
+                            <input type="text" maxlength="15" class="form-control text-uppercase" name="gst_number" id="unmatched_gst_number" value="{{ old('gst_number') }}" placeholder="GST Number">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_aadhaar_number">Aadhaar Number</label>
+                            <input type="text" maxlength="12" class="form-control" name="aadhaar_number" id="unmatched_aadhaar_number" value="{{ old('aadhaar_number') }}" placeholder="Aadhaar Number">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_contracted_load">Contracted Load</label>
+                            <input type="text" class="form-control" name="contracted_load" id="unmatched_contracted_load" value="{{ old('contracted_load', $prefill['contracted_load'] ?? '') }}" placeholder="Contracted Load">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_phase">Phase</label>
+                            <select class="form-control form-select select2 custom-select2" name="phase" id="unmatched_phase" data-placeholder="-- Select --">
+                                <option value="Single phase" @selected(old('phase', 'Single phase') === 'Single phase')>Single phase</option>
+                                <option value="Three phase" @selected(old('phase') === 'Three phase')>Three phase</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_reference">Reference</label>
+                            <input type="text" class="form-control" name="reference" id="unmatched_reference" value="{{ old('reference', $unmatchedRecord['consumer_number'] ?? '') }}" placeholder="Reference" readonly>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_agent_sales_person_id">Agent Sales Person<span class="text-danger">*</span></label>
+                            <select class="form-control form-select select2 custom-select2" name="agent_sales_person_id" id="unmatched_agent_sales_person_id" data-placeholder="-- Select --">
+                                <option value="">-- Select --</option>
+                                @foreach ($unmatchedCreateOptions['agentSalesPersons'] as $agent)
+                                    <option value="{{ $agent->id }}" @selected(old('agent_sales_person_id') == $agent->id)>{{ $agent->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_remark">Remark</label>
+                            <textarea class="form-control" name="remark" id="unmatched_remark" rows="1" placeholder="Remark (If Any)">{{ old('remark', $prefill['remark'] ?? '') }}</textarea>
+                        </div>
+
+                        <div class="col-lg-12 mt-50 mb-50">
+                            <h5 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);"> Quotation &amp; Offer Details</h5>
+                            <hr class="m-0">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_penal_company_id">Panel Company<span class="text-danger">*</span></label>
+                            <select class="form-control form-select select2 custom-select2" name="penal_company_id" id="unmatched_penal_company_id" data-placeholder="-- Select --">
+                                <option value="">-- Select --</option>
+                                @foreach ($unmatchedCreateOptions['penalCompanies'] as $panelCompany)
+                                    <option value="{{ $panelCompany->id }}" @selected(old('penal_company_id', $prefill['penal_company_id'] ?? '') == $panelCompany->id)>{{ $panelCompany->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_penal_type_id">Panel Type<span class="text-danger">*</span></label>
+                            <select class="form-control form-select select2 custom-select2" name="penal_type_id" id="unmatched_penal_type_id" data-placeholder="-- Select --">
+                                <option value="">-- Select --</option>
+                                @foreach ($unmatchedCreateOptions['penalTypes'] as $panelType)
+                                    <option value="{{ $panelType->id }}" @selected(old('penal_type_id') == $panelType->id)>{{ $panelType->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_penal_watt_id">Panel Watt<span class="text-danger">*</span></label>
+                            <select class="form-control form-select select2 custom-select2" name="penal_watt_id" id="unmatched_penal_watt_id" data-placeholder="-- Select --">
+                                <option value="">-- Select --</option>
+                                @foreach ($unmatchedCreateOptions['penalWatts'] as $panelWatt)
+                                    <option value="{{ $panelWatt->id }}" @selected(old('penal_watt_id', $prefill['penal_watt_id'] ?? '') == $panelWatt->id)>{{ $panelWatt->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_penal_nos">Panel Nos<span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="penal_nos" id="unmatched_penal_nos" value="{{ old('penal_nos', $prefill['penal_nos'] ?? '') }}" placeholder="Panel Nos">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-2 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_pv_capacity_kw">PV Capacity KW<span class="text-danger">*</span></label>
+                            <input type="number" step="any" class="form-control" name="pv_capacity_kw" id="unmatched_pv_capacity_kw" value="{{ old('pv_capacity_kw', $prefill['pv_capacity_kw'] ?? '') }}" placeholder="PV Capacity KW" readonly>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_inveter_company_id">Inverter Company<span class="text-danger">*</span></label>
+                            <select class="form-control form-select select2 custom-select2" name="inveter_company_id" id="unmatched_inveter_company_id" data-placeholder="-- Select --">
+                                <option value="">-- Select --</option>
+                                @foreach ($unmatchedCreateOptions['inverterCompanies'] as $inverterCompany)
+                                    <option value="{{ $inverterCompany->id }}" @selected(old('inveter_company_id', $prefill['inveter_company_id'] ?? '') == $inverterCompany->id)>{{ $inverterCompany->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_inveter_capacity">Inverter Capacity<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="inveter_capacity" id="unmatched_inveter_capacity" value="{{ old('inveter_capacity', $prefill['inveter_capacity'] ?? '') }}" placeholder="Inverter Capacity">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_no_of_inveter">No. Of Inverter<span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" name="no_of_inveter" id="unmatched_no_of_inveter" value="{{ old('no_of_inveter', $prefill['no_of_inveter'] ?? '') }}" placeholder="No. Of Inverter">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_structure">Structure<span class="text-danger">*</span></label>
+                            <select class="form-control form-select select2 custom-select2" name="structure" id="unmatched_structure" data-placeholder="-- Select --">
+                                <option value="">-- Select --</option>
+                                @foreach (['6ft * 8ft', '8ft * 10ft', '10ft * 12ft', 'As Per Design'] as $structure)
+                                    <option value="{{ $structure }}" @selected(old('structure') === $structure)>{{ $structure }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_common_meter">Common Meter</label>
+                            <select class="form-control form-select select2 custom-select2" name="common_meter" id="unmatched_common_meter" data-placeholder="-- Select --">
+                                <option value="No" @selected(old('common_meter', 'No') === 'No')>No</option>
+                                <option value="Yes" @selected(old('common_meter') === 'Yes')>Yes</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_total_system_cost">Total System Cost<span class="text-danger">*</span></label>
+                            <input type="number" step="any" class="form-control" name="total_system_cost" id="unmatched_total_system_cost" value="{{ old('total_system_cost') }}" placeholder="Total System Cost">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_meter_charges_extra">Meter Charge Extra</label>
+                            <select class="form-control form-select select2 custom-select2" name="meter_charges_extra" id="unmatched_meter_charges_extra" data-placeholder="-- Select --">
+                                <option value="No" @selected(old('meter_charges_extra', 'No') === 'No')>No</option>
+                                <option value="Yes" @selected(old('meter_charges_extra') === 'Yes')>Yes</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_meter_charges">Meter Charges<span class="text-danger">*</span></label>
+                            <input type="number" step="any" class="form-control" name="meter_charges" id="unmatched_meter_charges" value="{{ old('meter_charges') }}" placeholder="Meter Charges">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_registration_fee">Registration Fee</label>
+                            <input type="number" step="any" class="form-control" name="registration_fee" id="unmatched_registration_fee" value="{{ old('registration_fee') }}" placeholder="Registration Fee">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_other_charge_name">Other Charge Name</label>
+                            <input type="text" class="form-control" name="other_charge_name" id="unmatched_other_charge_name" value="{{ old('other_charge_name') }}" placeholder="Other Charge Name">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_other_charge_amount">Other Charge Amount</label>
+                            <input type="number" step="any" class="form-control" name="other_charge_amount" id="unmatched_other_charge_amount" value="{{ old('other_charge_amount') }}" placeholder="Other Charge Amount">
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_state_subsidy_select">State Subsidy Type<span class="text-danger">*</span></label>
+                            <select class="form-control form-select select2 custom-select2" name="state_subsidy_select" id="unmatched_state_subsidy_select" data-placeholder="-- Select --">
                                 <option value="">-- Select --</option>
                                 <option value="general" @selected(old('state_subsidy_select') === 'general')>GENERAL</option>
                                 <option value="sc_st" @selected(old('state_subsidy_select') === 'sc_st')>SC/ST</option>
                                 <option value="give_up_subsidy" @selected(old('state_subsidy_select') === 'give_up_subsidy')>Give up subsidy</option>
                             </select>
                         </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_total_amount">Total Amount <span class="text-danger">*</span></label>
-                            <input type="number" step="any" class="form-control" name="total_amount" id="unmatched_total_amount" value="{{ old('total_amount') }}" placeholder="Calculated total amount" readonly>
+                        <div class="col-12 col-md-6 col-lg-2 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_bom_id">BOM</label>
+                            <select class="form-control form-select select2 custom-select2" name="bom_id" id="unmatched_bom_id" data-placeholder="-- Select --">
+                                <option value="0">None</option>
+                                @foreach ($unmatchedCreateOptions['boms'] as $bom)
+                                    <option value="{{ $bom->id }}" @selected(old('bom_id') == $bom->id)>{{ $bom->bom_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_total_amount">Total Amount<span class="text-danger">*</span></label>
+                            <input type="number" step="any" class="form-control" name="total_amount" id="unmatched_total_amount" value="{{ old('total_amount') }}" placeholder="Total Amount" readonly>
                         </div>
                     </div>
 
@@ -262,7 +398,7 @@
                                         </tr>
                                         <tr>
                                             <td colspan="4" align="right"><b>Central Gov. Subsidy</b></td>
-                                            <td><input type="number" step="any" id="unmatched_span_subsidy" class="form-control p-50" name="subsidy" value="{{ number_format((float) old('subsidy', 0), 2, '.', '') }}" placeholder="Enter central subsidy"></td>
+                                            <td><input type="number" step="any" id="unmatched_span_subsidy" class="form-control p-50" name="subsidy" value="{{ number_format((float) old('subsidy', $prefill['subsidy'] ?? 0), 2, '.', '') }}" placeholder="Enter central subsidy"></td>
                                         </tr>
                                         <tr>
                                             <td colspan="4" align="right"><b>State Gov. Subsidy</b></td>
@@ -270,7 +406,7 @@
                                         </tr>
                                         <tr>
                                             <td colspan="4" align="right"><b>Total Subsidy</b></td>
-                                            <td id="unmatched_span_total_subsidy">{{ number_format((float) old('subsidy', 0) + (float) old('state_subsidy', 0), 2, '.', '') }}</td>
+                                            <td id="unmatched_span_total_subsidy">{{ number_format((float) old('subsidy', $prefill['subsidy'] ?? 0) + (float) old('state_subsidy', 0), 2, '.', '') }}</td>
                                         </tr>
                                         <tr>
                                             <td colspan="4" align="right"><b>Net Customer Price</b></td>
@@ -303,169 +439,56 @@
                         </div>
                     </div>
 
-                    <h6 class="fw-bold mt-3">Sales Order Details</h6>
-                    <hr class="my-1">
                     <div class="row">
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_consumer_type">Consumer Type <span class="text-danger">*</span></label>
-                            <select class="form-select" name="consumer_type" id="unmatched_consumer_type" data-placeholder="Select consumer type">
-                                <option value="">-- Select --</option>
-                                <option value="Resident" @selected(old('consumer_type') === 'Resident')>Resident</option>
-                                <option value="Industrial" @selected(old('consumer_type') === 'Industrial')>Industrial</option>
-                                <option value="Commercial" @selected(old('consumer_type') === 'Commercial')>Commercial</option>
-                            </select>
+                        <div class="col-lg-12 mt-50 mb-50">
+                            <h5 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);"> Document Details</h5>
+                            <hr class="m-0">
                         </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_contact_number">Contact Number <span class="text-danger">*</span></label>
-                            <input type="text" maxlength="10" class="form-control" name="contact_number" id="unmatched_contact_number" value="{{ old('contact_number') }}" placeholder="Enter contact number">
-                        </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_email">Email</label>
-                            <input type="email" class="form-control" name="email" id="unmatched_email" value="{{ old('email') }}" placeholder="Enter email address">
-                        </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_pin_code">Pincode <span class="text-danger">*</span></label>
-                            <input type="text" maxlength="6" class="form-control" name="pin_code" id="unmatched_pin_code" value="{{ old('pin_code') }}" placeholder="Enter pincode">
-                        </div>
-
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_district_id">District <span class="text-danger">*</span></label>
-                            <select class="form-select" name="district_id" id="unmatched_district_id" data-placeholder="Select district">
-                                <option value="">-- Select --</option>
-                                @foreach ($unmatchedCreateOptions['districts'] as $district)
-                                    <option value="{{ $district->id }}" @selected(old('district_id') == $district->id)>{{ $district->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_taluka_id">Taluka <span class="text-danger">*</span></label>
-                            <select class="form-select" name="taluka_id" id="unmatched_taluka_id" data-placeholder="Select taluka">
-                                <option value="">-- Select --</option>
-                                @foreach ($unmatchedCreateOptions['talukas'] as $taluka)
-                                    <option value="{{ $taluka->id }}" data-district-id="{{ $taluka->district_id }}" @selected(old('taluka_id') == $taluka->id)>{{ $taluka->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_gst_number">GST Number</label>
-                            <input type="text" maxlength="15" class="form-control" name="gst_number" id="unmatched_gst_number" value="{{ old('gst_number') }}" placeholder="Enter GST number">
-                        </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_aadhaar_number">Aadhaar Number</label>
-                            <input type="text" maxlength="12" class="form-control" name="aadhaar_number" id="unmatched_aadhaar_number" value="{{ old('aadhaar_number') }}" placeholder="Enter Aadhaar number">
-                        </div>
-
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_contracted_load">Contracted Load</label>
-                            <input type="text" class="form-control" name="contracted_load" id="unmatched_contracted_load" value="{{ old('contracted_load') }}" placeholder="Enter contracted load">
-                        </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_phase">Phase</label>
-                            <select class="form-select" name="phase" id="unmatched_phase" data-placeholder="Select phase">
-                                <option value="Single phase" @selected(old('phase', 'Single phase') === 'Single phase')>Single phase</option>
-                                <option value="Three phase" @selected(old('phase') === 'Three phase')>Three phase</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_bank_name">Bank Name</label>
-                            <input type="text" class="form-control" name="bank_name" id="unmatched_bank_name" value="{{ old('bank_name') }}" placeholder="Enter bank name">
-                        </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_bank_account">Bank Account</label>
-                            <input type="text" maxlength="50" class="form-control" name="bank_account" id="unmatched_bank_account" value="{{ old('bank_account') }}" placeholder="Enter bank account number">
-                        </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_ifsc_code">IFSC Code</label>
-                            <input type="text" class="form-control" name="ifsc_code" id="unmatched_ifsc_code" value="{{ old('ifsc_code') }}" placeholder="Enter IFSC code">
-                        </div>
-
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_sub_division_id">Sub Division</label>
-                            <select class="form-select" name="sub_division_id" id="unmatched_sub_division_id" data-placeholder="Select sub division">
-                                <option value="">-- Select --</option>
-                                @foreach ($unmatchedCreateOptions['subDivisions'] as $subDivision)
-                                    <option value="{{ $subDivision->id }}"
-                                        data-division="{{ $subDivision->division_name }}"
-                                        data-circle="{{ $subDivision->circle_name }}"
-                                        data-discom="{{ $subDivision->discom }}"
-                                        @selected((string) $selectedSubDivision === (string) $subDivision->id)>{{ $subDivision->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_division">Division</label>
-                            <input type="text" class="form-control" name="division" id="unmatched_division" value="{{ old('division', $recommended['division_name'] ?? '') }}" placeholder="Division" readonly>
-                        </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_circle">Circle</label>
-                            <input type="text" class="form-control" name="circle" id="unmatched_circle" value="{{ old('circle', $recommended['circle_name'] ?? '') }}" placeholder="Circle" readonly>
-                        </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_discom">DISCOM</label>
-                            <input type="text" class="form-control" name="discom" id="unmatched_discom" value="{{ old('discom', $recommended['discom_name'] ?? '') }}" placeholder="DISCOM" readonly>
-                        </div>
-
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_bom_id">BOM</label>
-                            <select class="form-select" name="bom_id" id="unmatched_bom_id" data-placeholder="Select BOM">
-                                <option value="0">None</option>
-                                @foreach ($unmatchedCreateOptions['boms'] as $bom)
-                                    <option value="{{ $bom->id }}" @selected(old('bom_id') == $bom->id)>{{ $bom->bom_name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-3 mb-1">
-                            <label class="form-label" for="unmatched_file_type">Payment Type</label>
-                            <select class="form-select" name="file_type" id="unmatched_file_type" data-placeholder="Select payment type">
-                                <option value="C" @selected(old('file_type', 'C') === 'C')>Cash</option>
-                                <option value="L" @selected(old('file_type') === 'L')>Loan</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-1">
-                            <label class="form-label" for="unmatched_remark">Remark</label>
-                            <textarea class="form-control" name="remark" id="unmatched_remark" rows="1" placeholder="Enter remark">{{ old('remark') }}</textarea>
-                        </div>
-
-                        <div class="col-12 mb-1">
-                            <label class="form-label">Documents</label>
+                        <div class="col-12">
                             <div id="unmatched-document-list">
                                 @foreach ($oldDocuments as $documentIndex => $oldDocument)
                                     <div class="row g-1 mb-1 unmatched-document-row" data-index="{{ $documentIndex }}">
-                                        <div class="col-md-5">
-                                            <select class="form-select select2" name="document[{{ $documentIndex }}][name]" data-placeholder="Select document">
+                                        <div class="col-12 col-md-6 col-lg-5 mb-1">
+                                            <label class="form-label">Document Name</label>
+                                            <select class="form-control form-select select2 custom-select2" name="document[{{ $documentIndex }}][name]" data-placeholder="-- Select --">
                                                 <option value="">-- Select --</option>
                                                 @foreach ($documentOptions as $documentValue => $documentLabel)
                                                     <option value="{{ $documentValue }}" @selected(($oldDocument['name'] ?? '') === $documentValue)>{{ $documentLabel }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-12 col-md-6 col-lg-5 mb-1">
+                                            <label class="form-label">Upload Document</label>
                                             <input type="file" class="form-control" name="document[{{ $documentIndex }}][image]" data-placeholder="Upload document" title="Upload document">
                                         </div>
-                                        <div class="col-md-1 d-flex align-items-center">
-                                            <button type="button" class="btn btn-sm btn-outline-danger unmatched-document-remove" aria-label="Remove document">
+                                        <div class="col-12 col-lg-2 d-flex align-items-center">
+                                            <button type="button" class="btn btn-outline-danger text-nowrap px-1 mt-2 float-end unmatched-document-remove" aria-label="Remove document">
                                                 <i data-feather="x"></i>
                                             </button>
                                         </div>
                                     </div>
                                 @endforeach
                             </div>
-                            <button type="button" class="btn btn-sm btn-outline-secondary mt-1" id="unmatched-document-add">Add Document</button>
+                            <button type="button" class="btn btn-sm btn-icon btn-secondary mt-1" id="unmatched-document-add">
+                                <i class="fa fa-plus me-25"></i> Add New
+                            </button>
                             <template id="unmatched-document-template">
                                 <div class="row g-1 mb-1 unmatched-document-row" data-index="__INDEX__">
-                                    <div class="col-md-5">
-                                        <select class="form-select select2" name="document[__INDEX__][name]" data-placeholder="Select document">
+                                    <div class="col-12 col-md-6 col-lg-5 mb-1">
+                                        <label class="form-label">Document Name</label>
+                                        <select class="form-control form-select select2 custom-select2" name="document[__INDEX__][name]" data-placeholder="-- Select --">
                                             <option value="">-- Select --</option>
                                             @foreach ($documentOptions as $documentValue => $documentLabel)
                                                 <option value="{{ $documentValue }}">{{ $documentLabel }}</option>
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-12 col-md-6 col-lg-5 mb-1">
+                                        <label class="form-label">Upload Document</label>
                                         <input type="file" class="form-control" name="document[__INDEX__][image]" data-placeholder="Upload document" title="Upload document">
                                     </div>
-                                    <div class="col-md-1 d-flex align-items-center">
-                                        <button type="button" class="btn btn-sm btn-outline-danger unmatched-document-remove" aria-label="Remove document">
+                                    <div class="col-12 col-lg-2 d-flex align-items-center">
+                                        <button type="button" class="btn btn-outline-danger text-nowrap px-1 mt-2 float-end unmatched-document-remove" aria-label="Remove document">
                                             <i data-feather="x"></i>
                                         </button>
                                     </div>
@@ -474,9 +497,10 @@
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-end gap-1 mt-2">
-                        <a class="btn btn-sm btn-outline-secondary" href="{{ route('sales-master-consumer-preview') }}">Cancel</a>
-                        <button type="submit" class="btn btn-sm btn-primary" id="unmatched-create-submit">Create</button>
+                    <div class="row">
+                        <div class="col-md-12 mt-2">
+                            <button type="submit" class="btn btn-sm btn-primary float-end save" id="unmatched-create-submit">Submit</button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -897,11 +921,7 @@
 
             filterUnmatchedTalukas();
             applyUnmatchedMeterChargeMode();
-            recalculateUnmatchedQuotation();
-
-            if ($('#unmatched_sub_division_id').val() !== '') {
-                $('#unmatched_sub_division_id').trigger('change');
-            }
+            calculateUnmatchedTotal();
 
             $(document).on('click', '#unmatched-document-add', function() {
                 var nextIndex = 0;

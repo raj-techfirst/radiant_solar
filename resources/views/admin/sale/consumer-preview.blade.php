@@ -1,6 +1,9 @@
 @php
+    $missingInExcel = $missingInExcel ?? [];
     $matchedCount = count($matched);
     $unmatchedCount = count($unmatched);
+    $missingInExcelCount = count($missingInExcel);
+    $ignoredCount = count($ignored);
     $recommendedFields = [
         'consumer_name' => 'Consumer Name',
         'discom_name' => 'DISCOM',
@@ -21,7 +24,9 @@
 
 <style>
     #preview-matched-section .preview-table-scroll,
-    #preview-unmatched-section .preview-table-scroll {
+    #preview-unmatched-section .preview-table-scroll,
+    #preview-missing-section .preview-table-scroll,
+    #preview-ignored-section .preview-table-scroll {
         max-height: calc(100vh - 260px);
         min-height: 300px;
         overflow: auto;
@@ -141,7 +146,9 @@
     /* tablets */
     @media (max-width: 991.98px) {
         #preview-matched-section .preview-table-scroll,
-        #preview-unmatched-section .preview-table-scroll {
+        #preview-unmatched-section .preview-table-scroll,
+    #preview-missing-section .preview-table-scroll,
+        #preview-ignored-section .preview-table-scroll {
             max-height: calc(100vh - 220px);
         }
 
@@ -161,7 +168,9 @@
     /* phones */
     @media (max-width: 575.98px) {
         #preview-matched-section .preview-table-scroll,
-        #preview-unmatched-section .preview-table-scroll {
+        #preview-unmatched-section .preview-table-scroll,
+    #preview-missing-section .preview-table-scroll,
+        #preview-ignored-section .preview-table-scroll {
             max-height: calc(100vh - 200px);
             min-height: 220px;
         }
@@ -181,7 +190,9 @@
         }
 
         #preview-matched-section h5,
-        #preview-unmatched-section h5 {
+        #preview-unmatched-section h5,
+        #preview-missing-section h5,
+        #preview-ignored-section h5 {
             font-size: 1rem;
         }
     }
@@ -197,7 +208,19 @@
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="preview-unmatched-tab" type="button" role="tab"
             data-preview-filter="unmatched">
-            Not matched: {{ $unmatchedCount }}
+            Not Exist in DB: {{ $unmatchedCount }}
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="preview-missing-tab" type="button" role="tab"
+            data-preview-filter="missing">
+            Not Exist in Excel: {{ $missingInExcelCount }}
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="preview-ignored-tab" type="button" role="tab"
+            data-preview-filter="ignored">
+            Ignored: {{ $ignoredCount }}
         </button>
     </li>
 </ul>
@@ -313,6 +336,84 @@
                         @empty
                             <tr data-preview-empty="1">
                                 <td colspan="4" class="text-center">No unmatched records.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="preview-missing-section" class="mt-2 d-none">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <h5 class="mb-0">Not Exist in Excel Records</h5>
+            </div>
+            <div class="table-responsive preview-table-scroll">
+                <table class="table table-sm table-bordered preview-compact-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Consumer Name</th>
+                            <th class="pv-num">Consumer Number</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($missingInExcel as $key => $row)
+                            <tr data-preview-name="{{ $row['consumer_name'] ?? '' }}"
+                                data-preview-number="{{ $row['consumer_number'] ?? '' }}">
+                                <td>{{ $key + 1 }}</td>
+                                <td>{{ $row['consumer_name'] ?: '-' }}</td>
+                                <td class="pv-num">{{ $row['consumer_number'] ?: '-' }}</td>
+                            </tr>
+                        @empty
+                            <tr data-preview-empty="1">
+                                <td colspan="3" class="text-center">No DB records missing from Excel.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="preview-ignored-section" class="mt-2 d-none">
+    <div class="row">
+        <div class="col-12">
+            <h5 class="mb-1">Ignored Customers</h5>
+            <div class="table-responsive preview-table-scroll">
+                <table class="table table-sm table-bordered preview-compact-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 30px;">#</th>
+                            <th>Consumer Name</th>
+                            <th class="pv-num">Consumer Number</th>
+                            <th>Ignore Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($ignored as $key => $row)
+                            <tr data-preview-name="{{ $row['consumer_name'] ?? '' }}"
+                                data-preview-number="{{ $row['consumer_number'] ?? '' }}">
+                                <td>{{ $key + 1 }}</td>
+                                <td>{{ $row['consumer_name'] ?: '-' }}</td>
+                                <td class="pv-num">{{ $row['consumer_number'] ?: '-' }}</td>
+                                <td>{{ $row['ignore_date'] ?: '-' }}</td>
+                                <td>
+                                    <a class="btn btn-sm btn-outline-primary"
+                                        href="{{ route('sales-master-consumer-preview-create-from-unmatched-page', ['row' => 0, 'consumer_number' => $row['consumer_number'] ?? '']) }}"
+                                        title="Create quotation and sales order">
+                                        Create
+                                    </a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr data-preview-empty="1">
+                                <td colspan="5" class="text-center">No ignored customers.</td>
                             </tr>
                         @endforelse
                     </tbody>

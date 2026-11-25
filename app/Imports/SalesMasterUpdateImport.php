@@ -2,6 +2,7 @@
 
 namespace App\Imports;
 
+use App\Imports\Concerns\RepairsMalformedCsvRow;
 use App\Models\District;
 use App\Models\Loandata;
 use App\Models\SalesMaster;
@@ -18,6 +19,7 @@ use Maatwebsite\Excel\Concerns\WithHeadingRow;
 class SalesMasterUpdateImport implements ToCollection, WithHeadingRow, WithChunkReading
 {
     use RemembersChunkOffset;
+    use RepairsMalformedCsvRow;
 
     public const RECOMMENDED_FIELDS = [
         'consumer_name' => 'Consumer Name',
@@ -25,6 +27,10 @@ class SalesMasterUpdateImport implements ToCollection, WithHeadingRow, WithChunk
         'circle_name' => 'Circle',
         'division_name' => 'Division',
         'sub_division_name' => 'Sub Division',
+    ];
+
+    private const DISTRICT_ALIASES = [
+        'devbhoomi dwarka' => 'Devbhumi Dwarka',
     ];
 
     private const FIELDS = [
@@ -125,6 +131,7 @@ class SalesMasterUpdateImport implements ToCollection, WithHeadingRow, WithChunk
     private $pendingLoanInserts = [];
     private $districtNotFound = [];
     private $subDivisionNotFound = [];
+    private $ignoredDateTimes = [];
 
     public function __construct(array $rowNumbers = [], array $recommendedFields = [], array $salesMasterIdsByRow = [])
     {
@@ -157,7 +164,16 @@ class SalesMasterUpdateImport implements ToCollection, WithHeadingRow, WithChunk
                 continue;
             }
 
-            $this->processRow($row instanceof Collection ? $row : collect($row), $rowNumber);
+            $row = $row instanceof Collection ? $row : collect($row);
+            $headerKeys = $this->headerKeysFromRow($row);
+            $row = $this->repairMalformedRow(
+                $row,
+                count($headerKeys),
+                $this->indexesFromHeaderKeys($headerKeys),
+                $headerKeys
+            );
+
+            $this->processRow($row, $rowNumber);
         }
 
         $this->flushPendingLoanInserts();
@@ -234,6 +250,10 @@ class SalesMasterUpdateImport implements ToCollection, WithHeadingRow, WithChunk
 
         if (! empty($this->subDivisionNotFound)) {
             $errors[] = $this->notFoundSummary('Sub Division', $this->subDivisionNotFound, 'Sub Divisions left unchanged.');
+        }
+
+        foreach ($this->ignoredDateTimes as $label => $count) {
+            $errors[] = "Ignored time-only value in {$label} in {$count} row(s). Value set to null.";
         }
 
         return $errors;
@@ -445,7 +465,7 @@ class SalesMasterUpdateImport implements ToCollection, WithHeadingRow, WithChunk
         if ($this->districtsByName === null) {
             $this->districtsByName = [];
 
-            foreach (District::query()->select('id', 'name')->orderBy('id')->get() as $district) {
+            foreach (District::withTrashed()->select('id', 'name')->orderBy('id')->get() as $district) {
                 $key = $this->normalizedName($district->name);
 
                 if ($key !== '' && ! isset($this->districtsByName[$key])) {
@@ -453,6 +473,8 @@ class SalesMasterUpdateImport implements ToCollection, WithHeadingRow, WithChunk
                 }
             }
         }
+
+        $name = self::DISTRICT_ALIASES[$this->normalizedName($name)] ?? $name;
 
         return $this->districtsByName[$this->normalizedName($name)] ?? null;
     }
@@ -637,6 +659,12 @@ class SalesMasterUpdateImport implements ToCollection, WithHeadingRow, WithChunk
         }
 
         $text = trim((string) $value);
+
+        if (preg_match('/^\d{1,3}:\d{1,2}(?:\.\d+)?$/', $text)) {
+            $this->ignoredDateTimes[$label] = ($this->ignoredDateTimes[$label] ?? 0) + 1;
+
+            return [true, null];
+        }
 
         foreach (['d-m-Y', 'd/m/Y', 'Y-m-d', 'd.m.Y'] as $format) {
             $parsed = \DateTime::createFromFormat('!' . $format, $text);

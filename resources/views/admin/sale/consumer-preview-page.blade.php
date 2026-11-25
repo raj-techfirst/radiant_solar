@@ -131,6 +131,8 @@
                     @include('admin.sale.consumer-preview', [
                         'matched' => $preview['matched'],
                         'unmatched' => $preview['unmatched'],
+                        'missingInExcel' => $missingInExcel,
+                        'ignored' => $ignored,
                     ])
                 </div>
             </div>
@@ -275,6 +277,8 @@
                 var number = ($('#preview_filter_number').val() || '').trim().toLowerCase();
                 var matchedCount = 0;
                 var unmatchedCount = 0;
+                var missingCount = 0;
+                var ignoredCount = 0;
 
                 $('#preview-matched-section tbody tr').each(function() {
                     var row = $(this);
@@ -324,8 +328,50 @@
                     }
                 });
 
+                $('#preview-missing-section tbody tr').each(function() {
+                    var row = $(this);
+
+                    if (row.attr('data-preview-empty')) {
+                        row.toggleClass('d-none', name !== '' || number !== '');
+                        return;
+                    }
+
+                    var rowName = String(row.attr('data-preview-name') || '').toLowerCase();
+                    var rowNumber = String(row.attr('data-preview-number') || '').toLowerCase();
+                    var visible = (name === '' || rowName.indexOf(name) !== -1) &&
+                        (number === '' || rowNumber.indexOf(number) !== -1);
+
+                    row.toggleClass('d-none', !visible);
+
+                    if (visible) {
+                        missingCount++;
+                    }
+                });
+
+                $('#preview-ignored-section tbody tr').each(function() {
+                    var row = $(this);
+
+                    if (row.attr('data-preview-empty')) {
+                        row.toggleClass('d-none', name !== '' || number !== '');
+                        return;
+                    }
+
+                    var rowName = String(row.attr('data-preview-name') || '').toLowerCase();
+                    var rowNumber = String(row.attr('data-preview-number') || '').toLowerCase();
+                    var visible = (name === '' || rowName.indexOf(name) !== -1) &&
+                        (number === '' || rowNumber.indexOf(number) !== -1);
+
+                    row.toggleClass('d-none', !visible);
+
+                    if (visible) {
+                        ignoredCount++;
+                    }
+                });
+
                 $('#preview-matched-tab').html('Recommended Update: ' + matchedCount);
-                $('#preview-unmatched-tab').html('Not matched: ' + unmatchedCount);
+                $('#preview-unmatched-tab').html('Not Exist in DB: ' + unmatchedCount);
+                $('#preview-missing-tab').html('Not Exist in Excel: ' + missingCount);
+                $('#preview-ignored-tab').html('Ignored: ' + ignoredCount);
 
                 updatePreviewSelectAllState('matched');
                 updatePreviewSelectAllState('unmatched');
@@ -358,6 +404,7 @@
             $(document).on('click', '.preview-ignore-row', function() {
                 var $row = $(this).closest('tr');
                 var consumerNumber = $row.attr('data-preview-number') || '';
+                var consumerName = $row.attr('data-preview-name') || '';
 
                 if (consumerNumber === '') {
                     return;
@@ -368,7 +415,8 @@
                     type: 'POST',
                     data: {
                         _token: '{{ csrf_token() }}',
-                        consumer_numbers: [consumerNumber]
+                        consumer_numbers: [consumerNumber],
+                        consumer_names: [consumerName]
                     },
                     dataType: 'json',
                     success: function(response) {
@@ -378,6 +426,31 @@
                             $('#preview-unmatched-section tbody').html(
                                 '<tr data-preview-empty="1"><td colspan="4" class="text-center">No unmatched records.</td></tr>'
                             );
+                        }
+
+                        if (response.ignored && response.ignored.length) {
+                            $('#preview-ignored-section tbody tr[data-preview-empty]').remove();
+                            $.each(response.ignored, function(index, record) {
+                                var $ignoredRow = $('<tr>')
+                                    .attr('data-preview-name', record.consumer_name || '')
+                                    .attr('data-preview-number', record.consumer_number || '');
+
+                                $ignoredRow.append($('<td>').text($('#preview-ignored-section tbody tr').length + 1));
+                                $ignoredRow.append($('<td>').text(record.consumer_name || '-'));
+                                $ignoredRow.append($('<td>').addClass('pv-num').text(record.consumer_number || '-'));
+                                $ignoredRow.append($('<td>').text(record.ignore_date || '-'));
+
+                                var createUrl = '{{ route('sales-master-consumer-preview-create-from-unmatched-page', ['row' => 0, 'consumer_number' => '__NUMBER__']) }}'
+                                    .replace('__NUMBER__', encodeURIComponent(record.consumer_number || ''));
+                                var $createLink = $('<a>')
+                                    .addClass('btn btn-sm btn-outline-primary')
+                                    .attr('href', createUrl)
+                                    .attr('title', 'Create quotation and sales order')
+                                    .text('Create');
+
+                                $ignoredRow.append($('<td>').append($createLink));
+                                $('#preview-ignored-section tbody').prepend($ignoredRow);
+                            });
                         }
 
                         applyConsumerPreviewFilter();
@@ -412,7 +485,7 @@
                 $('#consumer-preview-tabs .nav-link').removeClass('active');
                 $(this).addClass('active');
 
-                $('#preview-matched-section, #preview-unmatched-section').addClass('d-none');
+                $('#preview-matched-section, #preview-unmatched-section, #preview-missing-section, #preview-ignored-section').addClass('d-none');
 
                 if (filter === 'matched') {
                     $('#preview-matched-section').removeClass('d-none');
@@ -420,6 +493,14 @@
 
                 if (filter === 'unmatched') {
                     $('#preview-unmatched-section').removeClass('d-none');
+                }
+
+                if (filter === 'missing') {
+                    $('#preview-missing-section').removeClass('d-none');
+                }
+
+                if (filter === 'ignored') {
+                    $('#preview-ignored-section').removeClass('d-none');
                 }
 
                 updatePreviewSelectAllState('matched');
