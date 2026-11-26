@@ -1,3 +1,6 @@
+@php
+    $portalData = $portalData ?? null;
+@endphp
 <section class="vertical-wizards">
     <form id="form" class="form" action="{{ route('status-save', $salesMaster->id) }}" method="POST"
         enctype="multipart/form-data">
@@ -158,6 +161,29 @@
                                 @endif
                             </div>
 
+                            <div class="col-12 mt-1 mb-1">
+                                <h6 class="fw-bold mb-0">Portal Application Details</h6>
+                            </div>
+                            <div class="mb-1 col-md-6">
+                                <label class="form-label">Application No</label>
+                                <input type="text" class="form-control"
+                                    value="{{ $portalData?->consumer_number ?: 'N/A' }}" readonly>
+                            </div>
+                            <div class="mb-1 col-md-6">
+                                <label class="form-label">Current Status of Application</label>
+                                <input type="text" class="form-control"
+                                    value="{{ $portalData?->current_status_of_application ?: 'N/A' }}" readonly>
+                            </div>
+                            <div class="mb-1 col-md-6">
+                                <label class="form-label">Vendor Consumer Agreement Uploaded</label>
+                                <input type="text" class="form-control"
+                                    value="{{ $portalData?->vendor_consumer_agreement_uploaded ?: 'N/A' }}" readonly>
+                            </div>
+                            <div class="mb-1 col-md-6">
+                                <label class="form-label">Vendor Consumer Agreement Uploading Date</label>
+                                <input type="text" class="form-control"
+                                    value="{{ $portalData?->vendor_consumer_agreement_uploading_date ?: 'N/A' }}" readonly>
+                            </div>
                     </div>
                 </div>
                 <div id="personal-info-vertical" class="content dstepper-block" role="tabpanel"
@@ -190,6 +216,14 @@
                                 placeholder="Feasibility Amount">
                             <span class="invalid-feedback d-block" id="error_feasibility_amount"
                                 role="alert"></span>
+                        </div>
+                        <div class="col-12 mt-1 mb-1">
+                            <h6 class="fw-bold mb-0">Portal Feasibility Details</h6>
+                        </div>
+                        <div class="mb-1 col-md-6">
+                            <label class="form-label">Feasibility Applied (kW)</label>
+                            <input type="text" class="form-control"
+                                value="{{ $portalData?->feasibility_applied ?: 'N/A' }}" readonly>
                         </div>
                     </div>
                 </div>
@@ -231,6 +265,50 @@
                                                 PDF</span> <i data-feather="download" class="me-25"></i></button>
                                     </a>
                                 @endif
+                            </div>
+
+                            <div class="col-12 mt-1 mb-1">
+                                <h6 class="fw-bold mb-0">Portal Loan Details</h6>
+                            </div>
+                            <div class="mb-1 col-md-6">
+                                <label class="form-label">Loan Status</label>
+                                <input type="text" class="form-control" value="{{ $portalData?->loan_status ?: 'N/A' }}"
+                                    readonly>
+                            </div>
+                            <div class="mb-1 col-md-6">
+                                <label class="form-label">Loan Rejection Date</label>
+                                <input type="text" class="form-control"
+                                    value="{{ $portalData?->loan_rejection_date ?: 'N/A' }}" readonly>
+                            </div>
+                            <div class="mb-1 col-md-6">
+                                <label class="form-label">Loan Disbursed Date (First Tranche)</label>
+                                <input type="text" class="form-control"
+                                    value="{{ $portalData?->loan_disbursed_date_first_tranche ?: 'N/A' }}" readonly>
+                            </div>
+                            <div class="mb-1 col-md-6">
+                                <label class="form-label">Loan Disbursed Amount (First Tranche)</label>
+                                <input type="text" class="form-control"
+                                    value="{{ $portalData?->loan_disbursed_amount_first_tranche ?: 'N/A' }}" readonly>
+                            </div>
+                            <div class="mb-1 col-md-6">
+                                <label class="form-label">Loan First Tranche Disbursal UTR</label>
+                                <input type="text" class="form-control"
+                                    value="{{ $portalData?->loan_first_tranche_disbursal_utr ?: 'N/A' }}" readonly>
+                            </div>
+                            <div class="mb-1 col-md-6">
+                                <label class="form-label">Loan Disbursed Date (Second Tranche)</label>
+                                <input type="text" class="form-control"
+                                    value="{{ $portalData?->loan_disbursed_date_second_tranche ?: 'N/A' }}" readonly>
+                            </div>
+                            <div class="mb-1 col-md-6">
+                                <label class="form-label">Loan Disbursed Amount (Second Tranche)</label>
+                                <input type="text" class="form-control"
+                                    value="{{ $portalData?->loan_disbursed_amount_second_tranche ?: 'N/A' }}" readonly>
+                            </div>
+                            <div class="mb-1 col-md-6">
+                                <label class="form-label">Loan Second Tranche Disbursal UTR</label>
+                                <input type="text" class="form-control"
+                                    value="{{ $portalData?->loan_second_tranche_disbursal_utr ?: 'N/A' }}" readonly>
                             </div>
                         </div>
                     </div>
@@ -422,6 +500,24 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div class="col-12 mt-1 mb-1">
+                            <h6 class="fw-bold mb-0">Portal Module Details</h6>
+                        </div>
+                        <div class="mb-1 col-md-6">
+                            <label class="form-label">Installed PV Module Capacity (kWp)</label>
+                            <input type="text" class="form-control"
+                                value="{{ $portalData?->installed_pv_module_capacity ?: 'N/A' }}" readonly>
+                        </div>
+                        <div class="mb-1 col-md-6">
+                            <label class="form-label">Module Capacity (WP)</label>
+                            <input type="text" class="form-control"
+                                value="{{ $portalData?->module_capacity_wp ?: 'N/A' }}" readonly>
+                        </div>
+                        <div class="mb-1 col-md-6">
+                            <label class="form-label">Module Quantity</label>
+                            <input type="text" class="form-control"
+                                value="{{ $portalData?->module_quantity ?: 'N/A' }}" readonly>
+                        </div>
                     </div>
                 </div>
                 <div id="social-links-vertical" class="content dstepper-block" role="tabpanel"
@@ -479,6 +575,25 @@
                                 </a>
                             @endif
                         </div>
+
+                        <div class="col-12 mt-1 mb-1">
+                            <h6 class="fw-bold mb-0">Portal Inspection Details</h6>
+                        </div>
+                        <div class="mb-1 col-md-6">
+                            <label class="form-label">Inspection Status</label>
+                            <input type="text" class="form-control"
+                                value="{{ $portalData?->inspection_status ?: 'N/A' }}" readonly>
+                        </div>
+                        <div class="mb-1 col-md-6">
+                            <label class="form-label">Inspection Return Date</label>
+                            <input type="text" class="form-control"
+                                value="{{ $portalData?->inspection_return_date ?: 'N/A' }}" readonly>
+                        </div>
+                        <div class="mb-1 col-md-12">
+                            <label class="form-label">Inspection Return Comment</label>
+                            <input type="text" class="form-control"
+                                value="{{ $portalData?->inspection_return_comment ?: 'N/A' }}" readonly>
+                        </div>
                     </div>
                 </div>
 
@@ -520,6 +635,30 @@
                                 placeholder="Enter installation amount">
                             <span class="invalid-feedback d-block" id="error_installation_amount"
                                 role="alert"></span>
+                        </div>
+
+                        <div class="col-12 mt-1 mb-1">
+                            <h6 class="fw-bold mb-0">Portal Subsidy Details</h6>
+                        </div>
+                        <div class="mb-1 col-md-6">
+                            <label class="form-label">Subsidy Amount</label>
+                            <input type="text" class="form-control"
+                                value="{{ $portalData?->subsidy_amount ?: 'N/A' }}" readonly>
+                        </div>
+                        <div class="mb-1 col-md-6">
+                            <label class="form-label">Subsidy Return Date</label>
+                            <input type="text" class="form-control"
+                                value="{{ $portalData?->subsidy_return_date ?: 'N/A' }}" readonly>
+                        </div>
+                        <div class="mb-1 col-md-6">
+                            <label class="form-label">Subsidy Return To</label>
+                            <input type="text" class="form-control"
+                                value="{{ $portalData?->subsidy_return_to ?: 'N/A' }}" readonly>
+                        </div>
+                        <div class="mb-1 col-md-12">
+                            <label class="form-label">Subsidy Return Comment</label>
+                            <input type="text" class="form-control"
+                                value="{{ $portalData?->subsidy_return_comment ?: 'N/A' }}" readonly>
                         </div>
                     </div>
                 </div>

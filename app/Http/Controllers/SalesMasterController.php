@@ -23,6 +23,7 @@ use App\Models\LeadMaster;
 use App\Models\Loandata;
 use App\Models\PaymetCollection;
 use App\Models\PenalCompany;
+use App\Models\PortalData;
 use App\Models\PenalType;
 use App\Models\PenalWatt;
 use App\Models\SalesMaster;
@@ -31,6 +32,7 @@ use App\Models\SubDivision;
 use App\Models\Taluka;
 use App\Models\User;
 use App\Models\UserCommission;
+use App\Services\PortalDataSyncService;
 use App\Services\UnmatchedRecordCreatorService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -84,7 +86,7 @@ class SalesMasterController extends Controller
         $agentSalesPerson = $q->get();
 
         if (request()->ajax()) {
-            return DataTables::of(SalesMaster::with('district', 'taluka', 'village', 'subDivision', 'agentsalesperson', 'panel', 'panelwatt', 'inveter', 'salesquatation')->orderBy('updated_at', 'DESC'))
+            return DataTables::of(SalesMaster::with('district', 'taluka', 'village', 'subDivision', 'agentsalesperson', 'panel', 'panelwatt', 'inveter', 'salesquatation', 'portalData')->orderBy('updated_at', 'DESC'))
                 ->addIndexColumn()
                 ->filter(function ($query) {
                     $company = CompanyProfile::where('user_id', Auth::id())->first();
@@ -251,7 +253,7 @@ class SalesMasterController extends Controller
 
                     $hideSubsidy = ($row->ragistration_portal == 'GEDA' || ($row->ragistration_portal == 'National' && $row->subsidy_giveup));
                     if (! $hideSubsidy) {
-                        $html .= '<a class="dropdown-item status application-view" href="javascript:void(0);" data-id="'.$row->id.'" data-date="'.$srd.'" data-date2="'.$sdvd.'" data-remark="'.$row->subsidy_disbursal_remark.'" data-value="subsidy_claimed">Subsidy Request</a>
+                        $html .= '<a class="dropdown-item status application-view" href="javascript:void(0);" data-id="'.$row->id.'" data-date="'.$srd.'" data-date2="'.$sdvd.'" data-remark="'.$row->subsidy_disbursal_remark.'" data-portal-subsidy-amount="'.e($row->portalData?->subsidy_amount ?: 'N/A').'" data-portal-subsidy-return-date="'.e($row->portalData?->subsidy_return_date ?: 'N/A').'" data-portal-subsidy-return-to="'.e($row->portalData?->subsidy_return_to ?: 'N/A').'" data-portal-subsidy-return-comment="'.e($row->portalData?->subsidy_return_comment ?: 'N/A').'" data-value="subsidy_claimed">Subsidy Request</a>
                             <a class="dropdown-item status application-view" href="javascript:void(0);" data-id="'.$row->id.'" data-date="'.$sdd.'" data-value="subsidy_receveid">Subsidy Disbursal</a>';
                     }
 
@@ -821,6 +823,7 @@ class SalesMasterController extends Controller
     {
         $salesMaster = SalesMaster::with('allpanels', 'district', 'subDivisionPDF', 'agentsalesperson', 'taluka', 'document', 'lead', 'installation', 'installation.panelwatt', 'installation.panelcompany', 'installation.paneltype', 'installation.installationPenals', 'installation.invater', 'installation.invater.company', 'installation.penalImage', 'installation.invaterImages', 'panel', 'panelwatt', 'inveter')->where('id', $id)->first();
         $payment = PaymetCollection::where('sales_master_id', $salesMaster->id)->get();
+        $portalData = PortalData::where('sales_master_id', $salesMaster->id)->first();
 
         if (! is_null($salesMaster)) {
             $percentage = 0;
@@ -843,7 +846,7 @@ class SalesMasterController extends Controller
                 }
             }
 
-            return view('admin.sale.model', compact('salesMaster', 'payment', 'percentage', 'salesloan'));
+            return view('admin.sale.model', compact('salesMaster', 'payment', 'percentage', 'salesloan', 'portalData'));
         } else {
             return abort(404);
         }
@@ -985,7 +988,8 @@ class SalesMasterController extends Controller
         $salesMaster = SalesMaster::where('id', $id)->first();
         if (! is_null($salesMaster)) {
             $salesloan = Loandata::where('sales_master_id', $salesMaster->id)->first();
-            $data['html'] = view('admin.sale.status_model', compact('salesMaster', 'user', 'type', 'salesloan'))->render();
+            $portalData = PortalData::where('sales_master_id', $salesMaster->id)->first();
+            $data['html'] = view('admin.sale.status_model', compact('salesMaster', 'user', 'type', 'salesloan', 'portalData'))->render();
 
             return response()->json($data);
         } else {
@@ -1804,12 +1808,15 @@ class SalesMasterController extends Controller
                 $defaultImportMap[(int) $preview['row']] = (int) $preview['sales_master_id'];
             }
 
+            $portalDataSyncedCount = app(PortalDataSyncService::class)->sync($rows, $salesByNumber);
+
             $oldFilePath = $request->session()->get('sales_master_consumer_preview.file_path');
 
             $request->session()->put('sales_master_consumer_preview', [
                 'matched' => $recommendedMatched,
                 'unmatched' => $unmatched,
                 'missing_in_excel' => $missingInExcel,
+                'portal_data_synced_count' => $portalDataSyncedCount,
                 'file_path' => $filePath,
                 'file_name' => $request->file('excel_file')->getClientOriginalName(),
                 'generated_at' => now()->format('d-m-Y H:i:s'),
@@ -1826,7 +1833,7 @@ class SalesMasterController extends Controller
             }
 
             return redirect()->route('sales-master-consumer-preview')
-                ->with('message', 'Excel preview generated.');
+                ->with('message', 'Excel preview generated. Portal data synced for ' . $portalDataSyncedCount . ' records.');
         } catch (\Throwable $e) {
             if (isset($filePath)) {
                 Storage::delete($filePath);

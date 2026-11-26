@@ -10,7 +10,21 @@
             background-color: #f3f3f3;
             padding-top: 10px;
         }
+
+        .portal-status-badge {
+            font-size: 1.1rem;
+            letter-spacing: 0.01em;
+        }
+
+        .portal-field-highlight {
+            background-color: #eef7ff;
+            border-radius: 4px;
+            padding: 2px 6px;
+        }
     </style>
+    @php
+        $portalData = $portalData ?? null;
+    @endphp
     <div class="content-wrapper container-xxl p-0 pt-2">
         <div class="content-body">
             <div class="col-lg-12">
@@ -79,9 +93,16 @@
                 @endif
                 <div class="card-body">
                     <div class="row">
-                        <div class="col-lg-12 mb-50">
-                            <h2 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);">Application
+                        <div class="col-lg-12 mb-50 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <h2 class="font-black mb-0" style="font-weight: bold;color: var(--ck-color-base-text);">
+                                Application
                                 Details</h2>
+                            <span class="badge bg-label-primary portal-status-badge portal-field-highlight px-1 py-1">
+                                Current Status of Application :
+                                <strong>{{ $portalData?->current_status_of_application ?: 'N/A' }}</strong>
+                            </span>
+                        </div>
+                        <div class="col-lg-12 mb-50">
                             <hr class="m-0" />
                         </div>
                         <div class="col-10 col-lg-10">
@@ -95,6 +116,37 @@
                                                 <span
                                                     class="text-dark ms-1"><b>{{ $salesMaster->consumer_number != '' && $salesMaster->consumer_number != null ? $salesMaster->consumer_number : 'N/A' }}</b></span>
                                             </li>
+                                            <li class="mb-1  d-flex align-items-center">
+                                                <span class="h6">R. Portal : </span>
+                                                <span
+                                                    class="text-dark  ms-1"><b>{{ $salesMaster->ragistration_portal != '' && $salesMaster->ragistration_portal != null ? $salesMaster->ragistration_portal : 'N/A' }}</b></span>
+                                            </li>
+                                            <li class="mb-1  d-flex align-items-center">
+                                                <span class="h6">F. Amount : </span>
+                                                <span
+                                                    class="text-dark  ms-1"><b>{{ $salesMaster->feasibility_amount != '' && $salesMaster->feasibility_amount != null ? $salesMaster->feasibility_amount : 'N/A' }}</b></span>
+                                            </li>
+                                            <li class="mb-1  d-flex align-items-center">
+                                                <span class="h6">R. Date : </span>
+                                                <span
+                                                    class="text-dark  ms-1"><b>{{ $salesMaster->ragistration_date != '' && $salesMaster->ragistration_date != null && $salesMaster->ragistration_date != '0000-00-00' && $salesMaster->ragistration_date != '1970-01-01' ? date('d-m-Y', strtotime($salesMaster->ragistration_date)) : 'N/A' }}</b></span>
+                                            </li>
+                                            <li class="mb-1  d-flex align-items-center">
+                                                <span class="h6">F. Date : </span>
+                                                <span
+                                                    class="text-dark  ms-1"><b>{{ $salesMaster->feasibility_date != '' && $salesMaster->feasibility_date != null && $salesMaster->feasibility_date != '1970-01-01' && $salesMaster->feasibility_date != '0000-00-00' ? date('d-m-Y', strtotime($salesMaster->feasibility_date)) : 'N/A' }}</b></span>
+                                            </li>
+                                            <li class="mb-1  d-flex align-items-center">
+                                                <span class="h6">Payment Date : </span>
+                                                <span
+                                                    class="text-dark  ms-1"><b>{{ $salesMaster->installation_date != '' && $salesMaster->installation_date != null && $salesMaster->installation_date != '0000-00-00' && $salesMaster->installation_date != '1970-01-01' ? date('d-m-Y', strtotime($salesMaster->installation_date)) : 'N/A' }}</b></span>
+                                            </li>
+                                            <li class="mb-50 d-flex align-items-center">
+                                                <span class="h6">Register KW : </span>
+                                                <span
+                                                    class="text-dark  ms-1"><b>{{ $salesMaster->register_kw != '' && $salesMaster->register_kw != null ? $salesMaster->register_kw : 'N/A' }}</b></span>
+                                            </li>
+
                                         </ul>
 
                                     </div>
@@ -109,145 +161,43 @@
                                                 <span
                                                     class="text-dark  ms-1"><b>{{ $salesMaster->consumer_name != '' && $salesMaster->consumer_name != null ? $salesMaster->consumer_name : 'N/A' }}</b></span>
                                             </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <!-- / Second -->
-                                <!-- Third -->
-                                <div class="col-lg-4">
-                                    <div class="info-container">
-                                        <ul class="list-unstyled mb-50">
-                                            <li class="mb-50 d-flex align-items-center">
-                                                <span class="h6">Register KW : </span>
-                                                <span
-                                                    class="text-dark  ms-1"><b>{{ $salesMaster->register_kw != '' && $salesMaster->register_kw != null ? $salesMaster->register_kw : 'N/A' }}</b></span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <!-- / Third -->
-
-                                <!-- Third -->
-                                <div class="col-lg-4">
-                                    <div class="info-container">
-                                        <ul class="list-unstyled mb-50">
                                             <li class="mb-1  d-flex align-items-center">
                                                 <span class="h6">Consumer Type : </span>
                                                 <span
                                                     class="text-dark  ms-1"><b>{{ $salesMaster->consumer_type != '' && $salesMaster->consumer_type != null ? $salesMaster->consumer_type : 'N/A' }}</b></span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <!-- / Third -->
-                                <!-- Third -->
-                                <div class="col-lg-4"></div>
-                                <div class="col-lg-4">
-                                    <div class="info-container">
-                                        <ul class="list-unstyled mb-50">
-                                            <li class="mb-1  d-flex align-items-center">
-                                                <span class="h6">R. Portal : </span>
+                                                <span class="h6 ms-3">DISCOM Sr.No. : </span>
                                                 <span
-                                                    class="text-dark  ms-1"><b>{{ $salesMaster->ragistration_portal != '' && $salesMaster->ragistration_portal != null ? $salesMaster->ragistration_portal : 'N/A' }}</b></span>
+                                                    class="text-dark  ms-1"><b>{{ $salesMaster->feasibility_discom_sr_number != '' && $salesMaster->feasibility_discom_sr_number != null ? $salesMaster->feasibility_discom_sr_number : 'N/A' }}</b></span>
                                             </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <!-- / Third -->
-                                <!-- Third -->
-                                <div class="col-lg-4">
-                                    <div class="info-container">
-                                        <ul class="list-unstyled mb-50">
                                             <li class="mb-1  d-flex align-items-center">
                                                 <span class="h6">R. No. : </span>
                                                 <span
                                                     class="text-dark  ms-1"><b>{{ $salesMaster->ragistration_number != '' && $salesMaster->ragistration_number != null ? $salesMaster->ragistration_number : 'N/A' }}</b></span>
                                             </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <!-- / Third -->
-                                <!-- Third -->
-                                <div class="col-lg-3">
-                                    <div class="info-container">
-                                        <ul class="list-unstyled mb-50">
-                                            <li class="mb-1  d-flex align-items-center">
-                                                <span class="h6">R. Date : </span>
-                                                <span
-                                                    class="text-dark  ms-1"><b>{{ $salesMaster->ragistration_date != '' && $salesMaster->ragistration_date != null && $salesMaster->ragistration_date != '0000-00-00' && $salesMaster->ragistration_date != '1970-01-01' ? date('d-m-Y', strtotime($salesMaster->ragistration_date)) : 'N/A' }}</b></span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <!-- / Third -->
-                                <!-- Third -->
-                                <div class="col-lg-4">
-                                    <div class="info-container">
-                                        <ul class="list-unstyled mb-50">
-                                            <li class="mb-1  d-flex align-items-center">
-                                                <span class="h6">DISCOM Sr.No. : </span>
-                                                <span
-                                                    class="text-dark  ms-1"><b>{{ $salesMaster->feasibility_discom_sr_number != '' && $salesMaster->feasibility_discom_sr_number != null ? $salesMaster->feasibility_discom_sr_number : 'N/A' }}</b></span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <!-- / Third -->
-                                <!-- Third -->
-                                <div class="col-lg-4">
-                                    <div class="info-container">
-                                        <ul class="list-unstyled mb-50">
-                                            <li class="mb-1  d-flex align-items-center">
-                                                <span class="h6">F. Amount : </span>
-                                                <span
-                                                    class="text-dark  ms-1"><b>{{ $salesMaster->feasibility_amount != '' && $salesMaster->feasibility_amount != null ? $salesMaster->feasibility_amount : 'N/A' }}</b></span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <!-- / Third -->
-
-                                <!-- Third -->
-                                <div class="col-lg-3">
-                                    <div class="info-container">
-                                        <ul class="list-unstyled mb-50">
-                                            <li class="mb-1  d-flex align-items-center">
-                                                <span class="h6">F. Date : </span>
-                                                <span
-                                                    class="text-dark  ms-1"><b>{{ $salesMaster->feasibility_date != '' && $salesMaster->feasibility_date != null && $salesMaster->feasibility_date != '1970-01-01' && $salesMaster->feasibility_date != '0000-00-00' ? date('d-m-Y', strtotime($salesMaster->feasibility_date)) : 'N/A' }}</b></span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <!-- / Third -->
-
-                                <!-- Third -->
-                                <div class="col-lg-4">
-                                    <div class="info-container">
-                                        <ul class="list-unstyled mb-50">
                                             <li class="mb-1  d-flex align-items-center">
                                                 <span class="h6">Payment Ref. Number : </span>
                                                 <span
                                                     class="text-dark  ms-1"><b>{{ $salesMaster->feasibility_date != '' && $salesMaster->payment_ref_number != null ? $salesMaster->payment_ref_number : 'N/A' }}</b></span>
                                             </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <!-- / Third -->
-
-                                <!-- Third -->
-                                <div class="col-lg-4">
-                                    <div class="info-container">
-                                        <ul class="list-unstyled mb-50">
-                                            <li class="mb-1  d-flex align-items-center">
-                                                <span class="h6">Payment Date : </span>
+                                            <li class="mb-1  d-flex align-items-center portal-field-highlight">
+                                                <span class="h6">Vendor Consumer Agreement Uploading Date : </span>
                                                 <span
-                                                    class="text-dark  ms-1"><b>{{ $salesMaster->installation_date != '' && $salesMaster->installation_date != null && $salesMaster->installation_date != '0000-00-00' && $salesMaster->installation_date != '1970-01-01' ? date('d-m-Y', strtotime($salesMaster->installation_date)) : 'N/A' }}</b></span>
+                                                    class="text-dark ms-1"><b>{{ $portalData?->vendor_consumer_agreement_uploading_date ?: 'N/A' }}</b></span>
+                                            </li>
+                                            <li class="mb-1  d-flex align-items-center portal-field-highlight">
+                                                <span class="h6">Vendor Consumer Agreement Uploaded : </span>
+                                                <span
+                                                    class="text-dark ms-1"><b>{{ $portalData?->vendor_consumer_agreement_uploaded ?: 'N/A' }}</b></span>
+                                            </li>
+                                            <li class="mb-1  d-flex align-items-center portal-field-highlight">
+                                                <span class="h6">Feasibility Applied (kW) : </span>
+                                                <span
+                                                    class="text-dark ms-1"><b>{{ $portalData?->feasibility_applied ?: 'N/A' }}</b></span>
                                             </li>
                                         </ul>
                                     </div>
                                 </div>
-                                <!-- / Third -->
+                                <!-- / Second -->
 
                                 <div class="col-lg-12 mt-50 mb-50">
                                     <h5 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);">
@@ -308,7 +258,7 @@
                                             <li class="mb-50 d-flex align-items-center">
                                                 <span class="h6">State : </span>
                                                 <span
-                                                    class="text-dark  ms-1"><b>{{ $salesMaster->district != '' && $salesMaster->district->state != null ? $salesMaster->district->state->state_name : 'N/A' }}</b></span>
+                                                    class="text-dark  ms-1"><b>{{ $salesMaster->district?->state?->state_name ?: 'N/A' }}</b></span>
                                             </li>
                                         </ul>
 
@@ -322,7 +272,7 @@
                                             <li class="mb-50 d-flex align-items-center">
                                                 <span class="h6">District : </span>
                                                 <span
-                                                    class="text-dark  ms-1"><b>{{ $salesMaster->district->name != '' && $salesMaster->district->name != null ? $salesMaster->district->name : 'N/A' }}</b></span>
+                                                    class="text-dark  ms-1"><b>{{ $salesMaster->district?->name ?: 'N/A' }}</b></span>
                                             </li>
                                         </ul>
 
@@ -337,7 +287,7 @@
                                             <li class="mb-50 d-flex align-items-center">
                                                 <span class="h6">Taluka : </span>
                                                 <span
-                                                    class="text-dark  ms-1"><b>{{ $salesMaster->taluka->name != '' && $salesMaster->taluka->name != null ? $salesMaster->taluka->name : 'N/A' }}</b></span>
+                                                    class="text-dark  ms-1"><b>{{ $salesMaster->taluka?->name ?: 'N/A' }}</b></span>
                                             </li>
                                         </ul>
                                     </div>
@@ -535,7 +485,7 @@
                                             <li class="mb-50 d-flex align-items-center">
                                                 <span class="h6">Agent / Sales Person : </span>
                                                 <span
-                                                    class="text-dark ms-1"><b>{{ $salesMaster->agentsalesperson->name != '' && $salesMaster->agentsalesperson->name != null ? $salesMaster->agentsalesperson->name : 'N/A' }}</b></span>
+                                                    class="text-dark ms-1"><b>{{ $salesMaster->agentsalesperson?->name ?: 'N/A' }}</b></span>
                                             </li>
                                         </ul>
                                     </div>
@@ -645,6 +595,152 @@
                                     </div>
                                 </div>
 
+                                <div class="col-lg-12 mt-50 mb-50">
+                                    <h5 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);">
+                                        <i class="fa fa-bank pe-50"></i> Loan Details
+                                    </h5>
+                                    <hr class="m-0" />
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="info-container">
+                                        <ul class="list-unstyled mb-50">
+                                            <li class="mb-1 d-flex align-items-center">
+                                                <span class="h6">Loan Portal : </span>
+                                                <span
+                                                    class="text-dark ms-1"><b>{{ !is_null($salesloan) && $salesloan->loan_portal != '' && $salesloan->loan_portal != null ? $salesloan->loan_portal : 'N/A' }}</b></span>
+                                            </li>
+                                            <li class="mb-1 d-flex align-items-center">
+                                                <span class="h6">Application No : </span>
+                                                <span
+                                                    class="text-dark ms-1"><b>{{ !is_null($salesloan) && $salesloan->application_no != '' && $salesloan->application_no != null ? $salesloan->application_no : 'N/A' }}</b></span>
+                                            </li>
+
+
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="info-container">
+                                        <ul class="list-unstyled mb-50">
+                                            <li class="mb-1 d-flex align-items-center">
+                                                <span class="h6">Approved Amount : </span>
+                                                <span
+                                                    class="text-dark ms-1"><b>{{ !is_null($salesloan) ? number_format((float) $salesloan->approved_amount, 2) : 'N/A' }}</b></span>
+                                            </li>
+                                            <li class="mb-1 d-flex align-items-center">
+                                                <span class="h6">Application Submitted At : </span>
+                                                <span
+                                                    class="text-dark ms-1"><b>{{ !is_null($salesloan) && $salesloan->submitted_at != '' && $salesloan->submitted_at != '0000-00-00' && $salesloan->submitted_at != null ? date('d-m-Y', strtotime($salesloan->submitted_at)) : 'N/A' }}</b></span>
+                                            </li>
+
+
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="info-container">
+                                        <ul class="list-unstyled mb-50">
+                                            <li class="mb-1 d-flex align-items-center">
+                                                <span class="h6">Loan PDF : </span>
+                                                <span class="text-dark ms-1"><b>
+                                                        @if (!is_null($salesloan) && $salesloan->loan_pdf != '')
+                                                            <a href="{{ route('download-document', 'file=' . $salesloan->loan_pdf) }}"
+                                                                download="Loan PDF">Download</a>
+                                                        @else
+                                                            N/A
+                                                        @endif
+                                                    </b></span>
+                                            </li>
+                                            <li class="mb-50 d-flex align-items-center portal-field-highlight">
+                                                <span class="h6">Loan Status : </span>
+                                                <span
+                                                    class="text-dark ms-1"><b>{{ $portalData?->loan_status ?: 'N/A' }}</b></span>
+                                            </li>
+                                            <li class="mb-50 d-flex align-items-center portal-field-highlight">
+                                                <span class="h6">Loan Rejection Date : </span>
+                                                <span
+                                                    class="text-dark ms-1"><b>{{ $portalData?->loan_rejection_date ?: 'N/A' }}</b></span>
+                                            </li>
+
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="info-container">
+                                        <ul class="list-unstyled mb-50">
+                                            <li class="mb-50 d-flex align-items-center portal-field-highlight">
+                                                <span class="h6">Loan Disbursed Date (First Tranche) : </span>
+                                                <span
+                                                    class="text-dark ms-1"><b>{{ $portalData?->loan_disbursed_date_first_tranche ?: 'N/A' }}</b></span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="info-container">
+                                        <ul class="list-unstyled mb-50">
+                                            <li class="mb-50 d-flex align-items-center portal-field-highlight">
+                                                <span class="h6">Loan Disbursed Amount (First Tranche) : </span>
+                                                <span
+                                                    class="text-dark ms-1"><b>{{ $portalData?->loan_disbursed_amount_first_tranche ?: 'N/A' }}</b></span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="info-container">
+                                        <ul class="list-unstyled mb-50">
+                                            <li class="mb-50 d-flex align-items-center portal-field-highlight">
+                                                <span class="h6">Loan First Tranche Disbursal UTR : </span>
+                                                <span
+                                                    class="text-dark ms-1"><b>{{ $portalData?->loan_first_tranche_disbursal_utr ?: 'N/A' }}</b></span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="info-container">
+                                        <ul class="list-unstyled mb-50">
+                                            <li class="mb-50 d-flex align-items-center portal-field-highlight">
+                                                <span class="h6">Loan Disbursed Date (Second Tranche) : </span>
+                                                <span
+                                                    class="text-dark ms-1"><b>{{ $portalData?->loan_disbursed_date_second_tranche ?: 'N/A' }}</b></span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="info-container">
+                                        <ul class="list-unstyled mb-50">
+                                            <li class="mb-50 d-flex align-items-center portal-field-highlight">
+                                                <span class="h6">Loan Disbursed Amount (Second Tranche) : </span>
+                                                <span
+                                                    class="text-dark ms-1"><b>{{ $portalData?->loan_disbursed_amount_second_tranche ?: 'N/A' }}</b></span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-4">
+                                    <div class="info-container">
+                                        <ul class="list-unstyled mb-50">
+                                            <li class="mb-50 d-flex align-items-center portal-field-highlight">
+                                                <span class="h6">Loan Second Tranche Disbursal UTR : </span>
+                                                <span
+                                                    class="text-dark ms-1"><b>{{ $portalData?->loan_second_tranche_disbursal_utr ?: 'N/A' }}</b></span>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+
                                 @if (!is_null($salesMaster->installation))
                                     <div class="col-lg-12 mt-50 mb-50">
                                         <h2 class="font-black"
@@ -662,11 +758,36 @@
                                                     <span
                                                         class="text-dark ms-1"><b>{{ $salesMaster->installation->date != '' && $salesMaster->installation->date != null && $salesMaster->installation != '1970-01-01' && $salesMaster->installation != '0000-00-00' ? date('d-m-Y', strtotime($salesMaster->installation->date)) : 'N/A' }}</b></span>
                                                 </li>
+                                                <li class="mb-1  d-flex align-items-center portal-field-highlight">
+                                                    <span class="h6">Installed PV Module Capacity (kWp) : </span>
+                                                    <span
+                                                        class="text-dark ms-1"><b>{{ $portalData?->installed_pv_module_capacity ?: 'N/A' }}</b></span>
+                                                </li>
                                             </ul>
 
                                         </div>
                                     </div>
                                     <!-- / Other First -->
+
+                                    <!--  Other Second -->
+                                    <div class="col-lg-4">
+                                        <div class="info-container">
+                                            <ul class="list-unstyled mb-50">
+                                                <li class="mb-1  d-flex align-items-center portal-field-highlight">
+                                                    <span class="h6">Module Quantity : </span>
+                                                    <span
+                                                        class="text-dark ms-1"><b>{{ $portalData?->module_quantity ?: 'N/A' }}</b></span>
+                                                </li>
+                                                <li class="mb-1  d-flex align-items-center portal-field-highlight">
+                                                    <span class="h6">Module Capacity (WP) : </span>
+                                                    <span
+                                                        class="text-dark ms-1"><b>{{ $portalData?->module_capacity_wp ?: 'N/A' }}</b></span>
+                                                </li>
+
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <!-- / Other Second -->
 
                                     <div class="col-lg-12 mt-50 mb-50">
                                         <h5 class="font-black"
@@ -676,12 +797,11 @@
                                         <hr class="m-0" />
                                     </div>
 
-                                    @if ($salesMaster->allpanels->count() > 0 )
+                                    @if ($salesMaster->allpanels->count() > 0)
                                         <div class="col-lg-12">
                                             @foreach ($salesMaster->allpanels as $k => $panel)
-											
                                                 <ul class="p-0 list-group list-group-horizontal-md  mb-1">
-                                                    <li class="list-group-item">  Panel Company : <b
+                                                    <li class="list-group-item"> Panel Company : <b
                                                             class="data">{{ $panel->itemgroup->panel_company->name != '' && $panel->itemgroup->panel_company->name != null ? $panel->itemgroup->panel_company->name : 'N/A' }}</b>
                                                     </li>
                                                     <li class="list-group-item"> Panel Type : <b
@@ -720,7 +840,7 @@
                                             <div class="info-container">
                                                 <ul class="list-unstyled mb-50">
                                                     <li class="mb-1  d-flex align-items-center">
-                                                        <span class="h6">  Panel Company : </span>
+                                                        <span class="h6"> Panel Company : </span>
                                                         <span
                                                             class="text-dark ms-1"><b>{{ !is_null($salesMaster->installation->panelcompany) && $salesMaster->installation->panelcompany->name != '' && $salesMaster->installation->panelcompany->name != null ? $salesMaster->installation->panelcompany->name : 'N/A' }}</b></span>
                                                     </li>
@@ -879,6 +999,11 @@
                                                 <span
                                                     class="text-dark ms-1"><b>{{ $salesMaster->couriar_no != '' && $salesMaster->couriar_no != null ? $salesMaster->couriar_no : 'N/A' }}</b></span>
                                             </li>
+                                            <li class="mb-1  d-flex align-items-center">
+                                                <span class="h6">Project Completion Date : </span>
+                                                <span
+                                                    class="text-dark ms-1"><b>{{ $salesMaster->project_completion_date != '' && $salesMaster->project_completion_date != '1970-01-01' && $salesMaster->project_completion_date != '0000-00-00' && $salesMaster->project_completion_date != null ? date('d-m-Y', strtotime($salesMaster->project_completion_date)) : 'N/A' }}</b></span>
+                                            </li>
                                         </ul>
                                     </div>
                                 </div>
@@ -889,6 +1014,11 @@
                                                 <span class="h6">Courier Company : </span>
                                                 <span
                                                     class="text-dark ms-1"><b>{{ $salesMaster->courair_company != '' && $salesMaster->courair_company != null ? $salesMaster->courair_company : 'N/A' }}</b></span>
+                                            </li>
+                                            <li class="mb-1  d-flex align-items-center portal-field-highlight">
+                                                <span class="h6">Inspection Return Date : </span>
+                                                <span
+                                                    class="text-dark ms-1"><b>{{ $portalData?->inspection_return_date ?: 'N/A' }}</b></span>
                                             </li>
                                         </ul>
                                     </div>
@@ -901,34 +1031,10 @@
                                                 <span
                                                     class="text-dark ms-1"><b>{{ $salesMaster->meter_installation_date != '' && $salesMaster->meter_installation_date != '1970-01-01' && $salesMaster->meter_installation_date != '0000-00-00' ? date('d-m-Y', strtotime($salesMaster->meter_installation_date)) : 'N/A' }}</b></span>
                                             </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <div class="col-lg-4">
-                                    <div class="info-container">
-                                        <ul class="list-unstyled mb-50">
-                                            <li class="mb-1  d-flex align-items-center">
-                                                <span class="h6">Project Completion Date : </span>
+                                            <li class="mb-1  d-flex align-items-center portal-field-highlight">
+                                                <span class="h6">Inspection Status : </span>
                                                 <span
-                                                    class="text-dark ms-1"><b>{{ $salesMaster->project_completion_date != '' && $salesMaster->project_completion_date != '1970-01-01' && $salesMaster->project_completion_date != '0000-00-00' && $salesMaster->project_completion_date != null ? date('d-m-Y', strtotime($salesMaster->project_completion_date)) : 'N/A' }}</b></span>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                @if(!($salesMaster->ragistration_portal == 'GEDA' || ($salesMaster->ragistration_portal == 'National' && $salesMaster->subsidy_giveup)))
-                                <div class="col-lg-12 mt-50 mb-50">
-                                    <h5 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);">
-                                        <i class="fa fa-university pe-50"></i> Subsidy Details
-                                    </h5>
-                                    <hr class="m-0" />
-                                </div>
-                                <div class="col-lg-4">
-                                    <div class="info-container">
-                                        <ul class="list-unstyled mb-50">
-                                            <li class="mb-50 d-flex align-items-center">
-                                                <span class="h6">Request Date : </span>
-                                                <span
-                                                    class="text-dark ms-1"><b>{{ $salesMaster->subsidy_request_date != '' && $salesMaster->subsidy_request_date != '1970-01-01' && $salesMaster->subsidy_request_date != '0000-00-00' ? date('d-m-Y', strtotime($salesMaster->subsidy_request_date)) : 'N/A' }}</b></span>
+                                                    class="text-dark ms-1"><b>{{ $portalData?->inspection_status ?: 'N/A' }}</b></span>
                                             </li>
                                         </ul>
                                     </div>
@@ -936,36 +1042,114 @@
                                 <div class="col-lg-4">
                                     <div class="info-container">
                                         <ul class="list-unstyled mb-50">
-                                            <li class="mb-1  d-flex align-items-center">
-                                                <span class="h6">Verify Date : </span>
+                                            <li class="mb-1  d-flex align-items-center portal-field-highlight">
+                                                <span class="h6">Inspection Return Comment : </span>
                                                 <span
-                                                    class="text-dark ms-1"><b>{{ $salesMaster->subsidy_disbursement_verify_date != '' && $salesMaster->subsidy_disbursement_verify_date != '1970-01-01' && $salesMaster->subsidy_disbursement_verify_date != '0000-00-00' ? date('d-m-Y', strtotime($salesMaster->subsidy_disbursement_verify_date)) : 'N/A' }}</b></span>
+                                                    class="text-dark ms-1"><b>{{ $portalData?->inspection_return_comment ?: 'N/A' }}</b></span>
                                             </li>
                                         </ul>
                                     </div>
                                 </div>
-                                <div class="col-lg-4">
-                                    <div class="info-container">
-                                        <ul class="list-unstyled mb-50">
-                                            <li class="mb-50 d-flex align-items-center">
-                                                <span class="h6">Disbursement Date : </span>
-                                                <span
-                                                    class="text-dark ms-1"><b>{{ $salesMaster->subsidy_disbursement_date != '' && $salesMaster->subsidy_disbursement_date != '1970-01-01' && $salesMaster->subsidy_disbursement_date != '0000-00-00' ? date('d-m-Y', strtotime($salesMaster->subsidy_disbursement_date)) : 'N/A' }}</b></span>
-                                            </li>
-                                        </ul>
+                                @if (
+                                    !(
+                                        $salesMaster->ragistration_portal == 'GEDA' ||
+                                        ($salesMaster->ragistration_portal == 'National' && $salesMaster->subsidy_giveup)
+                                    ))
+                                    <div class="col-lg-12 mt-50 mb-50">
+                                        <h5 class="font-black"
+                                            style="font-weight: bold;color: var(--ck-color-base-text);">
+                                            <i class="fa fa-university pe-50"></i> Subsidy Details
+                                        </h5>
+                                        <hr class="m-0" />
                                     </div>
-                                </div>
-                                <div class="col-lg-8">
-                                    <div class="info-container">
-                                        <ul class="list-unstyled mb-50">
-                                            <li class="mb-1  d-flex align-items-center">
-                                                <span class="h6">Remark : </span>
-                                                <span
-                                                    class="text-dark ms-1"><b>{{ $salesMaster->subsidy_disbursal_remark }}</b></span>
-                                            </li>
-                                        </ul>
+                                    <div class="col-lg-4">
+                                        <div class="info-container">
+                                            <ul class="list-unstyled mb-50">
+                                                <li class="mb-50 d-flex align-items-center">
+                                                    <span class="h6">Request Date : </span>
+                                                    <span
+                                                        class="text-dark ms-1"><b>{{ $salesMaster->subsidy_request_date != '' && $salesMaster->subsidy_request_date != '1970-01-01' && $salesMaster->subsidy_request_date != '0000-00-00' ? date('d-m-Y', strtotime($salesMaster->subsidy_request_date)) : 'N/A' }}</b></span>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </div>
-                                </div>
+                                    <div class="col-lg-4">
+                                        <div class="info-container">
+                                            <ul class="list-unstyled mb-50">
+                                                <li class="mb-1  d-flex align-items-center">
+                                                    <span class="h6">Verify Date : </span>
+                                                    <span
+                                                        class="text-dark ms-1"><b>{{ $salesMaster->subsidy_disbursement_verify_date != '' && $salesMaster->subsidy_disbursement_verify_date != '1970-01-01' && $salesMaster->subsidy_disbursement_verify_date != '0000-00-00' ? date('d-m-Y', strtotime($salesMaster->subsidy_disbursement_verify_date)) : 'N/A' }}</b></span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="info-container">
+                                            <ul class="list-unstyled mb-50">
+                                                <li class="mb-50 d-flex align-items-center">
+                                                    <span class="h6">Disbursement Date : </span>
+                                                    <span
+                                                        class="text-dark ms-1"><b>{{ $salesMaster->subsidy_disbursement_date != '' && $salesMaster->subsidy_disbursement_date != '1970-01-01' && $salesMaster->subsidy_disbursement_date != '0000-00-00' ? date('d-m-Y', strtotime($salesMaster->subsidy_disbursement_date)) : 'N/A' }}</b></span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="info-container">
+                                            <ul class="list-unstyled mb-50">
+                                                <li class="mb-1  d-flex align-items-center">
+                                                    <span class="h6">Remark : </span>
+                                                    <span
+                                                        class="text-dark ms-1"><b>{{ $salesMaster->subsidy_disbursal_remark }}</b></span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="info-container">
+                                            <ul class="list-unstyled mb-50">
+                                                <li class="mb-50 d-flex align-items-center portal-field-highlight">
+                                                    <span class="h6">Subsidy Amount (Rs.) : </span>
+                                                    <span
+                                                        class="text-dark ms-1"><b>{{ $portalData?->subsidy_amount ?: 'N/A' }}</b></span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="info-container">
+                                            <ul class="list-unstyled mb-50">
+                                                <li class="mb-50 d-flex align-items-center portal-field-highlight">
+                                                    <span class="h6">Subsidy Return Date : </span>
+                                                    <span
+                                                        class="text-dark ms-1"><b>{{ $portalData?->subsidy_return_date ?: 'N/A' }}</b></span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="info-container">
+                                            <ul class="list-unstyled mb-50">
+                                                <li class="mb-50 d-flex align-items-center portal-field-highlight">
+                                                    <span class="h6">Subsidy Return To : </span>
+                                                    <span
+                                                        class="text-dark ms-1"><b>{{ $portalData?->subsidy_return_to ?: 'N/A' }}</b></span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-12">
+                                        <div class="info-container">
+                                            <ul class="list-unstyled mb-50">
+                                                <li class="mb-1 d-flex align-items-center portal-field-highlight">
+                                                    <span class="h6">Subsidy Return Comment : </span>
+                                                    <span
+                                                        class="text-dark ms-1"><b>{{ $portalData?->subsidy_return_comment ?: 'N/A' }}</b></span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
                                 @endif
                                 <div class="col-lg-12 mt-50 mb-50">
                                     <h5 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);">
@@ -978,7 +1162,7 @@
                                         @if ($salesMaster->document->count() > 0)
                                             @foreach ($salesMaster->document as $docVal)
                                                 @if ($docVal->image != '')
-                                                    <a href="{{ route('download-document','file='. $docVal->image) }}">
+                                                    <a href="{{ route('download-document', 'file=' . $docVal->image) }}">
                                                         <button type="button"
                                                             class="btn btn-sm btn-outline-primary"><span>{{ ucwords(str_replace('_', ' ', $docVal->name)) }}</span>
                                                             <i data-feather="download" class="me-25"></i></button>
@@ -988,7 +1172,7 @@
                                         @endif
                                         @if (!is_null($salesMaster->lead) && $salesMaster->lead->site_visit_images != '')
                                             @foreach (explode(',', $salesMaster->lead->site_visit_images) as $siteKey => $siteImg)
-                                                <a href="{{ route('download-document','file='. $siteImg) }}"
+                                                <a href="{{ route('download-document', 'file=' . $siteImg) }}"
                                                     download="{{ $siteImg }}">
                                                     <button type="button"
                                                         class="btn btn-sm btn-outline-primary"><span>Site Visit
@@ -999,7 +1183,7 @@
                                         @endif
 
                                         @if (!is_null($salesMaster->feasibility_letter) && $salesMaster->feasibility_letter != '')
-                                            <a href="{{ route('download-document','file='. $salesMaster->feasibility_letter) }}"
+                                            <a href="{{ route('download-document', 'file=' . $salesMaster->feasibility_letter) }}"
                                                 download="Feasibility Letter">
                                                 <button type="button"
                                                     class="btn btn-sm btn-outline-primary"><span>Feasibility Letter</span>
@@ -1008,7 +1192,7 @@
                                         @endif
 
                                         @if (!is_null($salesloan) && $salesloan->loan_pdf != '')
-                                            <a href="{{ route('download-document','file='. $salesloan->loan_pdf) }}"
+                                            <a href="{{ route('download-document', 'file=' . $salesloan->loan_pdf) }}"
                                                 download="Loan PDF">
                                                 <button type="button" class="btn btn-sm btn-outline-primary"><span>Loan
                                                         PDF</span> <i data-feather="download" class="me-25"></i></button>
@@ -1021,7 +1205,7 @@
                                                 !is_null($salesMaster->installation->penalImage) &&
                                                 $salesMaster->installation->penalImage->count() > 0)
                                             @foreach ($salesMaster->installation->penalImage as $panel => $panelImg)
-                                                <a href="{{ route('download-document','file='. $panelImg->image) }}"
+                                                <a href="{{ route('download-document', 'file=' . $panelImg->image) }}"
                                                     download="{{ $panelImg->image }}">
                                                     <button type="button"
                                                         class="btn btn-sm btn-outline-primary"><span>Panel
@@ -1035,7 +1219,7 @@
                                                 !is_null($salesMaster->installation->invaterImages) &&
                                                 $salesMaster->installation->invaterImages->count() > 0)
                                             @foreach ($salesMaster->installation->invaterImages as $invater => $invaterImg)
-                                                <a href="{{ route('download-document','file='. $invaterImg->image) }}"
+                                                <a href="{{ route('download-document', 'file=' . $invaterImg->image) }}"
                                                     download="{{ $invaterImg->image }}">
                                                     <button type="button"
                                                         class="btn btn-sm btn-outline-primary"><span>Invater
@@ -1046,7 +1230,7 @@
                                         @endif
 
                                         @if ($salesMaster->meter_application_oc != '')
-                                            <a href="{{ route('download-document','file='. $salesMaster->meter_application_oc) }}"
+                                            <a href="{{ route('download-document', 'file=' . $salesMaster->meter_application_oc) }}"
                                                 download="Meter Application OC">
                                                 <button type="button" class="btn btn-sm btn-outline-primary"><span>Meter
                                                         Application OC</span> <i data-feather="download"
@@ -1055,7 +1239,7 @@
                                         @endif
 
                                         @if ($salesMaster->payment_receipt != '')
-                                            <a href="{{ route('download-document','file='. $salesMaster->payment_receipt) }}"
+                                            <a href="{{ route('download-document', 'file=' . $salesMaster->payment_receipt) }}"
                                                 download="Payment Receipt">
                                                 <button type="button"
                                                     class="btn btn-sm btn-outline-primary"><span>Payment
@@ -1065,7 +1249,7 @@
                                         @endif
 
                                         @if ($salesMaster->proforma_15 != '')
-                                            <a href="{{ route('download-document','file='. $salesMaster->proforma_15) }}"
+                                            <a href="{{ route('download-document', 'file=' . $salesMaster->proforma_15) }}"
                                                 download="Proforma 15">
                                                 <button type="button"
                                                     class="btn btn-sm btn-outline-primary"><span>Proforma
@@ -1208,28 +1392,32 @@
                                                         $remove = $status['is_remove'];
                                                         $active = ($salesMaster->$value ?? '0') == '1';
                                                     @endphp
-                                                    @if (($value == 'subsidy_claimed' || $value == 'subsidy_receveid') && ($salesMaster->ragistration_portal == 'GEDA' || ($salesMaster->ragistration_portal == 'National' && $salesMaster->subsidy_giveup)))
+                                                    @if (
+                                                        ($value == 'subsidy_claimed' || $value == 'subsidy_receveid') &&
+                                                            ($salesMaster->ragistration_portal == 'GEDA' ||
+                                                                ($salesMaster->ragistration_portal == 'National' && $salesMaster->subsidy_giveup)))
                                                     @else
-                                                    @if ($value == 'disbursement' && $percentage > 0)
-                                                        <li
-                                                            class="{{ $percentage < 100 ? 'active-tl-light' : 'active-tl' }}">
-                                                        @else
-                                                        <li class="{{ $active ? 'active-tl' : '' }}">
-                                                    @endif
-                                                    {{ $label }}
+                                                        @if ($value == 'disbursement' && $percentage > 0)
+                                                            <li
+                                                                class="{{ $percentage < 100 ? 'active-tl-light' : 'active-tl' }}">
+                                                            @else
+                                                            <li class="{{ $active ? 'active-tl' : '' }}">
+                                                        @endif
+                                                        {{ $label }}
 
-                                                    @if ($value == 'disbursement' && $percentage > 0)
-                                                        ({{ number_format($percentage, 2) }}%)
-                                                    @endif
-                                                    {{-- Remove button --}}
-                                                    @if ($active && $remove == 1)
-                                                        <a href="javascript:void(0)" data-id="{{ $salesMaster->id }}"
-                                                            data-status="{{ $value }}" class="remove-status"
-                                                            data-bs-toggle="tooltip" title="Click to remove status">
-                                                            <i data-feather="x" class="text-danger"></i>
-                                                        </a>
-                                                    @endif
-                                                    </li>
+                                                        @if ($value == 'disbursement' && $percentage > 0)
+                                                            ({{ number_format($percentage, 2) }}%)
+                                                        @endif
+                                                        {{-- Remove button --}}
+                                                        @if ($active && $remove == 1)
+                                                            <a href="javascript:void(0)"
+                                                                data-id="{{ $salesMaster->id }}"
+                                                                data-status="{{ $value }}" class="remove-status"
+                                                                data-bs-toggle="tooltip" title="Click to remove status">
+                                                                <i data-feather="x" class="text-danger"></i>
+                                                            </a>
+                                                        @endif
+                                                        </li>
                                                     @endif
                                                 @endif
                                             @endif

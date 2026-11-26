@@ -538,6 +538,28 @@
                                     id="subsidy_disbursal_remark" placeholder="Type here.."></textarea>
                             </div>
 
+                            <div class="col-12 col-md-12 mb-1 custom-input-group d-none" id="portal_subsidy_details">
+                                <h6 class="fw-bold mb-1">Portal Subsidy Details</h6>
+                                <div class="row">
+                                    <div class="mb-1 col-md-6">
+                                        <label class="form-label">Subsidy Amount</label>
+                                        <input type="text" class="form-control" id="portal_subsidy_amount" readonly>
+                                    </div>
+                                    <div class="mb-1 col-md-6">
+                                        <label class="form-label">Subsidy Return Date</label>
+                                        <input type="text" class="form-control" id="portal_subsidy_return_date" readonly>
+                                    </div>
+                                    <div class="mb-1 col-md-6">
+                                        <label class="form-label">Subsidy Return To</label>
+                                        <input type="text" class="form-control" id="portal_subsidy_return_to" readonly>
+                                    </div>
+                                    <div class="mb-1 col-md-12">
+                                        <label class="form-label">Subsidy Return Comment</label>
+                                        <input type="text" class="form-control" id="portal_subsidy_return_comment" readonly>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="col-md-12 col-12">
                                 <button type="submit"
                                     class="btn btn-sm btn-primary float-end save_meter">{{ __('message.Submit') }}</button>
@@ -860,6 +882,7 @@
             $('#sub_dis_date').addClass('d-none');
             $('#sub_ver_date').addClass('d-none');
             $('#sub_text').addClass('d-none');
+            $('#portal_subsidy_details').addClass('d-none');
             $('#imgPreview').addClass('d-none');
             $('#meterAppTitle').html('');
             if (status == 'dispach_pending_list') {
@@ -907,6 +930,12 @@
                 $('#subsidy_disbursement_verify_date').val(date2);
                 var remark = $(this).data('remark');
                 $('#subsidy_disbursal_remark').val(remark);
+
+                $('#portal_subsidy_amount').val($(this).data('portal-subsidy-amount') || 'N/A');
+                $('#portal_subsidy_return_date').val($(this).data('portal-subsidy-return-date') || 'N/A');
+                $('#portal_subsidy_return_to').val($(this).data('portal-subsidy-return-to') || 'N/A');
+                $('#portal_subsidy_return_comment').val($(this).data('portal-subsidy-return-comment') || 'N/A');
+                $('#portal_subsidy_details').removeClass('d-none');
 
                 $('#meterAppTitle').html('Subsidy Request');
                 $('#meterApp').modal('show');

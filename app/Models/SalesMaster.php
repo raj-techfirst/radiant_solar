@@ -64,6 +64,11 @@ class SalesMaster extends Model
         return $this->hasOne(SalesQuatation::class, 'id', 'sales_quatation_id');
     }
 
+    public function portalData()
+    {
+        return $this->hasOne(PortalData::class, 'sales_master_id', 'id');
+    }
+
     public function lead()
     {
         return $this->hasOne(LeadMaster::class, 'id', 'lead_master_id');
