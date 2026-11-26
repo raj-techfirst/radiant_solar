@@ -279,6 +279,9 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('subsidy-claim-reports', [Reports::class, 'subsidyClaimReports'])->name('subsidy-claim-reports');
     Route::post('subsidy-claim-download', [Reports::class, 'subsidyClaimDownload'])->name('subsidy-claim-download');
 
+    Route::get('bank-loan-reports', [Reports::class, 'bankLoanReports'])->name('bank-loan-reports');
+    Route::post('bank-loan-download', [Reports::class, 'bankLoanDownload'])->name('bank-loan-download');
+
     Route::resource('year', YearController::class);
     Route::resource('item-group', ItemGroupController::class);
     Route::resource('supplier', SupplierController::class);

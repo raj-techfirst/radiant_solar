@@ -450,6 +450,8 @@
 
                                                     <option {{ $value->name == 'dcr_certificate' ? 'selected' : '' }}
                                                         value="dcr_certificate">DCR Certificate</option>
+                                                          <option {{ $value->name == 'cast_certificate' ? 'selected' : '' }}
+                                                        value="cast_certificate">Cast Certificate</option>
                                                     <option {{ $value->name == 'other_document' ? 'selected' : '' }}
                                                         value="other_document">Other Document</option>
                                                 </select>
@@ -502,6 +504,8 @@
                                                             Acknowledgement / FORM</option>
 
                                                         <option value="dcr_certificate">DCR Certificate</option>
+                                                        <option value="cast_certificate">Cast Certificate</option>
+
                                                         <option value="other_document">Other Document</option>
                                                     </select>
                                                 </div>
@@ -542,6 +546,7 @@
                                                 <option value="application_acknowledgement_form">Application
                                                     Acknowledgement / FORM</option>
                                                 <option value="dcr_certificate">DCR Certificate</option>
+                                                <option value="cast_certificate">Cast Certificate</option>
                                                 <option value="other_document">Other Document</option>
                                             </select>
                                         </div>

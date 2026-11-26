@@ -96,7 +96,16 @@ class SalesMaster extends Model
         return $this->hasMany(InstallationPenalMaster::class, 'sales_master_id', 'id');
     }
 
-    public function scopeAdvancedFilter($query, array $filters)
+    public function loandata()
+    {
+        return $this->hasOne(Loandata::class, 'sales_master_id', 'id');
+    }
+    public function loandisbursements()
+    {
+        return $this->hasMany(Loandisbursement::class, 'sales_master_id', 'id');
+    }
+
+     public function scopeAdvancedFilter($query, array $filters)
     {
         $textColumns = [
             'consumer_number' => 'consumer_number',

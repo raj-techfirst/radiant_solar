@@ -249,6 +249,30 @@
             </div>
             @endcan
 
+            @can('bank-loan-report')
+            <div class="col-lg-3 col-md-6 col-12">
+                <div class="card report-card border cursor-pointer">
+                    <a href="{{ route('bank-loan-reports') }}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <img src="{{ asset('img/icon/payment-pending.png') }}" alt="bank loan" height="38">
+                                <span class="text-truncate fw-bolder h4">{{ $bankLoan[0]['total'] }}</span>
+                            </div>
+                            <div class="my-1 mb-0 d-flex justify-content-between">
+                                <span class="text-truncate fw-bolder h4">{{ number_format($bankLoan[0]['kw'],3) }} <small>KW</small></span>
+                            </div>
+                            <div class="mt-1 mb-50">
+                                <h5>Bank Loan Report</h5>
+                            </div>
+                            <div class="progress progress-bar-secondary progress-md mb-0" style="height: 5px">
+                                <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="30" aria-valuemax="100" style="width: 30%"></div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            @endcan
+
             @canany(['b2b-accept', 'b2b-dispatch', 'b2b-rate'])
             <div class="col-lg-3 col-md-6 col-12">
                 <div class="card report-card border cursor-pointer">

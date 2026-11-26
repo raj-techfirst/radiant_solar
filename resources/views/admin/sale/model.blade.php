@@ -1154,7 +1154,7 @@
                                         </div>
                                     </div>
                                 @endif
-                                <div class="col-lg-12 mt-50 mb-50">
+                              <div class="col-lg-12 mt-50 mb-50">
                                     <h5 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);">
                                         <i class="fa fa-file pe-50"> </i> Uploaded Documents
                                     </h5>
@@ -1165,11 +1165,12 @@
                                         @if ($salesMaster->document->count() > 0)
                                             @foreach ($salesMaster->document as $docVal)
                                                 @if ($docVal->image != '')
-                                                    <a href="{{ route('download-document', 'file=' . $docVal->image) }}">
-                                                        <button type="button"
-                                                            class="btn btn-sm btn-outline-primary"><span>{{ ucwords(str_replace('_', ' ', $docVal->name)) }}</span>
-                                                            <i data-feather="download" class="me-25"></i></button>
-                                                    </a>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        onclick="downloadDocument('{{ route('download-document', 'file=' . $docVal->image) }}', '{{ $docVal->name }}', '{{ pathinfo($docVal->image, PATHINFO_EXTENSION) }}')">
+
+                                                        <span>{{ ucwords(str_replace('_', ' ', $docVal->name)) }}</span>
+                                                        <i data-feather="download" class="me-25"></i>
+                                                    </button>
                                                 @endif
                                             @endforeach
                                         @endif
@@ -1186,12 +1187,20 @@
                                         @endif
 
                                         @if (!is_null($salesMaster->feasibility_letter) && $salesMaster->feasibility_letter != '')
-                                            <a href="{{ route('download-document', 'file=' . $salesMaster->feasibility_letter) }}"
+                                            {{-- <a href="{{ route('download-document', 'file=' . $salesMaster->feasibility_letter) }}"
                                                 download="Feasibility Letter">
                                                 <button type="button"
                                                     class="btn btn-sm btn-outline-primary"><span>Feasibility Letter</span>
                                                     <i data-feather="download" class="me-25"></i></button>
-                                            </a>
+                                            </a> --}}
+
+                                              <button type="button" class="btn btn-sm btn-outline-primary"
+                                                        onclick="downloadDocument('{{ route('download-document', 'file=' . $salesMaster->feasibility_letter) }}', 'Feasibility Letter', '{{ pathinfo($salesMaster->feasibility_letter, PATHINFO_EXTENSION) }}')">
+
+                                                        <span>Feasibility Letter</span>
+                                                        <i data-feather="download" class="me-25"></i>
+                                            </button>
+
                                         @endif
 
                                         @if (!is_null($salesloan) && $salesloan->loan_pdf != '')
@@ -1508,6 +1517,28 @@
     <script type="text/javascript">
         'use strict';
         const URL = "{{ route('sales-master.index') }}";
+
+        function downloadDocument(url, name, extension) {
+        fetch(url)
+            .then(response => {
+                if (!response.ok) throw new Error('Download failed');
+                return response.blob();
+            })
+            .then(blob => {
+                let link = document.createElement('a');
+                let blobUrl = window.URL.createObjectURL(blob);
+
+                link.href = blobUrl;
+                link.download = name + '.' + extension;
+
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                window.URL.revokeObjectURL(blobUrl);
+            })
+            .catch(error => console.error(error));
+    }
 
         $(document).on('click', '.declaration-dcr-link', function() {
             var id = $(this).data('id');

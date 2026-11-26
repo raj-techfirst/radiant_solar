@@ -1467,14 +1467,14 @@ function technicalSpecifications()
             'itemDescription' => 'AC Distribution Box',
             'qty' => 'Nos',
             'size' => 'As Per Design',
-            'make' => 'L&T/Schneider Equivalent',
+            'make' => 'Reputed Make',
             'type' => 'other',
         ],
         [
             'itemDescription' => 'DC Distribution Box',
             'qty' => 'Nos',
             'size' => 'As Per Design',
-            'make' => 'L&T/Schneider Equivalent',
+            'make' => 'Reputed Make',
             'type' => 'other',
         ],
         [
@@ -1495,7 +1495,7 @@ function technicalSpecifications()
             'itemDescription' => 'LA Cables',
             'qty' => 'Mtr',
             'size' => 'As Per Design',
-            'make' => 'Johnson/Kanbary/Equivalent',
+            'make' => 'Reputed Make',
             'type' => 'other',
         ],
         [

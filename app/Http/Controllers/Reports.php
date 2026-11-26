@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\BankLoanExport;
 use App\Exports\DispachListExport;
 use App\Exports\FinalOrdersExport;
 use App\Exports\InstallationListExport;
@@ -26,7 +27,7 @@ class Reports extends Controller
 {
     function __construct()
     {
-        $this->middleware('permission:reports-total-collection|reports-payment-pending|reports-meter-charges|reports-dispach|reports-installation|reports-meter-application|reports-final|reports-invoice|b2b-accept|b2b-dispatch|b2b-rate|sales-agent-wise-report|subsidy-claim-report', ['only' => ['index']]);
+        $this->middleware('permission:reports-total-collection|reports-payment-pending|reports-meter-charges|reports-dispach|reports-installation|reports-meter-application|reports-final|reports-invoice|b2b-accept|b2b-dispatch|b2b-rate|sales-agent-wise-report|subsidy-claim-report|bank-loan-report', ['only' => ['index']]);
         $this->middleware('permission:reports-total-collection', ['only' => ['totalcollection']]);
         $this->middleware('permission:reports-payment-pending', ['only' => ['paymentPending']]);
         $this->middleware('permission:reports-meter-charges', ['only' => ['meterCharges']]);
@@ -35,12 +36,14 @@ class Reports extends Controller
         $this->middleware('permission:reports-meter-application', ['only' => ['meterApplication']]);
         $this->middleware('permission:reports-final', ['only' => ['finalReport']]);
         $this->middleware('permission:subsidy-claim-report', ['only' => ['subsidyClaimReports', 'subsidyClaimDownload']]);
+        $this->middleware('permission:bank-loan-report', ['only' => ['bankLoanReports', 'bankLoanDownload']]);
     }
     public function index()
     {
         $company = CompanyProfile::where('user_id', Auth::id())->first();
         
         $subClaim = SalesMaster::selectRaw('sum(register_kw) as kw,count(id) as total')->where('meter_installation', '1');
+        $bankLoan = SalesMaster::selectRaw('sum(register_kw) as kw,count(id) as total')->where('file_type', 'L');
 
         $invoicequery = SalesMaster::selectRaw('sum(register_kw) as kw,count(id) as total');
         $invoicequery->where('dispach_pending_list', '1');
@@ -104,6 +107,7 @@ class Reports extends Controller
                 $meterApplicationquery->whereIn('agent_sales_person_id', $agentIds);
                 $finalReportquery->whereIn('agent_sales_person_id', $agentIds);
                 $subClaim->whereIn('agent_sales_person_id', $agentIds);
+                $bankLoan->whereIn('agent_sales_person_id', $agentIds);
                 $b2bAcceptCount->whereIn('agent_sales_person_id', $agentIds);
                 $b2bDispatchCount->whereIn('agent_sales_person_id', $agentIds);
                 $b2bRateCount->whereIn('agent_sales_person_id', $agentIds);
@@ -122,6 +126,7 @@ class Reports extends Controller
             $meterApplicationquery->where('agent_sales_person_id', $id);
             $finalReportquery->where('agent_sales_person_id', $id);
             $subClaim->where('agent_sales_person_id', $id);
+            $bankLoan->where('agent_sales_person_id', $id);
             $b2bAcceptCount->where('agent_sales_person_id', $id);
             $b2bDispatchCount->where('agent_sales_person_id', $id);
             $b2bRateCount->where('agent_sales_person_id', $id);
@@ -145,11 +150,12 @@ class Reports extends Controller
         $meterApplication = $meterApplicationquery->get();
         $finalReport = $finalReportquery->get();
         $subClaim = $subClaim->get();
+        $bankLoan = $bankLoan->where('file_cancel_order', '0')->get();
         $b2bAccept = $b2bAcceptCount->count();
         $b2bDispatch = $b2bDispatchCount->count();
         $b2bRate = $b2bRateCount->count();
 
-        return view('admin.reports.index', compact('totalcollection', 'paymentpending', 'meterCharges', 'dispach', 'installation', 'installationNew', 'meterApplication', 'finalReport', 'invoice', 'subClaim', 'b2bAccept', 'b2bDispatch', 'b2bRate'));
+        return view('admin.reports.index', compact('totalcollection', 'paymentpending', 'meterCharges', 'dispach', 'installation', 'installationNew', 'meterApplication', 'finalReport', 'invoice', 'subClaim', 'bankLoan', 'b2bAccept', 'b2bDispatch', 'b2bRate'));
     }
     public function totalcollection()
     {
@@ -1492,5 +1498,55 @@ class Reports extends Controller
     public function subsidyClaimDownload(Request $request)
     {
         return Excel::download(new SubsidyClaimExport($request), 'subsidy_claim.xlsx');
+    }
+
+    public function bankLoanReports(Request $request)
+    {
+        $companyFind = CompanyProfile::where('user_id', Auth::id())->first();
+        $agentWhere = "";
+        if ($companyFind->user_type == 'M') {
+            $agentWhere .= 'company_profiles.user_id = ' . Auth::id() . ' OR  company_profiles.manager_id = ' . $companyFind->id;
+        }
+        if ($companyFind->user_type == 'S') {
+            $agentWhere .= 'company_profiles.id = ' . $companyFind->id . ' OR  company_profiles.id = ' . $companyFind->manager_id;
+        }
+        $q = CompanyProfile::select('agent_sales_people.*')->leftJoin('agent_sales_people', 'agent_sales_people.user_id', 'company_profiles.user_id');
+        if ($agentWhere != "") {
+            $q->whereRaw($agentWhere);
+        }
+        $agentSalesPerson = $q->get();
+
+        if ($request->ajax()) {
+            return DataTables::of(BankLoanExport::query($request))
+                ->addIndexColumn()
+                ->filter(function ($query) {
+                    // all filters are applied in BankLoanExport::query()
+                })
+                // Table shows only the highlighted columns; the Excel download has all columns.
+                ->addColumn('loan_portal', function ($row) {
+                    return $row->loandata->loan_portal ?? '';
+                })
+                ->addColumn('submitted_at', function ($row) {
+                    return BankLoanExport::formatDate($row->loandata->submitted_at ?? null) ?: '-';
+                })
+                ->addColumn('approved_amount', function ($row) {
+                    return number_format(BankLoanExport::approvedAmount($row), 2);
+                })
+                ->editColumn('disbursed_amount', function ($row) {
+                    return number_format((float) ($row->disbursed_amount ?? 0), 2);
+                })
+                ->addColumn('loan_pending_amount', function ($row) {
+                    return number_format(BankLoanExport::pendingAmount($row), 2);
+                })
+                ->make(true);
+        }
+
+        $statusColumns = BankLoanExport::STATUS_COLUMNS;
+        return view('admin.reports.bank-loan', compact('agentSalesPerson', 'statusColumns'));
+    }
+
+    public function bankLoanDownload(Request $request)
+    {
+        return Excel::download(new BankLoanExport($request), 'bank_loan_report.xlsx');
     }
 }
