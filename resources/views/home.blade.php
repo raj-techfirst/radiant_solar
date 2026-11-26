@@ -294,6 +294,59 @@
                             </div>
                         </div>
                     @endif
+
+                    <!-- Portal Status Wise -->
+                    @if (isset($portalStatusData['rows']) && count($portalStatusData['rows']) > 0)
+                        <div class="col-md-6 col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">Portal Status Wise</h4>
+                                </div>
+                                <div class="card-body p-0 table-responsive-custom">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>No.</th>
+                                                <th>Status</th>
+                                                <th class="text-center">Files</th>
+                                                <th class="text-end">Total Kw</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($portalStatusData['rows'] as $row)
+                                                <tr>
+                                                    <td>{{ $row['no'] }}</td>
+                                                    <td>
+                                                        <span class="fw-bold text-body">{{ $row['name'] }}</span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge rounded-pill bg-light-primary text-primary">
+                                                            {{ $row['count'] > 0 ? $row['count'] : '–' }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-end font-monospace">
+                                                        {{ $row['kw'] > 0 ? number_format($row['kw'], 2) : '–' }}
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                            <tr>
+                                                <td></td>
+                                                <td class="fw-bold text-success">Total</td>
+                                                <td class="text-center">
+                                                    <span class="badge rounded-pill bg-light-success text-success">
+                                                        {{ number_format($portalStatusData['total']['count']) }}
+                                                    </span>
+                                                </td>
+                                                <td class="text-end font-monospace fw-bold">
+                                                    {{ number_format($portalStatusData['total']['kw'], 2) }}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Charts Section -->
