@@ -95,5 +95,35 @@ class SalesMaster extends Model
     {
         return $this->hasMany(InstallationPenalMaster::class, 'sales_master_id', 'id');
     }
+
+    public function scopeAdvancedFilter($query, array $filters)
+    {
+        $textColumns = [
+            'consumer_number' => 'consumer_number',
+            'application_number' => 'ragistration_number',
+        ];
+        $exactColumns = [
+            'discom' => 'discom',
+            'circle' => 'circle',
+            'division' => 'division',
+            'sub_division_id' => 'sub_division_id',
+        ];
+
+        foreach ($textColumns as $key => $column) {
+            $value = trim((string) ($filters[$key] ?? ''));
+            if ($value !== '') {
+                $query->where($column, 'like', '%'.$value.'%');
+            }
+        }
+
+        foreach ($exactColumns as $key => $column) {
+            $value = trim((string) ($filters[$key] ?? ''));
+            if ($value !== '') {
+                $query->where($column, $value);
+            }
+        }
+
+        return $query;
+    }
 }
 

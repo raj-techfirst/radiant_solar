@@ -48,6 +48,11 @@
         min-width: 760px;
     }
 
+    .preview-consumer-link {
+        color: inherit;
+        text-decoration: none;
+    }
+
     #consumer-preview-tabs {
         flex-wrap: nowrap;
         overflow-x: auto;
@@ -242,6 +247,7 @@
                             @foreach ($recommendedFields as $field => $label)
                                 <th class="pv-col-{{ $field }}">{{ $label }}</th>
                             @endforeach
+                            <th>Sales Order Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -259,7 +265,16 @@
                                         value="{{ $row['sales_master_id'] ?? '' }}">
                                 </td>
                                 <td>{{ $key + 1 }}</td>
-                                <td class="pv-num">{{ $row['db_consumer_number'] ?: ($row['consumer_number'] ?? '-') }}</td>
+                                <td class="pv-num">
+                                    @if (! empty($row['sales_master_id']))
+                                        <a class="preview-consumer-link"
+                                            href="{{ route('sales-master.show', $row['sales_master_id']) }}"
+                                            target="_blank" rel="noopener noreferrer"
+                                            title="Open Sales Order view">{{ $row['db_consumer_number'] ?: ($row['consumer_number'] ?? '-') }}</a>
+                                    @else
+                                        {{ $row['db_consumer_number'] ?: ($row['consumer_number'] ?? '-') }}
+                                    @endif
+                                </td>
                                 @foreach ($recommendedFields as $field => $label)
                                     @php
                                         $excelText = $recommendedValue($row, 'excel_recommended', $field);
@@ -274,10 +289,11 @@
                                         @endunless
                                     </td>
                                 @endforeach
+                                <td>{{ $row['current_status'] ?? '-' }}</td>
                             </tr>
                         @empty
                             <tr data-preview-empty="1">
-                                <td colspan="{{ 3 + count($recommendedFields) }}" class="text-center">No recommended updates.</td>
+                                <td colspan="{{ 4 + count($recommendedFields) }}" class="text-center">No recommended updates.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -301,6 +317,7 @@
                             <th>Consumer Name</th>
                             <th class="pv-num">Consumer Number</th>
                             <th>Action</th>
+                            <th>Sales Order Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -332,10 +349,11 @@
                                         </button>
                                     </div>
                                 </td>
+                                <td>{{ $row['current_status'] ?? '-' }}</td>
                             </tr>
                         @empty
                             <tr data-preview-empty="1">
-                                <td colspan="4" class="text-center">No unmatched records.</td>
+                                <td colspan="5" class="text-center">No unmatched records.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -358,6 +376,7 @@
                             <th>#</th>
                             <th>Consumer Name</th>
                             <th class="pv-num">Consumer Number</th>
+                            <th>Sales Order Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -366,11 +385,21 @@
                                 data-preview-number="{{ $row['consumer_number'] ?? '' }}">
                                 <td>{{ $key + 1 }}</td>
                                 <td>{{ $row['consumer_name'] ?: '-' }}</td>
-                                <td class="pv-num">{{ $row['consumer_number'] ?: '-' }}</td>
+                                <td class="pv-num">
+                                    @if (! empty($row['id']))
+                                        <a class="preview-consumer-link"
+                                            href="{{ route('sales-master.show', $row['id']) }}" target="_blank"
+                                            rel="noopener noreferrer"
+                                            title="Open Sales Order view">{{ $row['consumer_number'] ?: '-' }}</a>
+                                    @else
+                                        {{ $row['consumer_number'] ?: '-' }}
+                                    @endif
+                                </td>
+                                <td>{{ $row['current_status'] ?? '-' }}</td>
                             </tr>
                         @empty
                             <tr data-preview-empty="1">
-                                <td colspan="3" class="text-center">No DB records missing from Excel.</td>
+                                <td colspan="4" class="text-center">No DB records missing from Excel.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -393,6 +422,7 @@
                             <th class="pv-num">Consumer Number</th>
                             <th>Ignore Date</th>
                             <th>Action</th>
+                            <th>Sales Order Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -401,7 +431,16 @@
                                 data-preview-number="{{ $row['consumer_number'] ?? '' }}">
                                 <td>{{ $key + 1 }}</td>
                                 <td>{{ $row['consumer_name'] ?: '-' }}</td>
-                                <td class="pv-num">{{ $row['consumer_number'] ?: '-' }}</td>
+                                <td class="pv-num">
+                                    @if (! empty($row['sales_master_id']))
+                                        <a class="preview-consumer-link"
+                                            href="{{ route('sales-master.show', $row['sales_master_id']) }}"
+                                            target="_blank" rel="noopener noreferrer"
+                                            title="Open Sales Order view">{{ $row['consumer_number'] ?: '-' }}</a>
+                                    @else
+                                        {{ $row['consumer_number'] ?: '-' }}
+                                    @endif
+                                </td>
                                 <td>{{ $row['ignore_date'] ?: '-' }}</td>
                                 <td>
                                     <a class="btn btn-sm btn-outline-primary"
@@ -410,10 +449,11 @@
                                         Create
                                     </a>
                                 </td>
+                                <td>{{ $row['current_status'] ?? '-' }}</td>
                             </tr>
                         @empty
                             <tr data-preview-empty="1">
-                                <td colspan="5" class="text-center">No ignored customers.</td>
+                                <td colspan="6" class="text-center">No ignored customers.</td>
                             </tr>
                         @endforelse
                     </tbody>

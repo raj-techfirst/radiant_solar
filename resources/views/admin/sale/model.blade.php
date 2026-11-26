@@ -595,12 +595,14 @@
                                     </div>
                                 </div>
 
-                                <div class="col-lg-12 mt-50 mb-50">
-                                    <h5 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);">
-                                        <i class="fa fa-bank pe-50"></i> Loan Details
-                                    </h5>
-                                    <hr class="m-0" />
-                                </div>
+                                @if ($salesMaster->file_type == 'L')
+                                    <div class="col-lg-12 mt-50 mb-50">
+                                        <h5 class="font-black"
+                                            style="font-weight: bold;color: var(--ck-color-base-text);">
+                                            <i class="fa fa-bank pe-50"></i> Loan Details
+                                        </h5>
+                                        <hr class="m-0" />
+                                    </div>
 
                                 <div class="col-lg-4">
                                     <div class="info-container">
@@ -740,6 +742,7 @@
                                         </ul>
                                     </div>
                                 </div>
+                                @endif
 
                                 @if (!is_null($salesMaster->installation))
                                     <div class="col-lg-12 mt-50 mb-50">

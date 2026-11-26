@@ -449,6 +449,7 @@
                                     .text('Create');
 
                                 $ignoredRow.append($('<td>').append($createLink));
+                                $ignoredRow.append($('<td>').text(record.current_status || '-'));
                                 $('#preview-ignored-section tbody').prepend($ignoredRow);
                             });
                         }

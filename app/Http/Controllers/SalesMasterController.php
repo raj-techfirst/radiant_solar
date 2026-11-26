@@ -108,16 +108,22 @@ class SalesMasterController extends Controller
                         $id = $agent->id;
                         $query->where('agent_sales_person_id', $id);
                     }
-                    if (request()->input('from_date') != '' && request()->input('to_date') == '') {
-                        $query->where('master_create_date', '>=', date('Y-m-d 00:00:00', strtotime(request()->input('from_date'))));
+                    $advancedFilters = request()->input('advanced_filters', []);
+                    $advancedFromDate = trim((string) (is_array($advancedFilters) ? ($advancedFilters['from_date'] ?? '') : ''));
+                    $advancedToDate = trim((string) (is_array($advancedFilters) ? ($advancedFilters['to_date'] ?? '') : ''));
+                    $fromDate = $advancedFromDate !== '' ? $advancedFromDate : trim((string) request()->input('from_date', ''));
+                    $toDate = $advancedToDate !== '' ? $advancedToDate : trim((string) request()->input('to_date', ''));
+
+                    if ($fromDate != '' && $toDate == '') {
+                        $query->where('master_create_date', '>=', date('Y-m-d 00:00:00', strtotime($fromDate)));
                         $query->where('master_create_date', '<=', date('Y-m-d 23:59:59'));
                     }
-                    if (request()->input('from_date') != '' && request()->input('to_date') != '') {
-                        $query->where('master_create_date', '>=', date('Y-m-d 00:00:00', strtotime(request()->input('from_date'))));
-                        $query->where('master_create_date', '<=', date('Y-m-d 23:59:59', strtotime(request()->input('to_date'))));
+                    if ($fromDate != '' && $toDate != '') {
+                        $query->where('master_create_date', '>=', date('Y-m-d 00:00:00', strtotime($fromDate)));
+                        $query->where('master_create_date', '<=', date('Y-m-d 23:59:59', strtotime($toDate)));
                     }
-                    if (request()->input('from_date') == '' && request()->input('to_date') != '') {
-                        $query->where('master_create_date', '<=', date('Y-m-d 23:59:59', strtotime(request()->input('to_date'))));
+                    if ($fromDate == '' && $toDate != '') {
+                        $query->where('master_create_date', '<=', date('Y-m-d 23:59:59', strtotime($toDate)));
                     }
                     if (request()->input('consumer') != '') {
                         $consumer = request()->input('consumer');
@@ -152,6 +158,10 @@ class SalesMasterController extends Controller
                         } else {
                             $query->where('ragistration_portal', 'like', '%'.$ragistration_portal.'%');
                         }
+                    }
+
+                    if (is_array($advancedFilters) && count($advancedFilters) > 0) {
+                        $query->advancedFilter($advancedFilters);
                     }
                 })
                 ->editColumn('master_create_date', function ($row) {
@@ -281,8 +291,14 @@ class SalesMasterController extends Controller
         } else {
             $boms = BOM::get();
             $banks = Bank::orderBy('name', 'ASC')->get();
+            $advanceFilterOptions = [
+                'discoms' => SubDivision::query()->whereNotNull('discom')->where('discom', '!=', '')->distinct()->orderBy('discom')->pluck('discom')->all(),
+                'circles' => SubDivision::query()->whereNotNull('circle_name')->where('circle_name', '!=', '')->distinct()->orderBy('circle_name')->pluck('circle_name')->all(),
+                'divisions' => SubDivision::query()->whereNotNull('division_name')->where('division_name', '!=', '')->distinct()->orderBy('division_name')->pluck('division_name')->all(),
+                'sub_divisions' => SubDivision::query()->whereNotNull('name')->orderBy('name')->pluck('name', 'id')->all(),
+            ];
 
-            return view('admin.sale.view', compact('agentSalesPerson', 'boms', 'banks'));
+            return view('admin.sale.view', compact('agentSalesPerson', 'boms', 'banks', 'advanceFilterOptions'));
         }
     }
 
@@ -1393,16 +1409,29 @@ class SalesMasterController extends Controller
 
     public function consumerPreviewPage()
     {
+        $salesByNumberForStatus = SalesMaster::query()
+            ->get()
+            ->filter(function ($salesMaster) {
+                return SalesMasterConsumerPreview::normalizeNumber($salesMaster->consumer_number) !== '';
+            })
+            ->mapWithKeys(function ($salesMaster) {
+                return [SalesMasterConsumerPreview::normalizeNumber($salesMaster->consumer_number) => $salesMaster];
+            });
+
         $ignored = ConsumerIgnore::query()
             ->orderByDesc('id')
             ->get(['consumer_name', 'consumer_number', 'ignore_date'])
-            ->map(function ($record) {
+            ->map(function ($record) use ($salesByNumberForStatus) {
                 $ignoreDate = trim((string) ($record->ignore_date ?? ''));
+                $normalizedNumber = SalesMasterConsumerPreview::normalizeNumber($record->consumer_number ?? '');
+                $salesMaster = $salesByNumberForStatus->get($normalizedNumber);
 
                 return [
                     'consumer_name' => $record->consumer_name ?? '',
                     'consumer_number' => $record->consumer_number ?? '',
                     'ignore_date' => $ignoreDate !== '' ? date('d-m-Y', strtotime($ignoreDate)) : '',
+                    'sales_master_id' => $salesMaster ? $salesMaster->id : null,
+                    'current_status' => $salesMaster ? toGetSalesMasterLastStatus($salesMaster->id, $salesMaster) : '',
                 ];
             })
             ->all();
@@ -1710,7 +1739,36 @@ class SalesMasterController extends Controller
             })));
 
             $salesByNumber = SalesMaster::query()
-                ->get(['id', 'consumer_name', 'consumer_number', 'district_id', 'sub_division_id', 'discom', 'circle', 'division'])
+                ->get([
+                    'id',
+                    'consumer_name',
+                    'consumer_number',
+                    'district_id',
+                    'sub_division_id',
+                    'discom',
+                    'circle',
+                    'division',
+                    'application_pending',
+                    'pending_approvel',
+                    'feasibility_approved',
+                    'meter_charge_paid',
+                    'apply_for_loan',
+                    'loan_sension',
+                    'disbursement',
+                    'payment_receveid',
+                    'dispach_pending_list',
+                    'installation_pending',
+                    'installation_done',
+                    'meter_application_done',
+                    'meter_installation',
+                    'ragistration_portal',
+                    'subsidy_giveup',
+                    'project_completion',
+                    'subsidy_claimed',
+                    'subsidy_receveid',
+                    'hold_query',
+                    'file_cancel_order',
+                ])
                 ->filter(function ($salesMaster) {
                     return SalesMasterConsumerPreview::normalizeNumber($salesMaster->consumer_number) !== '';
                 })
@@ -1721,13 +1779,16 @@ class SalesMasterController extends Controller
             $excelNumberSet = array_fill_keys($numbers, true);
             $missingInExcel = $salesByNumber
                 ->filter(function ($salesMaster, $number) use ($excelNumberSet) {
-                    return ! isset($excelNumberSet[$number]);
+                    return ! isset($excelNumberSet[$number])
+                        && (int) ($salesMaster->hold_query ?? 0) !== 1
+                        && (int) ($salesMaster->file_cancel_order ?? 0) !== 1;
                 })
                 ->map(function ($salesMaster) {
                     return [
                         'id' => (int) $salesMaster->id,
                         'consumer_name' => $salesMaster->consumer_name ?? '',
                         'consumer_number' => $salesMaster->consumer_number ?? '',
+                        'current_status' => toGetSalesMasterLastStatus($salesMaster->id, $salesMaster),
                     ];
                 })
                 ->values()
@@ -1777,6 +1838,7 @@ class SalesMasterController extends Controller
                     ];
 
                     $preview['sales_master_id'] = $salesMaster->id;
+                    $preview['current_status'] = toGetSalesMasterLastStatus($salesMaster->id, $salesMaster);
                     $preview['db_consumer_name'] = $salesMaster->consumer_name;
                     $preview['db_consumer_number'] = $salesMaster->consumer_number;
                     $preview['excel_recommended'] = $excelRecommended;
@@ -1919,16 +1981,27 @@ class SalesMasterController extends Controller
             $request->session()->put('sales_master_consumer_preview', $preview);
         }
 
+        $salesByNumberForStatus = SalesMaster::query()
+            ->get()
+            ->filter(function ($salesMaster) {
+                return SalesMasterConsumerPreview::normalizeNumber($salesMaster->consumer_number) !== '';
+            })
+            ->mapWithKeys(function ($salesMaster) {
+                return [SalesMasterConsumerPreview::normalizeNumber($salesMaster->consumer_number) => $salesMaster];
+            });
+
         return response()->json([
             'success' => true,
             'ignored_count' => $numbers->count(),
-            'ignored' => collect($records)->map(function ($record) {
+            'ignored' => collect($records)->map(function ($record) use ($salesByNumberForStatus) {
                 $ignoreDate = trim((string) ($record['ignore_date'] ?? ''));
+                $salesMaster = $salesByNumberForStatus->get($record['consumer_number']);
 
                 return [
                     'consumer_name' => $record['consumer_name'] ?? '',
                     'consumer_number' => $record['consumer_number'] ?? '',
                     'ignore_date' => $ignoreDate !== '' ? date('d-m-Y', strtotime($ignoreDate)) : '',
+                    'current_status' => $salesMaster ? toGetSalesMasterLastStatus($salesMaster->id, $salesMaster) : '',
                 ];
             })->all(),
             'message' => $numbers->count() . ' record(s) added to ignore list.',

@@ -91,7 +91,11 @@
 
                     <div class="col-sm-12 col-md-6 col-lg-8 custom-input-group pt-2">
                         <div class="d-flex justify-content-end">
-                            <button class="btn btn-gradient-primary btn-sm filter" type="button" data-bs-toggle="tooltip"
+                            <button class="btn btn-outline-primary btn-sm advance-filter ms-1" type="button"
+                                data-bs-toggle="tooltip" data-placement="top" title="Advance Filter">
+                                <i data-feather='filter'></i> Advance Filter
+                            </button>
+                            <button class="btn btn-gradient-primary btn-sm filter ms-1" type="button" data-bs-toggle="tooltip"
                                 data-placement="top" title="Click to Filter">
                                 <i data-feather='search'></i>
                             </button>
@@ -106,6 +110,84 @@
                             </button>
                             @endcan
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="advanceFilterModal" tabindex="-1" aria-labelledby="advanceFilterModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-transparent border-bottom">
+                        <h4 class="text-center mb-0 mx-auto" id="advanceFilterModalLabel">Advance Filter</h4>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-2">
+                        <div class="row g-1 mb-2">
+                            <div class="col-md-3">
+                                <label class="form-label mb-50" for="advance_consumer_number">Consumer Number</label>
+                                <input type="text" class="form-control" id="advance_consumer_number"
+                                    placeholder="Enter Consumer Number">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label mb-50" for="advance_application_number">Application Number</label>
+                                <input type="text" class="form-control" id="advance_application_number"
+                                    placeholder="Enter Application Number">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label mb-50" for="advance_discom">Search by Discom</label>
+                                <select class="form-select advance-select2" id="advance_discom">
+                                    <option value="">Select discom</option>
+                                    @foreach ($advanceFilterOptions['discoms'] as $discom)
+                                        <option value="{{ $discom }}">{{ $discom }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label mb-50" for="advance_circle">Search by Circle</label>
+                                <select class="form-select advance-select2" id="advance_circle">
+                                    <option value="">Select circle</option>
+                                    @foreach ($advanceFilterOptions['circles'] as $circle)
+                                        <option value="{{ $circle }}">{{ $circle }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row g-1 mb-2">
+                            <div class="col-md-3">
+                                <label class="form-label mb-50" for="advance_division">Search by Division</label>
+                                <select class="form-select advance-select2" id="advance_division">
+                                    <option value="">Select division</option>
+                                    @foreach ($advanceFilterOptions['divisions'] as $division)
+                                        <option value="{{ $division }}">{{ $division }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label mb-50" for="advance_sub_division">Search by SubDivision</label>
+                                <select class="form-select advance-select2" id="advance_sub_division">
+                                    <option value="">Select sub-division</option>
+                                    @foreach ($advanceFilterOptions['sub_divisions'] as $id => $subDivision)
+                                        <option value="{{ $id }}">{{ $subDivision }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label mb-50" for="advance_from_date">From Date</label>
+                                <input type="text" class="form-control flatpickr-date" id="advance_from_date"
+                                    placeholder="Enter From Date">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label mb-50" for="advance_to_date">To Date</label>
+                                <input type="text" class="form-control flatpickr-date" id="advance_to_date"
+                                    placeholder="Enter To Date">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-between">
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="clear-advance-filter">Clear</button>
+                        <button type="button" class="btn btn-sm btn-primary" id="apply-advance-filter">Apply</button>
                     </div>
                 </div>
             </div>
@@ -615,6 +697,101 @@
         'use strict';
         const URL = "{{ route('sales-master.index') }}";
         var table = '';
+        var advanceFilters = {};
+        var advanceFilterKeys = [
+            'consumer_number',
+            'application_number',
+            'discom',
+            'circle',
+            'division',
+            'sub_division_id',
+            'from_date',
+            'to_date'
+        ];
+
+        function getAdvanceFilterCount() {
+            var count = 0;
+            advanceFilterKeys.forEach(function(key) {
+                if ($.trim(String(advanceFilters[key] || '')) !== '') {
+                    count++;
+                }
+            });
+
+            return count;
+        }
+
+        function updateAdvanceFilterButton() {
+            var count = getAdvanceFilterCount();
+            var label = 'Advance Filter' + (count > 0 ? ' (' + count + ')' : '');
+            $('.advance-filter').html('<i data-feather="filter"></i> ' + label);
+            $('.advance-filter').toggleClass('btn-primary', count > 0);
+            $('.advance-filter').toggleClass('btn-outline-primary', count === 0);
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        }
+
+        function collectAdvanceFilters() {
+            advanceFilters = {
+                consumer_number: $.trim($('#advance_consumer_number').val() || ''),
+                application_number: $.trim($('#advance_application_number').val() || ''),
+                discom: $('#advance_discom').val() || '',
+                circle: $('#advance_circle').val() || '',
+                division: $('#advance_division').val() || '',
+                sub_division_id: $('#advance_sub_division').val() || '',
+                from_date: $('#advance_from_date').val() || '',
+                to_date: $('#advance_to_date').val() || ''
+            };
+
+            return advanceFilters;
+        }
+
+        function fillAdvanceFilterFields() {
+            $('#advance_consumer_number').val(advanceFilters.consumer_number || '');
+            $('#advance_application_number').val(advanceFilters.application_number || '');
+            $('#advance_discom').val(advanceFilters.discom || '').trigger('change');
+            $('#advance_circle').val(advanceFilters.circle || '').trigger('change');
+            $('#advance_division').val(advanceFilters.division || '').trigger('change');
+            $('#advance_sub_division').val(advanceFilters.sub_division_id || '').trigger('change');
+            $('#advance_from_date').val(advanceFilters.from_date || '');
+            $('#advance_to_date').val(advanceFilters.to_date || '');
+        }
+
+        function clearAdvanceFilterFields() {
+            $('#advance_consumer_number').val('');
+            $('#advance_application_number').val('');
+            $('#advance_discom').val('').trigger('change');
+            $('#advance_circle').val('').trigger('change');
+            $('#advance_division').val('').trigger('change');
+            $('#advance_sub_division').val('').trigger('change');
+            $('#advance_from_date').val('');
+            $('#advance_to_date').val('');
+        }
+
+        function advanceFilterSelects() {
+            return $('#advance_discom, #advance_circle, #advance_division, #advance_sub_division');
+        }
+
+        function initAdvanceFilterSelects() {
+            advanceFilterSelects().each(function() {
+                if ($(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2('destroy');
+                }
+            });
+            advanceFilterSelects().select2({
+                dropdownParent: $('#advanceFilterModal .modal-content'),
+                width: '100%'
+            });
+        }
+
+        function destroyAdvanceFilterSelects() {
+            advanceFilterSelects().each(function() {
+                if ($(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2('destroy');
+                }
+            });
+        }
+
         $(function() {
 
             var type = new URLSearchParams(window.location.search).get('type');
@@ -640,7 +817,7 @@
                 }
             }
 
-            flatpickr('.flatpickr-date', {
+            flatpickr('input.flatpickr-date', {
                 enableTime: false,
                 dateFormat: 'd-m-Y',
                 defaultDate: '',
@@ -656,10 +833,11 @@
                         d.agent_sales_person_id = $('#agent_sales_person_id').val();
                         d.status = $('#status').val();
                         d.not_status = $('#not_status').val();
-                        d.ragistration_portal = $('#ragistration_portal').val();
-                         d.file_type = $('#file_type').val();
+                         d.ragistration_portal = $('#ragistration_portal').val();
+                          d.file_type = $('#file_type').val();
+                         d.advanced_filters = advanceFilters;
 
-                    }
+                     }
                 },
                 processing: true,
                 serverSide: true,
@@ -1207,7 +1385,7 @@
                             });
                     }
 
-                    flatpickr('.flatpickr-date', {
+                    flatpickr('input.flatpickr-date', {
                         enableTime: false,
                         dateFormat: 'd-m-Y',
                         defaultDate: '',
@@ -1335,6 +1513,34 @@
             table.draw();
         });
 
+        $(document).on('click', '.advance-filter', function() {
+            fillAdvanceFilterFields();
+            $('#advanceFilterModal').modal('show');
+        });
+
+        $('#advanceFilterModal').on('shown.bs.modal', function() {
+            initAdvanceFilterSelects();
+            fillAdvanceFilterFields();
+        });
+
+        $('#advanceFilterModal').on('hidden.bs.modal', function() {
+            destroyAdvanceFilterSelects();
+        });
+
+        $(document).on('click', '#apply-advance-filter', function() {
+            collectAdvanceFilters();
+            updateAdvanceFilterButton();
+            $('#advanceFilterModal').modal('hide');
+            table.draw();
+        });
+
+        $(document).on('click', '#clear-advance-filter', function() {
+            advanceFilters = {};
+            clearAdvanceFilterFields();
+            updateAdvanceFilterButton();
+            table.draw();
+        });
+
         $(document).on('click', '.download', function() {
             $.ajax({
                 url: "{{ route('sales-order-report') }}",
@@ -1348,9 +1554,10 @@
                     "status": $('#status').val(),
                     "not_status": $('#not_status').val(),
                     "ragistration_portal": $('#ragistration_portal').val(),
-                    "_token": "{{ csrf_token() }}",
-                    "file_type": $('#file_type').val(),
-                },
+                     "_token": "{{ csrf_token() }}",
+                     "file_type": $('#file_type').val(),
+                     "advanced_filters": advanceFilters,
+                 },
                 cache: false,
                 xhr: function() {
                     var xhr = new XMLHttpRequest();
@@ -1407,6 +1614,9 @@
             $('#ragistration_portal').val('');
             $('.select2').select2();
              $('#file_type').val('');
+            advanceFilters = {};
+            clearAdvanceFilterFields();
+            updateAdvanceFilterButton();
             table.draw();
         });
 

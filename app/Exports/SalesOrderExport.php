@@ -47,16 +47,22 @@ class SalesOrderExport implements FromCollection, WithHeadings,WithMapping
             $id = $agent->id;
             $query->where('agent_sales_person_id', $id);
         }
-        if ($this->request->input('from_date') != "" && $this->request->input('to_date') == '') {
-            $query->where('master_create_date', '>=', date('Y-m-d 00:00:00', strtotime($this->request->input('from_date'))));
+        $advancedFilters = $this->request->input('advanced_filters', []);
+        $advancedFromDate = trim((string) (is_array($advancedFilters) ? ($advancedFilters['from_date'] ?? '') : ''));
+        $advancedToDate = trim((string) (is_array($advancedFilters) ? ($advancedFilters['to_date'] ?? '') : ''));
+        $fromDate = $advancedFromDate !== '' ? $advancedFromDate : trim((string) $this->request->input('from_date', ''));
+        $toDate = $advancedToDate !== '' ? $advancedToDate : trim((string) $this->request->input('to_date', ''));
+
+        if ($fromDate != "" && $toDate == "") {
+            $query->where('master_create_date', '>=', date('Y-m-d 00:00:00', strtotime($fromDate)));
             $query->where('master_create_date', '<=', date('Y-m-d 23:59:59'));
         }
-        if ($this->request->input('from_date') != "" && $this->request->input('to_date') != '') {
-            $query->where('master_create_date', '>=', date('Y-m-d 00:00:00', strtotime($this->request->input('from_date'))));
-            $query->where('master_create_date', '<=', date('Y-m-d 23:59:59', strtotime($this->request->input('to_date'))));
+        if ($fromDate != "" && $toDate != "") {
+            $query->where('master_create_date', '>=', date('Y-m-d 00:00:00', strtotime($fromDate)));
+            $query->where('master_create_date', '<=', date('Y-m-d 23:59:59', strtotime($toDate)));
         }
-        if ($this->request->input('from_date') == "" && $this->request->input('to_date') != '') {
-            $query->where('master_create_date', '<=', date('Y-m-d 23:59:59', strtotime($this->request->input('to_date'))));
+        if ($fromDate == "" && $toDate != "") {
+            $query->where('master_create_date', '<=', date('Y-m-d 23:59:59', strtotime($toDate)));
         }
         if ($this->request->input('consumer') != "") {
             $query->where(function ($q) {
@@ -86,6 +92,10 @@ class SalesOrderExport implements FromCollection, WithHeadings,WithMapping
             } else {
                 $query->where('ragistration_portal', 'like', '%' . $ragistration_portal . '%');
             }
+        }
+
+        if (is_array($advancedFilters) && count($advancedFilters) > 0) {
+            $query->advancedFilter($advancedFilters);
         }
 		
        $data = $query->orderBy('id', 'DESC')->get();

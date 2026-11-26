@@ -193,9 +193,16 @@ function shorten_number($number)
     return $number.' '.$suffix;
 }
 
-function toGetSalesMasterLastStatus($id)
+function toGetSalesMasterLastStatus($id, $salesMaster = null)
 {
-    $salesMaster = SalesMaster::where('id', $id)->first();
+    if (is_null($salesMaster)) {
+        $salesMaster = SalesMaster::where('id', $id)->first();
+    }
+
+    if (is_null($salesMaster)) {
+        return 'Application Pending';
+    }
+
     $title = 'Application Pending';
     if ($salesMaster->application_pending == 1) {
         $title = 'Application Pending';
