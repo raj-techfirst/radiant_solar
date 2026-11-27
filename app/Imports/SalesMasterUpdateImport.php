@@ -253,7 +253,7 @@ class SalesMasterUpdateImport implements ToCollection, WithHeadingRow, WithChunk
         }
 
         foreach ($this->ignoredDateTimes as $label => $count) {
-            $errors[] = "Ignored time-only value in {$label} in {$count} row(s). Value set to null.";
+            $errors[] = "Ignored time-only value in {$label} in {$count} row(s). Existing value left unchanged.";
         }
 
         return $errors;
@@ -678,7 +678,7 @@ class SalesMasterUpdateImport implements ToCollection, WithHeadingRow, WithChunk
         if (preg_match('/^\d{1,3}:\d{1,2}(?:\.\d+)?$/', $text)) {
             $this->ignoredDateTimes[$label] = ($this->ignoredDateTimes[$label] ?? 0) + 1;
 
-            return [true, null];
+            return [false, null];
         }
 
         foreach (['d-m-Y', 'd/m/Y', 'Y-m-d', 'd.m.Y'] as $format) {
@@ -693,14 +693,14 @@ class SalesMasterUpdateImport implements ToCollection, WithHeadingRow, WithChunk
         try {
             return [true, Carbon::parse($text)->format('Y-m-d')];
         } catch (\Throwable $e) {
-            $this->addError("Row {$rowNumber}: Invalid date in {$label} ({$text}). Value set to null.");
+            $this->addError("Row {$rowNumber}: Invalid date in {$label} ({$text}). Existing value left unchanged.");
             Log::warning('Sales master bulk update: invalid date', [
                 'row' => $rowNumber,
                 'field' => $label,
                 'value' => $text,
             ]);
 
-            return [true, null];
+            return [false, null];
         }
     }
 

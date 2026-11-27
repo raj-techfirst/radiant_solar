@@ -63,6 +63,21 @@ class PortalDataSyncService
         }
 
         $this->statusOnly = $this->isStatusOnly($rows);
+        $salesMasterIds = [];
+
+        foreach ($rows as $row) {
+            $number = (string) ($row['number'] ?? '');
+
+            if ($number === '' || ! $salesByNumber->has($number)) {
+                continue;
+            }
+
+            $salesMasterIds[(int) $salesByNumber->get($number)->id] = true;
+        }
+
+        $portalDataBySalesMasterId = $salesMasterIds === []
+            ? collect()
+            : PortalData::whereIn('sales_master_id', array_keys($salesMasterIds))->get()->keyBy('sales_master_id');
         $records = [];
 
         foreach ($rows as $row) {
@@ -75,8 +90,15 @@ class PortalDataSyncService
             $salesMaster = $salesByNumber->get($number);
             $salesMasterId = (int) $salesMaster->id;
             $fields = $row['fields'] ?? [];
+            $portalData = $portalDataBySalesMasterId->get($salesMasterId) ?: new PortalData(['sales_master_id' => $salesMasterId]);
 
-            $records[$salesMasterId] = $this->attributes($salesMasterId, $salesMaster, $fields);
+            foreach ($this->attributes($salesMaster, $fields, $portalData->exists) as $column => $value) {
+                if ($column !== 'sales_master_id') {
+                    $portalData->{$column} = $value;
+                }
+            }
+
+            $records[$salesMasterId] = $portalData;
         }
 
         if ($records === []) {
@@ -86,28 +108,8 @@ class PortalDataSyncService
         }
 
         DB::transaction(function () use ($records) {
-            if ($this->statusOnly) {
-                foreach ($records as $attributes) {
-                    $portalData = PortalData::firstOrNew(['sales_master_id' => $attributes['sales_master_id']]);
-
-                    if (! $portalData->exists) {
-                        $portalData->consumer_number = $attributes['consumer_number'];
-                    }
-
-                    $portalData->current_status_of_application = $attributes['current_status_of_application'];
-                    $portalData->save();
-                }
-
-                return;
-            }
-
-            PortalData::whereNotIn('sales_master_id', array_keys($records))->delete();
-
-            foreach ($records as $attributes) {
-                PortalData::updateOrCreate(
-                    ['sales_master_id' => $attributes['sales_master_id']],
-                    $attributes
-                );
+            foreach ($records as $portalData) {
+                $portalData->save();
             }
         });
 
@@ -178,19 +180,30 @@ class PortalDataSyncService
         return $hasStatus;
     }
 
-    private function attributes(int $salesMasterId, $salesMaster, array $fields): array
+    private function attributes($salesMaster, array $fields, bool $portalRowExists): array
     {
         $attributes = [
-            'sales_master_id' => $salesMasterId,
-            'consumer_number' => $this->valueOrNull($fields['consumer_number'] ?? ($salesMaster->consumer_number ?? null)),
+            'sales_master_id' => (int) $salesMaster->id,
         ];
+        $excelConsumerNumber = $this->valueOrNull($fields['consumer_number'] ?? null);
+        $dbConsumerNumber = $this->valueOrNull($salesMaster->consumer_number ?? null);
+
+        if ($excelConsumerNumber !== null) {
+            $attributes['consumer_number'] = $excelConsumerNumber;
+        } elseif (! $portalRowExists && $dbConsumerNumber !== null) {
+            $attributes['consumer_number'] = $dbConsumerNumber;
+        }
 
         foreach (self::FIELD_MAP as $column => $field) {
             if ($column === 'current_status_of_application' && ! $this->statusColumnDetected) {
                 continue;
             }
 
-            $attributes[$column] = $this->columnValue($fields[$field] ?? null, $column);
+            $value = $this->columnValue($fields[$field] ?? null, $column);
+
+            if ($value !== null) {
+                $attributes[$column] = $value;
+            }
         }
 
         return $attributes;

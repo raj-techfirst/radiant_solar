@@ -35,7 +35,7 @@ class HomeController extends Controller
 
             if (session()->get('soft') == 'crm') {
                 $salesData = [];
-                $query = SalesMaster::select('id', 'total_amount', 'pending_amonut', 'agent_sales_person_id', 'register_kw', 'file_type', 'ragistration_portal', 'subsidy_request_date', 'subsidy_disbursement_verify_date', 'subsidy_disbursement_date', 'subsidy_giveup')->with('agentsalesperson', 'portalData', 'loandata:id,sales_master_id,loan_sanction_date,approved_amount,submitted_at', 'loandisbursements:id,sales_master_id,amount');
+                $query = SalesMaster::select('id', 'total_amount', 'pending_amonut', 'agent_sales_person_id', 'register_kw', 'consumer_type', 'file_type', 'ragistration_portal', 'subsidy_request_date', 'subsidy_disbursement_verify_date', 'subsidy_disbursement_date', 'subsidy_giveup')->with('agentsalesperson', 'portalData', 'loandata:id,sales_master_id,loan_sanction_date,approved_amount,submitted_at', 'loandisbursements:id,sales_master_id,amount');
 
                 $user = User::where('id', Auth::id())->first();
                 if ($user->roles[0]->name == 'Manager') {

@@ -31,7 +31,7 @@ class PortalStatusService
             return [];
         }
 
-        $saleOrders = SalesMaster::select('id', 'register_kw', 'subsidy_request_date', 'subsidy_disbursement_verify_date', 'subsidy_disbursement_date', 'subsidy_giveup')
+        $saleOrders = SalesMaster::select('id', 'register_kw', 'consumer_type', 'subsidy_request_date', 'subsidy_disbursement_verify_date', 'subsidy_disbursement_date', 'subsidy_giveup')
             ->with('portalData')
             ->where('file_cancel_order', '0')
             ->get();
@@ -85,7 +85,8 @@ class PortalStatusService
 
         switch ($statusKey) {
             case 'vendor_selection_pending':
-                return is_null($portal) || $portalText('current_status_of_application') === '';
+                return strtolower(trim((string) ($saleOrder->consumer_type ?? ''))) === 'resident'
+                    && (is_null($portal) || $portalText('current_status_of_application') === '');
             case 'agreement_pending':
                 return ! is_null($portal) && ($agreement === '' || $agreement === 'no');
             case 'installation_pending':

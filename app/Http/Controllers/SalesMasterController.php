@@ -1977,6 +1977,9 @@ class SalesMasterController extends Controller
             ->unique()
             ->values();
         $names = collect($request->input('consumer_names', []))->values();
+        $existingNames = ConsumerIgnore::query()
+            ->whereIn('consumer_number', $numbers)
+            ->pluck('consumer_name', 'consumer_number');
         $preview = $request->session()->get('sales_master_consumer_preview');
         $namesByNumber = [];
 
@@ -2000,14 +2003,18 @@ class SalesMasterController extends Controller
             ], 422);
         }
 
-        $records = $numbers->map(function ($number, $index) use ($now, $names, $namesByNumber) {
-            $name = trim((string) ($names->get($index) ?? ''));
+            $records = $numbers->map(function ($number, $index) use ($now, $names, $namesByNumber, $existingNames) {
+                $name = trim((string) ($names->get($index) ?? ''));
 
-            if ($name === '') {
-                $name = $namesByNumber[$number] ?? '';
-            }
+                if ($name === '') {
+                    $name = $namesByNumber[$number] ?? '';
+                }
 
-            return [
+                if ($name === '' && isset($existingNames[$number])) {
+                    $name = (string) $existingNames[$number];
+                }
+
+                return [
                 'consumer_number' => $number,
                 'consumer_name' => $name !== '' ? $name : null,
                 'ignore_date' => $now->format('Y-m-d'),
