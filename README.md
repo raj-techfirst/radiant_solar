@@ -219,3 +219,21 @@ Application Pending → Pending Approval → Feasibility Approved → Meter Char
 ## License
 
 Proprietary — Radiant Solar Solutions
+
+
+
+Portal Status Wise — current conditions
+Rules: same CRM dashboard orders; Files = sales orders, Total Kw = SUM(register_kw). Statuses are checked in sequence and first match wins; once counted in an earlier row, that order is excluded from later rows. Date is “present” only if not blank, 0000-00-00, or 1970-01-01.
+No.	Status	Source	Counted when
+1	Vendar Selection (Pending)	portal_data	No linked portal row exists, or current_status_of_application is blank
+2	Upload Agreement (Pending)	portal_data.vendor_consumer_agreement_uploaded	Portal row exists and agreement value is blank or No
+3	Installation (Pending)	portal_data.vendor_consumer_agreement_uploaded, installations.date	Agreement is Yes and installation date is missing in the installations table
+4	Inspection (Pending)	installations.date, portal_data.inspection_status	Installation date exists in installations and portal inspection status is blank
+5	Inspection (Return)	portal_data.inspection_status	Inspection status contains return
+6	Subsidy Request (Not Redeemed)	portal_data.inspection_status, sales_masters.subsidy_request_date	Inspection status is Approved and subsidy redeem/request date is missing
+7	Subsidy Request (Redeemed)	subsidy_request_date, subsidy_disbursement_verify_date	Redeem date exists and verified date is missing
+8	Subsidy Request (Return)	portal_data.subsidy_return_date, subsidy_disbursement_verify_date	Portal subsidy return date exists and verified date is missing
+9	Subsidy Disbursal (Pending)	subsidy_disbursement_verify_date, subsidy_disbursement_date	Verified date exists and disbursed date is missing
+10	Subsidy Disbursal (Disbursed)	subsidy_disbursement_date	Disbursed date exists
+11	Subsidy Request (Give Up)	sales_masters.subsidy_giveup	subsidy_giveup = 1
+—	Total	All rows	Sum of unique orders counted once

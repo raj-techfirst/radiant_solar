@@ -317,7 +317,10 @@
                                                 <tr>
                                                     <td>{{ $row['no'] }}</td>
                                                     <td>
-                                                        <span class="fw-bold text-body">{{ $row['name'] }}</span>
+                                                        <a href="{{ route('sales-master.index', ['portal_status' => $row['key']]) }}"
+                                                            class="fw-bold text-body">
+                                                            {{ $row['name'] }}
+                                                        </a>
                                                     </td>
                                                     <td class="text-center">
                                                         <span class="badge rounded-pill bg-light-primary text-primary">

@@ -24,6 +24,8 @@ class PortalData extends Model
             'current_status_of_application',
             'vendor_consumer_agreement_uploaded',
             'vendor_consumer_agreement_uploading_date',
+            'solar_plant_installation_date',
+            'loan_taken',
             'loan_status',
             'loan_rejection_date',
             'loan_disbursed_date_first_tranche',

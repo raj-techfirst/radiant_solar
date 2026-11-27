@@ -298,6 +298,10 @@ class SalesMasterUpdateImport implements ToCollection, WithHeadingRow, WithChunk
 
                 if ($this->hasValue($value)) {
                     $salesUpdates[$column] = trim((string) $value);
+
+                    if ($field === 'application_number') {
+                        $salesUpdates['pending_approvel'] = '1';
+                    }
                 }
             }
 
@@ -334,11 +338,11 @@ class SalesMasterUpdateImport implements ToCollection, WithHeadingRow, WithChunk
 
             $dateFields = [
                 'application_submitted_date' => ['label' => 'Application Submitted Date', 'column' => 'ragistration_date', 'target' => 'sales'],
-                'feasibility_date' => ['label' => 'Feasibility Approved Date', 'column' => 'feasibility_date', 'target' => 'sales'],
-                'meter_application_date' => ['label' => 'Inspection Date', 'column' => 'meter_application_date', 'target' => 'sales'],
-                'subsidy_request_date' => ['label' => 'Subsidy Redeem Date', 'column' => 'subsidy_request_date', 'target' => 'sales'],
+                'feasibility_date' => ['label' => 'Feasibility Approved Date', 'column' => 'feasibility_date', 'target' => 'sales', 'flag' => 'feasibility_approved'],
+                'meter_application_date' => ['label' => 'Inspection Date', 'column' => 'meter_application_date', 'target' => 'sales', 'flag' => 'meter_application_done'],
+                'subsidy_request_date' => ['label' => 'Subsidy Redeem Date', 'column' => 'subsidy_request_date', 'target' => 'sales', 'flag' => 'subsidy_claimed'],
                 'subsidy_disbursement_verify_date' => ['label' => 'Subsidy Verified Date', 'column' => 'subsidy_disbursement_verify_date', 'target' => 'sales'],
-                'subsidy_disbursement_date' => ['label' => 'Subsidy Disbursed Date', 'column' => 'subsidy_disbursement_date', 'target' => 'sales'],
+                'subsidy_disbursement_date' => ['label' => 'Subsidy Disbursed Date', 'column' => 'subsidy_disbursement_date', 'target' => 'sales', 'flag' => 'subsidy_receveid', 'project_completion' => true],
                 'loan_application_date' => ['label' => 'Loan Application Date', 'column' => 'submitted_at', 'target' => 'loan'],
                 'loan_sanction_date' => ['label' => 'Loan Sanctioned date', 'column' => 'loan_sanction_date', 'target' => 'loan'],
             ];
@@ -351,6 +355,17 @@ class SalesMasterUpdateImport implements ToCollection, WithHeadingRow, WithChunk
                         $loanUpdates[$config['column']] = $value;
                     } else {
                         $salesUpdates[$config['column']] = $value;
+
+                        if ($value !== null) {
+                            if (! empty($config['flag'])) {
+                                $salesUpdates[$config['flag']] = '1';
+                            }
+
+                            if (! empty($config['project_completion'])) {
+                                $salesUpdates['project_completion_date'] = $value;
+                                $salesUpdates['project_completion'] = '1';
+                            }
+                        }
                     }
                 }
             }

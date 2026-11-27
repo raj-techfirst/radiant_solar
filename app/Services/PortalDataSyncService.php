@@ -9,10 +9,15 @@ use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 class PortalDataSyncService
 {
+    private bool $statusOnly = false;
+    private bool $skipped = false;
+
     private const FIELD_MAP = [
         'current_status_of_application' => 'current_status',
         'vendor_consumer_agreement_uploaded' => 'vendor_consumer_agreement_uploaded',
         'vendor_consumer_agreement_uploading_date' => 'vendor_consumer_agreement_uploading_date',
+        'solar_plant_installation_date' => 'solar_plant_installation_date',
+        'loan_taken' => 'loan_taken',
         'loan_status' => 'loan_status',
         'loan_rejection_date' => 'loan_rejection_date',
         'loan_disbursed_date_first_tranche' => 'loan_disbursed_date_first_tranche',
@@ -36,6 +41,7 @@ class PortalDataSyncService
 
     private const DATE_COLUMNS = [
         'vendor_consumer_agreement_uploading_date',
+        'solar_plant_installation_date',
         'loan_rejection_date',
         'loan_disbursed_date_first_tranche',
         'loan_disbursed_date_second_tranche',
@@ -45,6 +51,16 @@ class PortalDataSyncService
 
     public function sync(array $rows, Collection $salesByNumber): int
     {
+        $this->statusOnly = false;
+        $this->skipped = false;
+
+        if (! $this->hasMappedData($rows)) {
+            $this->skipped = true;
+
+            return 0;
+        }
+
+        $this->statusOnly = $this->isStatusOnly($rows);
         $records = [];
 
         foreach ($rows as $row) {
@@ -61,16 +77,29 @@ class PortalDataSyncService
             $records[$salesMasterId] = $this->attributes($salesMasterId, $salesMaster, $fields);
         }
 
-        $salesMasterIds = array_keys($records);
+        if ($records === []) {
+            $this->skipped = true;
 
-        DB::transaction(function () use ($records, $salesMasterIds) {
-            if ($salesMasterIds === []) {
-                PortalData::query()->delete();
+            return 0;
+        }
+
+        DB::transaction(function () use ($records) {
+            if ($this->statusOnly) {
+                foreach ($records as $attributes) {
+                    $portalData = PortalData::firstOrNew(['sales_master_id' => $attributes['sales_master_id']]);
+
+                    if (! $portalData->exists) {
+                        $portalData->consumer_number = $attributes['consumer_number'];
+                    }
+
+                    $portalData->current_status_of_application = $attributes['current_status_of_application'];
+                    $portalData->save();
+                }
 
                 return;
             }
 
-            PortalData::whereNotIn('sales_master_id', $salesMasterIds)->delete();
+            PortalData::whereNotIn('sales_master_id', array_keys($records))->delete();
 
             foreach ($records as $attributes) {
                 PortalData::updateOrCreate(
@@ -81,6 +110,57 @@ class PortalDataSyncService
         });
 
         return count($records);
+    }
+
+    public function wasStatusOnly(): bool
+    {
+        return $this->statusOnly;
+    }
+
+    public function wasSkipped(): bool
+    {
+        return $this->skipped;
+    }
+
+    private function hasMappedData(array $rows): bool
+    {
+        foreach ($rows as $row) {
+            $fields = $row['fields'] ?? [];
+
+            foreach (self::FIELD_MAP as $field) {
+                if ($this->valueOrNull($fields[$field] ?? null) !== null) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function isStatusOnly(array $rows): bool
+    {
+        $hasStatus = false;
+
+        foreach ($rows as $row) {
+            $fields = $row['fields'] ?? [];
+
+            foreach (self::FIELD_MAP as $column => $field) {
+                $value = $this->valueOrNull($fields[$field] ?? null);
+
+                if ($value === null) {
+                    continue;
+                }
+
+                if ($column === 'current_status_of_application') {
+                    $hasStatus = true;
+                    continue;
+                }
+
+                return false;
+            }
+        }
+
+        return $hasStatus;
     }
 
     private function attributes(int $salesMasterId, $salesMaster, array $fields): array

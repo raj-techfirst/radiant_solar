@@ -797,6 +797,7 @@
             var type = new URLSearchParams(window.location.search).get('type');
             var value = new URLSearchParams(window.location.search).get('value');
             var value_not = new URLSearchParams(window.location.search).get('value_not');
+            var portal_status = new URLSearchParams(window.location.search).get('portal_status');
 
             if (type == "agent") {
                 $('#agent_sales_person_id').val(value);
@@ -835,7 +836,8 @@
                         d.not_status = $('#not_status').val();
                          d.ragistration_portal = $('#ragistration_portal').val();
                           d.file_type = $('#file_type').val();
-                         d.advanced_filters = advanceFilters;
+                          d.portal_status = portal_status;
+                          d.advanced_filters = advanceFilters;
 
                      }
                 },

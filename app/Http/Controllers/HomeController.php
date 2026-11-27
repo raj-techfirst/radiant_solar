@@ -14,6 +14,7 @@ use App\Models\SalesMaster;
 use App\Models\SalesQuatation;
 use App\Models\User;
 use App\Models\Year;
+use App\Services\PortalStatusService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\App;
@@ -33,7 +34,7 @@ class HomeController extends Controller
 
             if (session()->get('soft') == 'crm') {
                 $salesData = [];
-                $query = SalesMaster::select('id', 'total_amount', 'pending_amonut', 'agent_sales_person_id', 'register_kw', 'ragistration_portal', 'subsidy_request_date', 'subsidy_disbursement_verify_date', 'subsidy_disbursement_date', 'subsidy_giveup')->with('agentsalesperson', 'portalData', 'installation');
+                $query = SalesMaster::select('id', 'total_amount', 'pending_amonut', 'agent_sales_person_id', 'register_kw', 'ragistration_portal', 'subsidy_request_date', 'subsidy_disbursement_verify_date', 'subsidy_disbursement_date', 'subsidy_giveup')->with('agentsalesperson', 'portalData');
 
                 $user = User::where('id', Auth::id())->first();
                 if ($user->roles[0]->name == 'Manager') {
@@ -656,19 +657,8 @@ class HomeController extends Controller
 
     private function buildPortalStatusData($saleOrders): array
     {
-        $statuses = [
-            'vendor_selection_pending' => 'Vendar Selection (Pending)',
-            'agreement_pending' => 'Upload Agreement (Pending)',
-            'installation_pending' => 'Installation (Pending)',
-            'inspection_pending' => 'Inspection (Pending)',
-            'inspection_return' => 'Inspection (Return)',
-            'subsidy_not_redeemed' => 'Subsidy Request (Not Redeemed)',
-            'subsidy_redeemed' => 'Subsidy Request (Redeemed)',
-            'subsidy_return' => 'Subsidy Request (Return)',
-            'disbursal_pending' => 'Subsidy Disbursal (Pending)',
-            'disbursed' => 'Subsidy Disbursal (Disbursed)',
-            'give_up' => 'Subsidy Request (Give Up)',
-        ];
+        $portalStatusService = app(PortalStatusService::class);
+        $statuses = $portalStatusService->statuses();
 
         $rows = [];
         $assignedIds = [];
@@ -684,7 +674,7 @@ class HomeController extends Controller
                     continue;
                 }
 
-                if (! $this->matchesPortalStatus($statusKey, $saleOrder)) {
+                if (! $portalStatusService->matches($statusKey, $saleOrder)) {
                     continue;
                 }
 
@@ -695,6 +685,7 @@ class HomeController extends Controller
 
             $rows[] = [
                 'no' => count($rows) + 1,
+                'key' => $statusKey,
                 'name' => $label,
                 'count' => $count,
                 'kw' => $kw,
@@ -713,50 +704,4 @@ class HomeController extends Controller
         ];
     }
 
-    private function matchesPortalStatus(string $statusKey, $saleOrder): bool
-    {
-        $portal = $saleOrder->portalData;
-        $hasDate = function ($value): bool {
-            $value = trim((string) $value);
-
-            return $value !== '' && $value !== '0000-00-00' && $value !== '1970-01-01';
-        };
-        $portalText = function (string $column) use ($portal): string {
-            return strtolower(trim((string) ($portal?->{$column} ?? '')));
-        };
-
-        $agreement = $portalText('vendor_consumer_agreement_uploaded');
-        $inspection = $portalText('inspection_status');
-        $redeemDate = $hasDate($saleOrder->subsidy_request_date);
-        $verifiedDate = $hasDate($saleOrder->subsidy_disbursement_verify_date);
-        $disbursedDate = $hasDate($saleOrder->subsidy_disbursement_date);
-        $installationDate = $hasDate($saleOrder->installation?->date);
-
-        switch ($statusKey) {
-            case 'vendor_selection_pending':
-                return is_null($portal) || $portalText('current_status_of_application') === '';
-            case 'agreement_pending':
-                return ! is_null($portal) && ($agreement === '' || $agreement === 'no');
-            case 'installation_pending':
-                return ! is_null($portal) && $agreement === 'yes' && ! $installationDate;
-            case 'inspection_pending':
-                return ! is_null($portal) && $installationDate && $inspection === '';
-            case 'inspection_return':
-                return ! is_null($portal) && strpos($inspection, 'return') !== false;
-            case 'subsidy_not_redeemed':
-                return ! is_null($portal) && $inspection === 'approved' && ! $redeemDate;
-            case 'subsidy_redeemed':
-                return $redeemDate && ! $verifiedDate;
-            case 'subsidy_return':
-                return ! is_null($portal) && $hasDate($portal->subsidy_return_date) && ! $verifiedDate;
-            case 'disbursal_pending':
-                return $verifiedDate && ! $disbursedDate;
-            case 'disbursed':
-                return $disbursedDate;
-            case 'give_up':
-                return (string) ($saleOrder->subsidy_giveup ?? '') === '1';
-        }
-
-        return false;
-    }
 }

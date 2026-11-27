@@ -33,6 +33,7 @@ use App\Models\Taluka;
 use App\Models\User;
 use App\Models\UserCommission;
 use App\Services\PortalDataSyncService;
+use App\Services\PortalStatusService;
 use App\Services\UnmatchedRecordCreatorService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -108,6 +109,14 @@ class SalesMasterController extends Controller
                         $id = $agent->id;
                         $query->where('agent_sales_person_id', $id);
                     }
+
+                    $portalStatus = trim((string) request()->input('portal_status', ''));
+
+                    if ($portalStatus !== '') {
+                        $matchingIds = app(PortalStatusService::class)->matchingIds($portalStatus);
+                        $query->whereIn('sales_masters.id', $matchingIds ?: [0]);
+                    }
+
                     $advancedFilters = request()->input('advanced_filters', []);
                     $advancedFromDate = trim((string) (is_array($advancedFilters) ? ($advancedFilters['from_date'] ?? '') : ''));
                     $advancedToDate = trim((string) (is_array($advancedFilters) ? ($advancedFilters['to_date'] ?? '') : ''));
@@ -1870,7 +1879,11 @@ class SalesMasterController extends Controller
                 $defaultImportMap[(int) $preview['row']] = (int) $preview['sales_master_id'];
             }
 
-            $portalDataSyncedCount = app(PortalDataSyncService::class)->sync($rows, $salesByNumber);
+            $portalDataSyncService = app(PortalDataSyncService::class);
+            $portalDataSyncedCount = $portalDataSyncService->sync($rows, $salesByNumber);
+            $portalSyncLabel = $portalDataSyncService->wasSkipped()
+                ? 'Portal data unchanged'
+                : ($portalDataSyncService->wasStatusOnly() ? 'Portal status synced' : 'Portal data synced');
 
             $oldFilePath = $request->session()->get('sales_master_consumer_preview.file_path');
 
@@ -1894,8 +1907,12 @@ class SalesMasterController extends Controller
                 Storage::delete($oldFilePath);
             }
 
+            $portalSyncMessage = $portalDataSyncService->wasSkipped()
+                ? $portalSyncLabel . ' (no matching portal fields or records found).'
+                : $portalSyncLabel . ' for ' . $portalDataSyncedCount . ' records.';
+
             return redirect()->route('sales-master-consumer-preview')
-                ->with('message', 'Excel preview generated. Portal data synced for ' . $portalDataSyncedCount . ' records.');
+                ->with('message', 'Excel preview generated. ' . $portalSyncMessage);
         } catch (\Throwable $e) {
             if (isset($filePath)) {
                 Storage::delete($filePath);

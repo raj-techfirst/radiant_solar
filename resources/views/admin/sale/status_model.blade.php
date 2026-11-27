@@ -184,6 +184,11 @@
                                 <input type="text" class="form-control"
                                     value="{{ $portalData?->vendor_consumer_agreement_uploading_date ?: 'N/A' }}" readonly>
                             </div>
+                            <div class="mb-1 col-md-6">
+                                <label class="form-label">Solar Plant Installation Date</label>
+                                <input type="text" class="form-control"
+                                    value="{{ $portalData?->solar_plant_installation_date ?: 'N/A' }}" readonly>
+                            </div>
                     </div>
                 </div>
                 <div id="personal-info-vertical" class="content dstepper-block" role="tabpanel"
@@ -269,6 +274,11 @@
 
                             <div class="col-12 mt-1 mb-1">
                                 <h6 class="fw-bold mb-0">Portal Loan Details</h6>
+                            </div>
+                            <div class="mb-1 col-md-6">
+                                <label class="form-label">Loan Taken (Yes/No)</label>
+                                <input type="text" class="form-control"
+                                    value="{{ $portalData?->loan_taken ?: 'N/A' }}" readonly>
                             </div>
                             <div class="mb-1 col-md-6">
                                 <label class="form-label">Loan Status</label>
