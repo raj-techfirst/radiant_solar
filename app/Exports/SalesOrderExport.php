@@ -7,6 +7,7 @@ use App\Models\CompanyProfile;
 use App\Models\InveterCompany;
 use App\Models\PenalCompany;
 use App\Models\SalesMaster;
+use App\Services\LoanStatusService;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\FromCollection;
@@ -97,7 +98,15 @@ class SalesOrderExport implements FromCollection, WithHeadings,WithMapping
         if (is_array($advancedFilters) && count($advancedFilters) > 0) {
             $query->advancedFilter($advancedFilters);
         }
-		
+
+        $loanStatus = trim((string) $this->request->input('loan_status', ''));
+        $loanLender = trim((string) $this->request->input('loan_lender', ''));
+
+        if ($loanStatus !== '') {
+            $matchingIds = app(LoanStatusService::class)->matchingIds($loanStatus, $loanLender);
+            $query->whereIn('sales_masters.id', $matchingIds ?: [0]);
+        }
+
        $data = $query->orderBy('id', 'DESC')->get();
         foreach ($data as $key => $value) :
             $value['feasibility_date'] = (!is_null($value->feasibility_date) && $value->feasibility_date != '1970-01-01' && $value->feasibility_date != '0000-00-00') ? date('d-m-Y', strtotime($value->feasibility_date)) : '';
@@ -112,7 +121,7 @@ class SalesOrderExport implements FromCollection, WithHeadings,WithMapping
 			$value['subsidy_disbursement_date'] = (!is_null($value->subsidy_disbursement_date) && $value->subsidy_disbursement_date != '1970-01-01' && $value->subsidy_disbursement_date != '0000-00-00') ? date('d-m-Y', strtotime($value->subsidy_disbursement_date)) : '';
 			$value['subsidy_disbursement_verify_date'] = (!is_null($value->subsidy_disbursement_verify_date) && $value->subsidy_disbursement_verify_date != '1970-01-01' && $value->subsidy_disbursement_verify_date != '0000-00-00') ? date('d-m-Y', strtotime($value->subsidy_disbursement_verify_date)) : '';
            
-            $value->state_name = $value->district->state->state_name;
+            $value->state_name = $value->district?->state?->state_name ?? '';
             $value->boms = $value->bom->bom_name ?? '';
 
 
@@ -125,7 +134,7 @@ class SalesOrderExport implements FromCollection, WithHeadings,WithMapping
             $value->penal_watt = (isset($value->salesquatation->penalWatt) && $value->salesquatation->penalWatt->name) ? $value->salesquatation->penalWatt->name : '';
             $value->status = toGetSalesMasterLastStatus($value->sid);
             // company name
-            if ($value->salesquatation->penal_company_id != null) {
+            if ($value->salesquatation?->penal_company_id != null) {
                 $hist = PenalCompany::whereIn('id', explode(',', $value->salesquatation->penal_company_id))->get();
                 if ($hist != '') {
                     $penel_companies_name =  "";
@@ -138,7 +147,7 @@ class SalesOrderExport implements FromCollection, WithHeadings,WithMapping
             }
             // company name
             // Inveter company name
-            if ($value->salesquatation->inveter_company_id != null) {
+            if ($value->salesquatation?->inveter_company_id != null) {
                 $hist = InveterCompany::whereIn('id', explode(',', $value->salesquatation->inveter_company_id))->get();
                 if ($hist != '') {
                     $inveter_companies_name =  "";
@@ -223,8 +232,8 @@ class SalesOrderExport implements FromCollection, WithHeadings,WithMapping
             $row->consumer_name,
             $row->address,
             $row->state_name,
-            $row->district->name,
-            $row->taluka->name,
+            $row->district?->name ?? '',
+            $row->taluka?->name ?? '',
             $row->pin_code,
             $row->contact_number,
             $row->email,
@@ -239,19 +248,19 @@ class SalesOrderExport implements FromCollection, WithHeadings,WithMapping
             $row->circle_name,
             $row->discom,
             $row->reference,
-            $row->agentsalesperson->name,
+            $row->agentsalesperson?->name ?? '',
             $row->total_amount,
             $row->register_kw,
-            $row->salesquatation->pv_capacity_kw,
+            $row->salesquatation?->pv_capacity_kw ?? '',
             $row->remark,
             $row->penal_company,
             $row->penal_watt,
-            $row->salesquatation->penal_nos,
+            $row->salesquatation?->penal_nos ?? '',
             $row->inveter_company,
-            $row->salesquatation->inveter_capacity,
-            $row->salesquatation->no_of_inveter,
-            $row->salesquatation->structure,
-            $row->salesquatation->common_meter,
+            $row->salesquatation?->inveter_capacity ?? '',
+            $row->salesquatation?->no_of_inveter ?? '',
+            $row->salesquatation?->structure ?? '',
+            $row->salesquatation?->common_meter ?? '',
             $row->discom_sr_numbar,
             $row->feasibility_date,
             $row->feasibility_amount,

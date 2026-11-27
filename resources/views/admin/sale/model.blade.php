@@ -1734,7 +1734,11 @@
                     $instPerson.select2({
                         dropdownAutoWidth: true,
                         width: '100%',
-                        placeholder: '-- Select --',
+                        allowClear: true,
+                        placeholder: {
+                            id: '',
+                            text: 'NONE'
+                        },
                         dropdownParent: $instPerson.parent()
                     });
 

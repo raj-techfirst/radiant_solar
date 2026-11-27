@@ -11,6 +11,7 @@ class PortalDataSyncService
 {
     private bool $statusOnly = false;
     private bool $skipped = false;
+    private bool $statusColumnDetected = false;
 
     private const FIELD_MAP = [
         'current_status_of_application' => 'current_status',
@@ -53,6 +54,7 @@ class PortalDataSyncService
     {
         $this->statusOnly = false;
         $this->skipped = false;
+        $this->statusColumnDetected = $this->hasStatusData($rows);
 
         if (! $this->hasMappedData($rows)) {
             $this->skipped = true;
@@ -137,6 +139,19 @@ class PortalDataSyncService
         return false;
     }
 
+    private function hasStatusData(array $rows): bool
+    {
+        foreach ($rows as $row) {
+            $fields = $row['fields'] ?? [];
+
+            if ($this->valueOrNull($fields['current_status'] ?? null) !== null) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private function isStatusOnly(array $rows): bool
     {
         $hasStatus = false;
@@ -171,6 +186,10 @@ class PortalDataSyncService
         ];
 
         foreach (self::FIELD_MAP as $column => $field) {
+            if ($column === 'current_status_of_application' && ! $this->statusColumnDetected) {
+                continue;
+            }
+
             $attributes[$column] = $this->columnValue($fields[$field] ?? null, $column);
         }
 

@@ -5,7 +5,7 @@
         $prefill = $unmatchedPrefill ?? [];
         $selectedBank = old('bank_id', $prefill['bank_id'] ?? ($unmatchedCreateOptions['banks']->firstWhere('default', 1)->id ?? ''));
         $selectedSubDivision = old('sub_division_id', $prefill['sub_division_id'] ?? ($unmatchedRecord['sub_division_id'] ?? ''));
-        $documentOptions = ['light_bill' => 'Light Bill', 'bank_details' => 'Bank Details', 'aadhaar_card' => 'Aadhaar Card', 'pancard' => 'Pancard', 'dastavej' => 'Dastavej', 'gst_certificate' => 'GST Certificate', 'udyam_registration' => 'Udyam Registration', 'customer_signture' => 'Customer Signature', 'passport_size_photo' => 'Passport Size Photo', 'sales_invoice' => 'Sales Invoice', 'application_acknowledgement_form' => 'Application Acknowledgement / Form', 'dcr_certificate' => 'DCR Certificate', 'other_document' => 'Other Document'];
+        $documentOptions = ['light_bill' => 'Light Bill', 'bank_details' => 'Bank Details', 'aadhaar_card' => 'Aadhaar Card', 'pancard' => 'Pancard', 'dastavej' => 'Dastavej', 'gst_certificate' => 'GST Certificate', 'udyam_registration' => 'Udyam Registration', 'customer_signture' => 'Customer Signature', 'passport_size_photo' => 'Passport Size Photo', 'sales_invoice' => 'Sales Invoice', 'application_acknowledgement_form' => 'Application Acknowledgement / Form', 'dcr_certificate' => 'DCR Certificate', 'cast_certificate' => 'Cast Certificate', 'other_document' => 'Other Document'];
         $oldDocuments = old('document');
 
         if (! is_array($oldDocuments) || count($oldDocuments) === 0) {
@@ -49,6 +49,9 @@
                     <input type="hidden" name="preview_row" id="unmatched_preview_row" value="{{ old('preview_row', $unmatchedRecord['row'] ?? '') }}">
                     <input type="hidden" name="consumer_number" id="unmatched_consumer_number" value="{{ old('consumer_number', $unmatchedRecord['consumer_number'] ?? '') }}">
                     <input type="hidden" name="consumer_name" id="unmatched_consumer_name" value="{{ old('consumer_name', $unmatchedRecord['consumer_name'] ?? '') }}">
+                    <input type="hidden" name="ragistration_portal" value="{{ old('ragistration_portal', 'National') }}">
+                    <input type="hidden" name="ragistration_number" value="{{ old('ragistration_number', $prefill['ragistration_number'] ?? '') }}">
+                    <input type="hidden" name="ragistration_date" value="{{ old('ragistration_date', $prefill['ragistration_date'] ?? '') }}">
 
                     <div class="row">
                         <div class="col-lg-12 mb-1">
@@ -77,9 +80,9 @@
                             <label class="form-label" for="unmatched_consumer_type">Consumer Type<span class="text-danger">*</span></label>
                             <select class="form-control form-select select2 custom-select2" name="consumer_type" id="unmatched_consumer_type" data-placeholder="-- Select --">
                                 <option value="">-- Select --</option>
-                                <option value="Resident" @selected((string) old('consumer_type', $prefill['consumer_type'] ?? '') === 'Resident')>Resident</option>
-                                <option value="Industrial" @selected((string) old('consumer_type', $prefill['consumer_type'] ?? '') === 'Industrial')>Industrial</option>
-                                <option value="Commercial" @selected((string) old('consumer_type', $prefill['consumer_type'] ?? '') === 'Commercial')>Commercial</option>
+                                <option value="Resident" @selected((string) old('consumer_type', $prefill['consumer_type'] ?? 'Resident') === 'Resident')>Resident</option>
+                                <option value="Industrial" @selected((string) old('consumer_type', $prefill['consumer_type'] ?? 'Resident') === 'Industrial')>Industrial</option>
+                                <option value="Commercial" @selected((string) old('consumer_type', $prefill['consumer_type'] ?? 'Resident') === 'Commercial')>Commercial</option>
                             </select>
                         </div>
                         <div class="col-12 col-md-3 col-lg-2 mb-1 custom-input-group">
@@ -97,10 +100,6 @@
                         <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
                             <label class="form-label" for="unmatched_contact_number">Contact Number<span class="text-danger">*</span></label>
                             <input type="text" maxlength="10" class="form-control" name="contact_number" id="unmatched_contact_number" value="{{ old('contact_number', $prefill['contact_number'] ?? '') }}" placeholder="Contact Number">
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
-                            <label class="form-label" for="unmatched_mobile">Mobile<span class="text-danger">*</span></label>
-                            <input type="text" maxlength="10" class="form-control" name="mobile" id="unmatched_mobile" value="{{ old('mobile', $prefill['mobile'] ?? '') }}" placeholder="Mobile Number">
                         </div>
                         <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
                             <label class="form-label" for="unmatched_email">Email</label>
@@ -136,15 +135,6 @@
                         <div class="col-lg-12 mt-50 mb-50">
                             <h5 class="font-black" style="font-weight: bold;color: var(--ck-color-base-text);"> Bank Details</h5>
                             <hr class="m-0">
-                        </div>
-                        <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
-                            <label class="form-label" for="unmatched_bank_id">Bank</label>
-                            <select class="form-control form-select select2 custom-select2" name="bank_id" id="unmatched_bank_id" data-placeholder="-- Select --">
-                                <option value="">-- Select --</option>
-                                @foreach ($unmatchedCreateOptions['banks'] as $bank)
-                                    <option value="{{ $bank->id }}" @selected((string) $selectedBank === (string) $bank->id)>{{ $bank->name }}</option>
-                                @endforeach
-                            </select>
                         </div>
                         <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
                             <label class="form-label" for="unmatched_bank_name">Bank Name</label>
@@ -214,7 +204,7 @@
                         </div>
                         <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
                             <label class="form-label" for="unmatched_reference">Reference</label>
-                            <input type="text" class="form-control" name="reference" id="unmatched_reference" value="{{ old('reference', $unmatchedRecord['consumer_number'] ?? '') }}" placeholder="Reference" readonly>
+                            <input type="text" class="form-control" name="reference" id="unmatched_reference" value="{{ old('reference') }}" placeholder="Enter Reference">
                         </div>
                         <div class="col-12 col-md-6 col-lg-4 mb-1 custom-input-group">
                             <label class="form-label" for="unmatched_agent_sales_person_id">Agent Sales Person<span class="text-danger">*</span></label>
@@ -333,9 +323,18 @@
                             <label class="form-label" for="unmatched_state_subsidy_select">State Subsidy Type<span class="text-danger">*</span></label>
                             <select class="form-control form-select select2 custom-select2" name="state_subsidy_select" id="unmatched_state_subsidy_select" data-placeholder="-- Select --">
                                 <option value="">-- Select --</option>
-                                <option value="general" @selected(old('state_subsidy_select') === 'general')>GENERAL</option>
+                                <option value="general" @selected(old('state_subsidy_select', 'general') === 'general')>GENERAL</option>
                                 <option value="sc_st" @selected(old('state_subsidy_select') === 'sc_st')>SC/ST</option>
                                 <option value="give_up_subsidy" @selected(old('state_subsidy_select') === 'give_up_subsidy')>Give up subsidy</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-lg-3 mb-1 custom-input-group">
+                            <label class="form-label" for="unmatched_bank_id">Bank</label>
+                            <select class="form-control form-select select2 custom-select2" name="bank_id" id="unmatched_bank_id" data-placeholder="-- Select --">
+                                <option value="">-- Select --</option>
+                                @foreach ($unmatchedCreateOptions['banks'] as $bank)
+                                    <option value="{{ $bank->id }}" @selected((string) $selectedBank === (string) $bank->id)>{{ $bank->name }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-12 col-md-6 col-lg-2 mb-1 custom-input-group">
@@ -382,7 +381,7 @@
                                         </tr>
                                         <tr>
                                             <td colspan="4" align="right">Meter Charge (Approx)</td>
-                                            <td id="unmatched_span_meter_charges">{{ number_format((float) old('meter_charges', 0), 2, '.', '') }}</td>
+                                            <td id="unmatched_span_meter_charges">{{ old('meter_charges_extra') === 'Yes' ? 'Extra' : number_format((float) old('meter_charges', 0), 2, '.', '') }}</td>
                                         </tr>
                                         <tr>
                                             <td colspan="4" align="right">Registration Charges</td>
@@ -519,9 +518,6 @@
                 'Enter Consumer Number.': 'consumer_number',
                 'The Consumer Number has already been taken.': 'consumer_number',
                 'Enter Consumer Name.': 'consumer_name_display',
-                'Enter Mobile Number.': 'mobile',
-                'Enter Valid Mobile Number.': 'mobile',
-                'Enter Address.': 'address',
                 'Select Agent/Sales Person.': 'agent_sales_person_id',
                 'Select Panel Company.': 'penal_company_id',
                 'Select Panel Type.': 'penal_type_id',
@@ -549,8 +545,6 @@
             var unmatchedRequiredMessages = {
                 consumer_number: 'Enter Consumer Number.',
                 consumer_name_display: 'Enter Consumer Name.',
-                mobile: 'Enter Mobile Number.',
-                address: 'Enter Address.',
                 agent_sales_person_id: 'Select Agent/Sales Person.',
                 penal_company_id: 'Select Panel Company.',
                 penal_type_id: 'Select Panel Type.',
@@ -703,10 +697,6 @@
                     return 'contact_number';
                 }
 
-                if (/mobile/i.test(message)) {
-                    return 'mobile';
-                }
-
                 return 'submit';
             }
 
@@ -838,7 +828,7 @@
                 $('#unmatched_span_pv_capacity_kw').text(capacity.toFixed(2));
                 $('#unmatched_span_rate').text(rate.toFixed(2));
                 $('#unmatched_span_value').text(systemCost.toFixed(2));
-                $('#unmatched_span_meter_charges').text(meterCharges.toFixed(2));
+                $('#unmatched_span_meter_charges').text($('#unmatched_meter_charges_extra').val() === 'Yes' ? 'Extra' : meterCharges.toFixed(2));
                 $('#unmatched_span_registration_fee').text(registrationFee.toFixed(2));
                 $('#unmatched_span_other_charge_name').text($('#unmatched_other_charge_name').val() || 'Other Charges');
                 $('#unmatched_span_other_charge').text(otherCharge.toFixed(2));
@@ -1024,7 +1014,7 @@
                 var $submit = $('#unmatched-create-submit');
                 var originalHtml = $submit.data('original-html') || $submit.html();
                 var required = [
-                    'consumer_number', 'consumer_name_display', 'mobile', 'address',
+                    'consumer_number', 'consumer_name_display',
                     'agent_sales_person_id', 'penal_company_id', 'penal_type_id', 'penal_watt_id',
                     'penal_nos', 'pv_capacity_kw', 'inveter_company_id', 'inveter_capacity',
                     'no_of_inveter', 'structure', 'total_system_cost', 'meter_charges',
@@ -1041,10 +1031,6 @@
                         fieldErrors[name] = unmatchedRequiredMessages[name];
                     }
                 });
-
-                if (!/^[6-9][0-9]{9}$/.test(String($('#unmatched_mobile').val() || ''))) {
-                    fieldErrors.mobile = 'Enter Valid Mobile Number.';
-                }
 
                 if (!/^[6-9][0-9]{9}$/.test(String($('#unmatched_contact_number').val() || ''))) {
                     fieldErrors.contact_number = 'Enter Valid Contact Number.';

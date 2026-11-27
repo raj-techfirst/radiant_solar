@@ -19,6 +19,7 @@ class SalesMasterConsumerPreview implements ToCollection
         'district_name' => ['district_name'],
         'state_name' => ['state_name'],
         'application_number' => ['consumer_registration_number', 'application_number', 'registration_number'],
+        'application_submitted_date' => ['application_submitted_date', 'application_submitted_at', 'submitted_date'],
         'connection_category' => ['connection_category_name_rwa_domestic', 'connection_category_name', 'connection_category'],
         'sanction_load' => ['sanction_load_kwp', 'sanction_load_kw', 'sanction_load'],
         'proposed_pv_capacity' => ['proposed_pv_capacity_kwp', 'proposed_pv_capacity_kw', 'proposed_pv_capacity'],
@@ -186,6 +187,10 @@ class SalesMasterConsumerPreview implements ToCollection
 
         if (is_null($value)) {
             return '';
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d');
         }
 
         return trim((string) $value);

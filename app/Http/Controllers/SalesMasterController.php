@@ -32,6 +32,7 @@ use App\Models\SubDivision;
 use App\Models\Taluka;
 use App\Models\User;
 use App\Models\UserCommission;
+use App\Services\LoanStatusService;
 use App\Services\PortalDataSyncService;
 use App\Services\PortalStatusService;
 use App\Services\UnmatchedRecordCreatorService;
@@ -114,6 +115,14 @@ class SalesMasterController extends Controller
 
                     if ($portalStatus !== '') {
                         $matchingIds = app(PortalStatusService::class)->matchingIds($portalStatus);
+                        $query->whereIn('sales_masters.id', $matchingIds ?: [0]);
+                    }
+
+                    $loanStatus = trim((string) request()->input('loan_status', ''));
+                    $loanLender = trim((string) request()->input('loan_lender', ''));
+
+                    if ($loanStatus !== '') {
+                        $matchingIds = app(LoanStatusService::class)->matchingIds($loanStatus, $loanLender);
                         $query->whereIn('sales_masters.id', $matchingIds ?: [0]);
                     }
 
@@ -305,6 +314,7 @@ class SalesMasterController extends Controller
                 'circles' => SubDivision::query()->whereNotNull('circle_name')->where('circle_name', '!=', '')->distinct()->orderBy('circle_name')->pluck('circle_name')->all(),
                 'divisions' => SubDivision::query()->whereNotNull('division_name')->where('division_name', '!=', '')->distinct()->orderBy('division_name')->pluck('division_name')->all(),
                 'sub_divisions' => SubDivision::query()->whereNotNull('name')->orderBy('name')->pluck('name', 'id')->all(),
+                'portal_statuses' => app(PortalStatusService::class)->statuses(),
             ];
 
             return view('admin.sale.view', compact('agentSalesPerson', 'boms', 'banks', 'advanceFilterOptions'));
@@ -426,7 +436,13 @@ class SalesMasterController extends Controller
             $salesMaster->invoice_no = $request->invoice_no;
             $salesMaster->invoice_date = ($request->invoice_date != '') ? date('Y-m-d', strtotime($request->invoice_date)) : '';
             $salesMaster->discom_sr_numbar = $request->feasibility_discom_sr_number;
-            $salesMaster->installation_asian_person = $request->installation_asian_person;
+            $installationPerson = $request->installation_asian_person;
+
+            if ($installationPerson === 'none' || $installationPerson === '-- Select --') {
+                $installationPerson = null;
+            }
+
+            $salesMaster->installation_asian_person = $installationPerson;
 
             $salesMaster->installation_date = ($request->payment_date != '') ? date('Y-m-d', strtotime($request->payment_date)) : '';
             $salesMaster->payment_ref_number = $request->payment_ref_number;
@@ -468,10 +484,10 @@ class SalesMasterController extends Controller
                 $salesMaster->dispach_pending_list = '0';
             }
 
-            if (! empty($request->installation_asian_person) && $request->installation_asian_person != '-- Select --' && $salesMaster->dispach_pending_list == '1') {
+            if (! empty($installationPerson) && $salesMaster->dispach_pending_list == '1') {
                 $salesMaster->installation_pending = '1';
                 //  installation amount set
-                $installerUserId = (int) $request->installation_asian_person; // users.id
+                $installerUserId = (int) $installationPerson; // users.id
                 $refDate = $salesMaster->master_create_date;
                 $installSlab = UserCommission::where('user_id', $installerUserId)
                     ->where('sub_agent_id', 0)
@@ -1568,7 +1584,7 @@ class SalesMasterController extends Controller
             return trim((string) ($recommended[$key] ?? ''));
         };
 
-        $mobile = $this->unmatchedValidMobile($value('mobile'));
+        $contactNumber = $this->unmatchedValidMobile($value('mobile'));
         $penalCompany = $this->unmatchedFindModel($options['penalCompanies'] ?? collect(), $value('pv_module_make'));
         $penalWatt = $this->unmatchedFindModel($options['penalWatts'] ?? collect(), $value('module_capacity_wp'));
         $inverterCompany = $this->unmatchedFindModel($options['inverterCompanies'] ?? collect(), $value('inverter_make'));
@@ -1588,7 +1604,9 @@ class SalesMasterController extends Controller
         };
 
         $add('consumer_name', $value('consumer_name'));
-        $add('mobile', $mobile);
+        $add('ragistration_portal', 'National');
+        $add('ragistration_number', $value('application_number'));
+        $add('ragistration_date', $this->unmatchedDate($value('application_submitted_date')));
         $add('address', $value('address'));
         $add('penal_company_id', $penalCompany->id ?? null);
         $add('penal_watt_id', $penalWatt->id ?? null);
@@ -1599,7 +1617,7 @@ class SalesMasterController extends Controller
         $add('no_of_inveter', $this->unmatchedNumber($value('inverter_quantity')));
         $add('subsidy', $this->unmatchedMoney($value('subsidy_amount')));
         $add('consumer_type', $this->unmatchedConsumerType($value('connection_category')));
-        $add('contact_number', $mobile);
+        $add('contact_number', $contactNumber);
         $add('email', $value('email'));
         $add('district_id', $district->id ?? null);
         $add('bank_name', $value('loan_applied_at_bank'));
@@ -1681,6 +1699,23 @@ class SalesMasterController extends Controller
         }
 
         return rtrim(rtrim(number_format((float) $value, 3, '.', ''), '0'), '.');
+    }
+
+    private function unmatchedDate($value): string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '' || $value === '0000-00-00' || $value === '1970-01-01') {
+            return '';
+        }
+
+        if (is_numeric($value)) {
+            return date('Y-m-d', (int) (((float) $value - 25569) * 86400));
+        }
+
+        $timestamp = strtotime($value);
+
+        return $timestamp === false ? '' : date('Y-m-d', $timestamp);
     }
 
     private function unmatchedMoney($value): string
@@ -2035,8 +2070,10 @@ class SalesMasterController extends Controller
             'preview_row' => 'nullable|integer',
             'consumer_number' => 'required|string|max:255',
             'consumer_name' => 'required|string|max:255',
-            'mobile' => 'required|string|max:10|regex:/^[6-9][0-9]{9}$/',
-            'address' => 'required|string',
+            'ragistration_portal' => 'nullable|string|max:255',
+            'ragistration_number' => 'nullable|string|max:255',
+            'ragistration_date' => 'nullable|string|max:50',
+            'address' => 'nullable|string',
             'agent_sales_person_id' => 'required',
             'penal_company_id' => 'required',
             'penal_type_id' => 'required',
@@ -2099,9 +2136,6 @@ class SalesMasterController extends Controller
         $validator = Validator::make($request->all(), $rules, [
             'consumer_number.required' => 'Enter Consumer Number.',
             'consumer_name.required' => 'Enter Consumer Name.',
-            'mobile.required' => 'Enter Mobile Number.',
-            'mobile.regex' => 'Enter Valid Mobile Number.',
-            'address.required' => 'Enter Address.',
             'agent_sales_person_id.required' => 'Select Agent/Sales Person.',
             'penal_company_id.required' => 'Select Panel Company.',
             'penal_type_id.required' => 'Select Panel Type.',

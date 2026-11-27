@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\erp\BOM;
+use App\Services\PortalStatusService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -130,6 +131,12 @@ class SalesMaster extends Model
             if ($value !== '') {
                 $query->where($column, $value);
             }
+        }
+
+        $portalStatus = trim((string) ($filters['portal_status'] ?? ''));
+        if ($portalStatus !== '') {
+            $matchingIds = app(PortalStatusService::class)->matchingIds($portalStatus);
+            $query->whereIn('sales_masters.id', $matchingIds ?: [0]);
         }
 
         return $query;

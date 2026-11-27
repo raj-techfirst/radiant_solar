@@ -14,6 +14,7 @@ use App\Models\SalesMaster;
 use App\Models\SalesQuatation;
 use App\Models\User;
 use App\Models\Year;
+use App\Services\LoanStatusService;
 use App\Services\PortalStatusService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -34,7 +35,7 @@ class HomeController extends Controller
 
             if (session()->get('soft') == 'crm') {
                 $salesData = [];
-                $query = SalesMaster::select('id', 'total_amount', 'pending_amonut', 'agent_sales_person_id', 'register_kw', 'ragistration_portal', 'subsidy_request_date', 'subsidy_disbursement_verify_date', 'subsidy_disbursement_date', 'subsidy_giveup')->with('agentsalesperson', 'portalData');
+                $query = SalesMaster::select('id', 'total_amount', 'pending_amonut', 'agent_sales_person_id', 'register_kw', 'file_type', 'ragistration_portal', 'subsidy_request_date', 'subsidy_disbursement_verify_date', 'subsidy_disbursement_date', 'subsidy_giveup')->with('agentsalesperson', 'portalData', 'loandata:id,sales_master_id,loan_sanction_date,approved_amount,submitted_at', 'loandisbursements:id,sales_master_id,amount');
 
                 $user = User::where('id', Auth::id())->first();
                 if ($user->roles[0]->name == 'Manager') {
@@ -378,8 +379,9 @@ class HomeController extends Controller
                 ];
 
                 $portalStatusData = $this->buildPortalStatusData($saleOrder);
+                $loanStatusData = app(LoanStatusService::class)->buildRows($saleOrder);
 
-                return view('home', compact('salesData', 'todayFollowUp', 'sitevisit', 'graph1Data', 'graph2Data', 'agents','totalQuotations','totalwonLeads', 'portalStatusData'));
+                return view('home', compact('salesData', 'todayFollowUp', 'sitevisit', 'graph1Data', 'graph2Data', 'agents','totalQuotations','totalwonLeads', 'portalStatusData', 'loanStatusData'));
             } else {
 
                  $purchase_order = PurchaseOrder::selectRaw("count(id) as total_pr, DATE_FORMAT(purchase_date, '%d %b') as purchase_date")

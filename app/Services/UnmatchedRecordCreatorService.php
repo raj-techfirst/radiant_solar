@@ -17,6 +17,9 @@ class UnmatchedRecordCreatorService
 {
     public function create(array $data, string $target): array
     {
+        $reference = trim((string) ($data['reference'] ?? ''));
+        $data['reference'] = $reference === '' ? null : strtoupper($reference);
+
         return DB::transaction(function () use ($data, $target) {
             $quotation = $this->createQuotation($data);
             $salesMaster = null;
@@ -58,7 +61,7 @@ class UnmatchedRecordCreatorService
         $quotation->created_from_unmatched_preview = true;
         $quotation->lead_master_id = $data['lead_master_id'] ?? null;
         $quotation->name = strtoupper((string) ($data['consumer_name'] ?? ''));
-        $quotation->mobile = $data['mobile'] ?? null;
+        $quotation->mobile = $data['contact_number'] ?? ($data['mobile'] ?? null);
         $quotation->address = $data['address'] ?? null;
         $quotation->penal_company_id = $this->multiValue($data['penal_company_id'] ?? null);
         $quotation->penal_type_id = $data['penal_type_id'] ?? null;
@@ -75,7 +78,7 @@ class UnmatchedRecordCreatorService
         $quotation->meter_charges = $this->numberOrZero($data['meter_charges'] ?? 0);
         $quotation->registration_fee = $this->numberOrZero($data['registration_fee'] ?? 0);
         $quotation->total_amount = $this->numberOrZero($data['total_amount'] ?? 0);
-        $quotation->reference = strtoupper((string) ($data['consumer_number'] ?? ''));
+        $quotation->reference = $data['reference'] ?? null;
         $quotation->agent_sales_person_id = $data['agent_sales_person_id'] ?? null;
         $quotation->other_charge_name = $data['other_charge_name'] ?? null;
         $quotation->other_charge_amount = $this->numberOrZero($data['other_charge_amount'] ?? 0);
@@ -101,8 +104,13 @@ class UnmatchedRecordCreatorService
         $salesMaster->lead_master_id = $data['lead_master_id'] ?? null;
         $salesMaster->sales_quatation_id = $quotationId;
         $salesMaster->consumer_number = $data['consumer_number'];
-        $salesMaster->consumer_type = $data['consumer_type'] ?? 'Resident';
+        $salesMaster->consumer_type = ! empty($data['consumer_type']) ? $data['consumer_type'] : 'Resident';
         $salesMaster->consumer_name = strtoupper((string) ($data['consumer_name'] ?? ''));
+        $salesMaster->ragistration_portal = $data['ragistration_portal'] ?? 'National';
+        $salesMaster->ragistration_number = $data['ragistration_number'] ?? null;
+        $registrationDate = trim((string) ($data['ragistration_date'] ?? ''));
+        $registrationTimestamp = $registrationDate === '' ? false : strtotime($registrationDate);
+        $salesMaster->ragistration_date = $registrationTimestamp === false ? null : date('Y-m-d', $registrationTimestamp);
         $salesMaster->gst_number = isset($data['gst_number']) ? strtoupper((string) $data['gst_number']) : null;
         $salesMaster->district_id = $data['district_id'] ?? null;
         $salesMaster->taluka_id = $data['taluka_id'] ?? null;
@@ -122,7 +130,7 @@ class UnmatchedRecordCreatorService
         $salesMaster->sub_division_id = ! empty($data['sub_division_id']) ? $data['sub_division_id'] : 0;
         $salesMaster->circle = $data['circle'] ?? null;
         $salesMaster->discom = $data['discom'] ?? null;
-        $salesMaster->reference = strtoupper((string) ($data['consumer_number'] ?? ''));
+        $salesMaster->reference = $data['reference'] ?? null;
         $salesMaster->bom_id = ! empty($data['bom_id']) ? $data['bom_id'] : 0;
         $salesMaster->file_type = ! empty($data['file_type']) ? $data['file_type'] : 'C';
         $salesMaster->total_amount = $this->numberOrZero($data['total_amount'] ?? 0);

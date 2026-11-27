@@ -350,6 +350,69 @@
                             </div>
                         </div>
                     @endif
+
+                    @if (isset($loanStatusData['rows']) && count($loanStatusData['rows']) > 0)
+                        <div class="col-md-6 col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4 class="card-title">Loan Status</h4>
+                                </div>
+                                <div class="card-body p-0 table-responsive-custom">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th rowspan="2">Loan Status</th>
+                                                <th colspan="2" class="text-center">Jansamarth</th>
+                                                <th colspan="2" class="text-center">Other Finance</th>
+                                            </tr>
+                                            <tr>
+                                                <th class="text-center">Files</th>
+                                                <th class="text-end">KW</th>
+                                                <th class="text-center">Files</th>
+                                                <th class="text-end">KW</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($loanStatusData['rows'] as $row)
+                                                <tr>
+                                                    <td class="fw-bold text-body">
+                                                        <a href="{{ route('sales-master.index', ['loan_status' => $row['key']]) }}"
+                                                            class="text-body">{{ $row['name'] }}</a>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        @if ($row['jansamarth']['files'] > 0)
+                                                            <a href="{{ route('sales-master.index', ['loan_status' => $row['key'], 'loan_lender' => 'jansamarth']) }}"
+                                                                class="badge rounded-pill bg-light-primary text-primary">
+                                                                {{ $row['jansamarth']['files'] }}
+                                                            </a>
+                                                        @else
+                                                            <span class="badge rounded-pill bg-light-primary text-primary">–</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-end font-monospace">
+                                                        {{ $row['jansamarth']['kw'] > 0 ? number_format($row['jansamarth']['kw'], 3) : '–' }}
+                                                    </td>
+                                                    <td class="text-center">
+                                                        @if ($row['other_finance']['files'] > 0)
+                                                            <a href="{{ route('sales-master.index', ['loan_status' => $row['key'], 'loan_lender' => 'other_finance']) }}"
+                                                                class="badge rounded-pill bg-light-info text-info">
+                                                                {{ $row['other_finance']['files'] }}
+                                                            </a>
+                                                        @else
+                                                            <span class="badge rounded-pill bg-light-info text-info">–</span>
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-end font-monospace">
+                                                        {{ $row['other_finance']['kw'] > 0 ? number_format($row['other_finance']['kw'], 3) : '–' }}
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <!-- Charts Section -->

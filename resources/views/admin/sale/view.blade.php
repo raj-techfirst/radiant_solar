@@ -120,7 +120,7 @@
             <div class="modal-dialog modal-dialog-centered modal-lg">
                 <div class="modal-content">
                     <div class="modal-header bg-transparent border-bottom">
-                        <h4 class="text-center mb-0 mx-auto" id="advanceFilterModalLabel">Advance Filter</h4>
+                        <h4 class="modal-title mb-0" id="advanceFilterModalLabel">Advance Filter</h4>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body p-2">
@@ -182,6 +182,17 @@
                                 <label class="form-label mb-50" for="advance_to_date">To Date</label>
                                 <input type="text" class="form-control flatpickr-date" id="advance_to_date"
                                     placeholder="Enter To Date">
+                            </div>
+                        </div>
+                        <div class="row g-1 mb-2">
+                            <div class="col-md-3">
+                                <label class="form-label mb-50" for="advance_portal_status">Portal Status Wise</label>
+                                <select class="form-select advance-select2" id="advance_portal_status">
+                                    <option value="">Select portal status</option>
+                                    @foreach ($advanceFilterOptions['portal_statuses'] as $statusValue => $statusLabel)
+                                        <option value="{{ $statusValue }}">{{ $statusLabel }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -706,7 +717,8 @@
             'division',
             'sub_division_id',
             'from_date',
-            'to_date'
+            'to_date',
+            'portal_status'
         ];
 
         function getAdvanceFilterCount() {
@@ -740,7 +752,8 @@
                 division: $('#advance_division').val() || '',
                 sub_division_id: $('#advance_sub_division').val() || '',
                 from_date: $('#advance_from_date').val() || '',
-                to_date: $('#advance_to_date').val() || ''
+                to_date: $('#advance_to_date').val() || '',
+                portal_status: $('#advance_portal_status').val() || ''
             };
 
             return advanceFilters;
@@ -755,6 +768,7 @@
             $('#advance_sub_division').val(advanceFilters.sub_division_id || '').trigger('change');
             $('#advance_from_date').val(advanceFilters.from_date || '');
             $('#advance_to_date').val(advanceFilters.to_date || '');
+            $('#advance_portal_status').val(advanceFilters.portal_status || '').trigger('change');
         }
 
         function clearAdvanceFilterFields() {
@@ -766,10 +780,11 @@
             $('#advance_sub_division').val('').trigger('change');
             $('#advance_from_date').val('');
             $('#advance_to_date').val('');
+            $('#advance_portal_status').val('').trigger('change');
         }
 
         function advanceFilterSelects() {
-            return $('#advance_discom, #advance_circle, #advance_division, #advance_sub_division');
+            return $('#advance_discom, #advance_circle, #advance_division, #advance_sub_division, #advance_portal_status');
         }
 
         function initAdvanceFilterSelects() {
@@ -798,6 +813,8 @@
             var value = new URLSearchParams(window.location.search).get('value');
             var value_not = new URLSearchParams(window.location.search).get('value_not');
             var portal_status = new URLSearchParams(window.location.search).get('portal_status');
+            var loan_status = new URLSearchParams(window.location.search).get('loan_status');
+            var loan_lender = new URLSearchParams(window.location.search).get('loan_lender');
 
             if (type == "agent") {
                 $('#agent_sales_person_id').val(value);
@@ -836,8 +853,10 @@
                         d.not_status = $('#not_status').val();
                          d.ragistration_portal = $('#ragistration_portal').val();
                           d.file_type = $('#file_type').val();
-                          d.portal_status = portal_status;
-                          d.advanced_filters = advanceFilters;
+                           d.portal_status = advanceFilters.portal_status ? '' : portal_status;
+                           d.loan_status = loan_status;
+                           d.loan_lender = loan_lender;
+                           d.advanced_filters = advanceFilters;
 
                      }
                 },
@@ -1331,7 +1350,11 @@
                     $instPerson.select2({
                         dropdownAutoWidth: true,
                         width: '100%',
-                        placeholder: '-- Select --',
+                        allowClear: true,
+                        placeholder: {
+                            id: '',
+                            text: 'NONE'
+                        },
                         dropdownParent: $instPerson.parent()
                     });
 
@@ -1558,7 +1581,9 @@
                     "ragistration_portal": $('#ragistration_portal').val(),
                      "_token": "{{ csrf_token() }}",
                      "file_type": $('#file_type').val(),
-                     "advanced_filters": advanceFilters,
+                     "loan_status": loan_status,
+                     "loan_lender": loan_lender,
+                      "advanced_filters": advanceFilters,
                  },
                 cache: false,
                 xhr: function() {

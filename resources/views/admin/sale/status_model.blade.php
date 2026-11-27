@@ -154,7 +154,7 @@
                                 <label class="form-label" for="feasibility_letter">Feasibility Letter</label>
                                 <input type="file" class="form-control" name="feasibility_letter" id="feasibility_letter">
                                 @if (!is_null($salesMaster) && $salesMaster->feasibility_letter != '')
-                                    <a href="{{ route('download-document', $salesMaster->feasibility_letter) }}"
+                                    <a href="{{ route('download-document', ['file' => $salesMaster->feasibility_letter]) }}"
                                         download="Feasibility Letter">
                                         <button type="button" class="btn btn-sm mt-1 btn-outline-primary"><span>Feasibility Letter</span> <i data-feather="download" class="me-25"></i></button>
                                     </a>
@@ -264,7 +264,7 @@
                                 <label class="form-label" for="loan_pdf">Loan PDF</label>
                                 <input type="file" class="form-control" name="loan_pdf" id="loan_pdf">
                                 @if (!is_null($salesloan) && $salesloan->loan_pdf != '')
-                                    <a href="{{ route('download-document', $salesloan->loan_pdf) }}"
+                                    <a href="{{ route('download-document', ['file' => $salesloan->loan_pdf]) }}"
                                         download="Loan PDF">
                                         <button type="button" class="btn btn-sm mt-1 btn-outline-primary"><span>Loan
                                                 PDF</span> <i data-feather="download" class="me-25"></i></button>
@@ -468,7 +468,7 @@
                             <label class="form-label" for="payment_receipt">Payment Receipt</label>
                             <input type="file" class="form-control" name="payment_receipt" id="payment_receipt">
                             @if ($salesMaster->payment_receipt != '')
-                                <a href="{{ route('download-document', $salesMaster->payment_receipt) }}"
+                                <a href="{{ route('download-document', ['file' => $salesMaster->payment_receipt]) }}"
                                     download="Payment Receipt">
                                     <button type="button" class="btn btn-sm mt-1 btn-outline-primary"><span>Payment
                                             Receipt</span> <i data-feather="download" class="me-25"></i></button>
@@ -502,7 +502,8 @@
                                 Person</label>
                             <select class="form-control form-select select2 custom-select2"
                                 name="installation_asian_person" id="installation_asian_person">
-                                <option value="" selected>{{ __('message.-- Select --') }}</option>
+                                <option value="" hidden></option>
+                                <option value="none" {{ empty($salesMaster->installation_asian_person) ? 'selected' : '' }}>NONE</option>
                                 @foreach ($user as $value)
                                     <option value="{{ $value->id }}"
                                         {{ isset($salesMaster) && $salesMaster->installation_asian_person == $value->id ? 'selected' : '' }}>
@@ -577,7 +578,7 @@
                                 id="meter_application_oc">
 
                             @if ($salesMaster->meter_application_oc != '')
-                                    <a href="{{ route('download-document', $salesMaster->meter_application_oc) }}"
+                                    <a href="{{ route('download-document', ['file' => $salesMaster->meter_application_oc]) }}"
                                         download="Meter Application OC">
                                     <button type="button" class="btn btn-sm mt-1 btn-outline-primary"><span>Meter
                                             Application OC</span> <i data-feather="download"
@@ -647,29 +648,6 @@
                                 role="alert"></span>
                         </div>
 
-                        <div class="col-12 mt-1 mb-1">
-                            <h6 class="fw-bold mb-0">Portal Subsidy Details</h6>
-                        </div>
-                        <div class="mb-1 col-md-6">
-                            <label class="form-label">Subsidy Amount</label>
-                            <input type="text" class="form-control"
-                                value="{{ $portalData?->subsidy_amount ?: 'N/A' }}" readonly>
-                        </div>
-                        <div class="mb-1 col-md-6">
-                            <label class="form-label">Subsidy Return Date</label>
-                            <input type="text" class="form-control"
-                                value="{{ $portalData?->subsidy_return_date ?: 'N/A' }}" readonly>
-                        </div>
-                        <div class="mb-1 col-md-6">
-                            <label class="form-label">Subsidy Return To</label>
-                            <input type="text" class="form-control"
-                                value="{{ $portalData?->subsidy_return_to ?: 'N/A' }}" readonly>
-                        </div>
-                        <div class="mb-1 col-md-12">
-                            <label class="form-label">Subsidy Return Comment</label>
-                            <input type="text" class="form-control"
-                                value="{{ $portalData?->subsidy_return_comment ?: 'N/A' }}" readonly>
-                        </div>
                     </div>
                 </div>
             </div>
