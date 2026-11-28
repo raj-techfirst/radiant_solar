@@ -28,8 +28,9 @@ class SalesOrderExport implements FromCollection, WithHeadings,WithMapping
     {
         $query = SalesMaster::select('*','id as sid')->with('bom','district','district.state', 'taluka', 'village', 'subDivision', 'agentsalesperson', 'salesquatation', 'salesquatation.penalWatt');
         $company = CompanyProfile::where('user_id', Auth::id())->first();
-        if ($company->user_type == 'M') {
-            $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
+        $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
+
+        if ($company && $company->user_type == 'M' && $agent) {
             $agentIds = [$agent->id];
             $sales = CompanyProfile::select('company_profiles.id', 'company_profiles.user_id', 'agent_sales_people.id as agent_id')
                 ->leftJoin('agent_sales_people', 'agent_sales_people.user_id', 'company_profiles.user_id')
@@ -39,14 +40,12 @@ class SalesOrderExport implements FromCollection, WithHeadings,WithMapping
                     array_push($agentIds, $v->agent_id);
                 endforeach;
             }
-            if($this->request->input('agent_sales_person_id') == "") {
-            $query->whereIn('agent_sales_person_id', $agentIds);
+            if ($this->request->input('agent_sales_person_id') == "") {
+                $query->whereIn('agent_sales_person_id', $agentIds);
             }
         }
-        if ($company->user_type == 'S') {
-            $agent = AgentSalesPerson::where('user_id', Auth::id())->first();
-            $id = $agent->id;
-            $query->where('agent_sales_person_id', $id);
+        if ($company && $company->user_type == 'S' && $agent) {
+            $query->where('agent_sales_person_id', $agent->id);
         }
         $advancedFilters = $this->request->input('advanced_filters', []);
         $advancedFromDate = trim((string) (is_array($advancedFilters) ? ($advancedFilters['from_date'] ?? '') : ''));
@@ -107,20 +106,21 @@ class SalesOrderExport implements FromCollection, WithHeadings,WithMapping
             $query->whereIn('sales_masters.id', $matchingIds ?: [0]);
         }
 
-       $data = $query->orderBy('id', 'DESC')->get();
+        $data = $query->orderBy('id', 'DESC')->get();
         foreach ($data as $key => $value) :
-            $value['feasibility_date'] = (!is_null($value->feasibility_date) && $value->feasibility_date != '1970-01-01' && $value->feasibility_date != '0000-00-00') ? date('d-m-Y', strtotime($value->feasibility_date)) : '';
-            $value['installation_date'] = (!is_null($value->installation_date) && $value->installation_date != '1970-01-01' && $value->installation_date != '0000-00-00') ? date('d-m-Y', strtotime($value->installation_date)) : '';
+            $value['feasibility_date'] = $this->formatDate($value->feasibility_date);
+            $value['installation_date'] = $this->formatDate($value->installation_date);
+            $value['invoice_date'] = $this->formatDate($value->invoice_date);
             $value['installation_asian_person'] = installationAsignPerson($value->installation_asian_person);
 
-			$value['master_date'] = (!is_null($value->master_create_date) && $value->master_create_date != '1970-01-01' && $value->master_create_date != '0000-00-00') ? date('d-m-Y', strtotime($value->master_create_date)) : '';
-		    $value['ragistration_date'] = (!is_null($value->ragistration_date) && $value->ragistration_date != '1970-01-01' && $value->ragistration_date != '0000-00-00') ? date('d-m-Y', strtotime($value->ragistration_date)) : '';
-			
-			$value['meter_application_date'] = (!is_null($value->meter_application_date) && $value->meter_application_date != '1970-01-01' && $value->meter_application_date != '0000-00-00') ? date('d-m-Y', strtotime($value->meter_application_date)) : '';
-			$value['meter_installation_date'] = (!is_null($value->meter_installation_date) && $value->meter_installation_date != '1970-01-01' && $value->meter_installation_date != '0000-00-00') ? date('d-m-Y', strtotime($value->meter_installation_date)) : '';
-			$value['subsidy_disbursement_date'] = (!is_null($value->subsidy_disbursement_date) && $value->subsidy_disbursement_date != '1970-01-01' && $value->subsidy_disbursement_date != '0000-00-00') ? date('d-m-Y', strtotime($value->subsidy_disbursement_date)) : '';
-			$value['subsidy_disbursement_verify_date'] = (!is_null($value->subsidy_disbursement_verify_date) && $value->subsidy_disbursement_verify_date != '1970-01-01' && $value->subsidy_disbursement_verify_date != '0000-00-00') ? date('d-m-Y', strtotime($value->subsidy_disbursement_verify_date)) : '';
-           
+            $value['master_date'] = $this->formatDate($value->master_create_date);
+            $value['ragistration_date'] = $this->formatDate($value->ragistration_date);
+
+            $value['meter_application_date'] = $this->formatDate($value->meter_application_date);
+            $value['meter_installation_date'] = $this->formatDate($value->meter_installation_date);
+            $value['subsidy_disbursement_date'] = $this->formatDate($value->subsidy_disbursement_date);
+            $value['subsidy_disbursement_verify_date'] = $this->formatDate($value->subsidy_disbursement_verify_date);
+
             $value->state_name = $value->district?->state?->state_name ?? '';
             $value->boms = $value->bom->bom_name ?? '';
 
@@ -162,6 +162,20 @@ class SalesOrderExport implements FromCollection, WithHeadings,WithMapping
         endforeach;
         return $data;
     }
+
+    private function formatDate($value): string
+    {
+        $value = trim((string) $value);
+
+        if ($value === '' || str_starts_with($value, '0000-00-00') || str_starts_with($value, '1970-01-01')) {
+            return '';
+        }
+
+        $timestamp = strtotime($value);
+
+        return $timestamp === false ? '' : date('d-m-Y', $timestamp);
+    }
+
     public function headings(): array
     {
         return [
@@ -265,10 +279,10 @@ class SalesOrderExport implements FromCollection, WithHeadings,WithMapping
             $row->feasibility_date,
             $row->feasibility_amount,
             $row->invoice_no,
-            $row->installation_date,
+            $row->invoice_date,
             $row->status,
             $row->payment_ref_number,
-            $row->feasibility_date,
+            $row->installation_date,
             $row->installation_asian_person,
             $row->boms,
             $row->meter_application_date,			

@@ -10,6 +10,8 @@ class SalesMasterConsumerPreview implements ToCollection
 {
     use RepairsMalformedCsvRow;
 
+    private const STATUS_HEADER = 'Status';
+
     private const EXCEL_FIELDS = [
         'consumer_number' => ['consumer_number', 'consumer_no', 'consumernumber', 'consumerno', 'c_no'],
         'consumer_name' => ['consumer_name', 'customername', 'name'],
@@ -36,7 +38,7 @@ class SalesMasterConsumerPreview implements ToCollection
         'inverter_quantity' => ['inverter_quantity'],
         'subsidy_amount' => ['subsidy_amount_rs', 'subsidy_amount'],
         'last_comment' => ['last_comment'],
-        'current_status' => ['status', 'current_status_of_application', 'current_status'],
+        'current_status' => [self::STATUS_HEADER],
         'vendor_consumer_agreement_uploaded' => ['vendor_consumer_agreement_uploaded_yes_no', 'vendor_consumer_agreement_uploaded'],
         'vendor_consumer_agreement_uploading_date' => ['vendor_consumer_agreement_uploading_date'],
         'solar_plant_installation_date' => ['solar_plant_installation_date'],
@@ -87,6 +89,7 @@ class SalesMasterConsumerPreview implements ToCollection
 
         foreach ($header as $index => $value) {
             $key = $this->headerKey($value);
+            $rawKey = trim(preg_replace('/^\xEF\xBB\xBF/', '', (string) $value));
 
             if (in_array($key, ['consumer_number', 'consumer_no', 'consumernumber', 'consumerno', 'c_no'])) {
                 $this->consumerNumberIndex = $index;
@@ -103,6 +106,14 @@ class SalesMasterConsumerPreview implements ToCollection
             }
 
             foreach (self::EXCEL_FIELDS as $field => $aliases) {
+                if ($field === 'current_status') {
+                    if ($rawKey === self::STATUS_HEADER) {
+                        $this->fieldIndexes[$field] = $index;
+                    }
+
+                    continue;
+                }
+
                 if (in_array($key, $aliases, true)) {
                     $this->fieldIndexes[$field] = $index;
                 }

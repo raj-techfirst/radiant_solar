@@ -6,13 +6,15 @@ Scope: sales-master Excel upload/preview, portal sync, default bulk update, reco
 
 ## 1. Header normalization
 
-All Excel headers are normalized before matching:
+Except for the portal status header, Excel headers are normalized before matching:
 
 1. Remove UTF-8 BOM.
 2. Lowercase.
 3. Trim outer whitespace.
 4. Replace every non-alphanumeric character with `_`.
 5. Trim leading/trailing `_`.
+
+Exception: the portal status header must be exactly `Status` after BOM removal and outer whitespace trimming. Matching is case-sensitive, so `status`, `STATUS`, `Current Status`, and `Current Status Of Application` are not treated as portal status headers.
 
 Examples:
 
@@ -21,12 +23,12 @@ Examples:
 | `Consumer Number` | `consumer_number` |
 | `Mobile No.` | `mobile_no` |
 | `Application Number` | `application_number` |
-| `Current Status Of Application` | `current_status_of_application` |
+| `Current Status Of Application` | `current_status_of_application` (normalization example only; not accepted as the portal status header) |
 | `Sr.No.` | `sr_no` |
 
 Source:
 
-- `app/Imports/SalesMasterConsumerPreview.php:199-206`
+- `app/Imports/SalesMasterConsumerPreview.php:13`, `:41`, `:88-120`, `:210-217`
 - `app/Imports/SalesMasterUpdateImport.php:219-226`
 
 ## 2. Main upload flow
@@ -74,7 +76,7 @@ All rows below write to table `portal_data`.
 
 | Excel column aliases | `portal_data` column | Transformation |
 |---|---|---|
-| `Status`, `Current Status Of Application`, `Current Status` | `current_status_of_application` | Trimmed text. Written only when at least one row has a non-empty parsed status value. |
+| `Status` only (exact case-sensitive header) | `current_status_of_application` | Trimmed text. Written only when at least one row has a non-empty parsed status value. Other casing/names are ignored. |
 | `Vendor Consumer Agreement Uploaded Yes No`, `Vendor Consumer Agreement Uploaded` | `vendor_consumer_agreement_uploaded` | Trimmed text. |
 | `Vendor Consumer Agreement Uploading Date` | `vendor_consumer_agreement_uploading_date` | Excel serial to `d-M-y` when numeric serial is `1..100000`; otherwise trimmed text. |
 | `Solar Plant Installation Date` | `solar_plant_installation_date` | Excel serial `1..100000` to `d-M-y`; otherwise trimmed text. |
@@ -123,6 +125,7 @@ Status detection:
 - `hasStatusData()` checks whether any row has a non-empty parsed `current_status` value.
 - `isStatusOnly()` returns true only when status is the only non-empty mapped portal field.
 - If no row has a status value, `current_status_of_application` is omitted entirely, even if the `Status` header exists.
+- A status-like header other than exact `Status` never populates `current_status`, so it cannot trigger a status-only sync or update `current_status_of_application`.
 
 Source: `app/Services/PortalDataSyncService.php:53-117`, `:129-181`
 
@@ -415,7 +418,7 @@ Source: `app/Services/LoanStatusService.php`
 | Wrong Excel / no matches | Portal sync is skipped when no workbook row matches a sales master. |
 | No upload DB deletes | Upload sync never deletes DB rows; `portal_data` rows absent from the Excel file are left unchanged. |
 | Blank Excel cells | Blank/missing cells are skipped; existing DB values are not erased. Default and recommended updates already skip blank values, and portal sync now skips blank portal fields. |
-| Status-only workbook | Existing portal rows get a nonblank `current_status_of_application` and nonblank Excel `consumer_number`; newly inserted rows also get a sales-master `consumer_number` fallback when Excel is blank; never deletes other portal rows. |
+| Status-only workbook (only nonblank mapped value is under exact `Status`) | Matched portal rows are loaded/created and receive a nonblank `consumer_number`; `current_status_of_application` is written only from each row's nonblank exact-`Status` value, so blank cells leave existing status unchanged; newly inserted rows also get a sales-master `consumer_number` fallback when Excel is blank; never deletes other portal rows. |
 | Default header validation | Automatic default update is skipped unless all default headers are present. |
 | Recommended header validation | Only consumer number plus selected recommended fields are required. |
 | Apostrophe cleanup | Preview strips straight/curly apostrophes from consumer and application numbers. Default bulk update strips apostrophes only from the consumer number. Duplicate check strips spaces and straight apostrophes from DB consumer numbers. |

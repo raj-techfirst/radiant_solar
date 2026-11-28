@@ -1567,58 +1567,60 @@
         });
 
         $(document).on('click', '.download', function() {
-            $.ajax({
-                url: "{{ route('sales-order-report') }}",
-                type: 'POST',
-                datatype: 'json',
-                data: {
-                    "from_date": $('#from_date').val(),
-                    "to_date": $('#to_date').val(),
-                    "consumer": $('#consumer').val(),
-                    "agent_sales_person_id": $('#agent_sales_person_id').val(),
-                    "status": $('#status').val(),
-                    "not_status": $('#not_status').val(),
-                    "ragistration_portal": $('#ragistration_portal').val(),
-                     "_token": "{{ csrf_token() }}",
-                     "file_type": $('#file_type').val(),
-                     "loan_status": loan_status,
-                     "loan_lender": loan_lender,
-                      "advanced_filters": advanceFilters,
-                 },
-                cache: false,
-                xhr: function() {
-                    var xhr = new XMLHttpRequest();
-                    xhr.onreadystatechange = function() {
-                        if (xhr.readyState == 2) {
-                            if (xhr.status == 200) {
-                                xhr.responseType = "blob";
-                            } else {
-                                xhr.responseType = "text";
-                            }
-                        }
-                    };
-                    return xhr;
-                },
-                success: function(data) {
-                    var blob = new Blob([data], {
-                        type: "application/octetstream"
-                    });
-                    var fileName = 'Sales_orders.xlsx';
-                    var isIE = false || !!document.documentMode;
-                    if (isIE) {
-                        window.navigator.msSaveBlob(blob, fileName);
-                    } else {
-                        var url = window.URL || window.webkitURL;
-                        var link = url.createObjectURL(blob);
-                        var a = $("<a />");
-                        a.attr("download", fileName);
-                        a.attr("href", link);
-                        $("body").append(a);
-                        a[0].click();
-                        $("body").remove(a);
-                    }
-                }
+            var queryParams = new URLSearchParams(window.location.search);
+            var iframeName = 'sales-order-download-' + Date.now();
+            var $iframe = $('<iframe>', {
+                name: iframeName,
+                style: 'display:none'
             });
+            var $form = $('<form>', {
+                method: 'POST',
+                action: "{{ route('sales-order-report') }}",
+                target: iframeName
+            });
+
+            var fields = {
+                from_date: $('#from_date').val(),
+                to_date: $('#to_date').val(),
+                consumer: $('#consumer').val(),
+                agent_sales_person_id: $('#agent_sales_person_id').val(),
+                status: $('#status').val(),
+                not_status: $('#not_status').val(),
+                ragistration_portal: $('#ragistration_portal').val(),
+                file_type: $('#file_type').val(),
+                loan_status: queryParams.get('loan_status') || '',
+                loan_lender: queryParams.get('loan_lender') || ''
+            };
+
+            $.each(fields, function(name, value) {
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: name,
+                    value: value || ''
+                }).appendTo($form);
+            });
+
+            $.each(advanceFilters, function(name, value) {
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'advanced_filters[' + name + ']',
+                    value: value || ''
+                }).appendTo($form);
+            });
+
+            $('<input>').attr({
+                type: 'hidden',
+                name: '_token',
+                value: "{{ csrf_token() }}"
+            }).appendTo($form);
+
+            $('body').append($iframe).append($form);
+            $form[0].submit();
+
+            setTimeout(function() {
+                $form.remove();
+                $iframe.remove();
+            }, 120000);
         });
 
         $(document).on('click', '.reset', function() {

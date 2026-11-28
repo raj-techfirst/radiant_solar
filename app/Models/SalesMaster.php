@@ -58,7 +58,7 @@ class SalesMaster extends Model
 
     public function salesquatation()
     {
-        return $this->hasOne(SalesQuatation::class, 'id', 'sales_quatation_id')->select('id', 'form_type', 'nos',  'penal_company_id', 'penal_type_id', 'penal_watt_id', 'penal_nos', 'pv_capacity_kw', 'inveter_company_id', 'inveter_capacity', 'no_of_inveter', 'structure','quatation_type');
+        return $this->hasOne(SalesQuatation::class, 'id', 'sales_quatation_id')->select('id', 'form_type', 'nos',  'penal_company_id', 'penal_type_id', 'penal_watt_id', 'penal_nos', 'pv_capacity_kw', 'inveter_company_id', 'inveter_capacity', 'no_of_inveter', 'structure', 'common_meter', 'quatation_type');
     }
     public function salesquatationfull()
     {
