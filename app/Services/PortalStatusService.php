@@ -31,9 +31,8 @@ class PortalStatusService
             return [];
         }
 
-        $saleOrders = SalesMaster::select('id', 'register_kw', 'consumer_type', 'subsidy_request_date', 'subsidy_disbursement_verify_date', 'subsidy_disbursement_date', 'subsidy_giveup')
+        $saleOrders = SalesMaster::select('id', 'register_kw', 'consumer_type', 'file_cancel_order', 'subsidy_request_date', 'subsidy_disbursement_verify_date', 'subsidy_disbursement_date', 'subsidy_giveup')
             ->with('portalData')
-            ->where('file_cancel_order', '0')
             ->get();
 
         $assignedIds = [];
@@ -67,48 +66,29 @@ class PortalStatusService
     public function matches(string $statusKey, $saleOrder): bool
     {
         $portal = $saleOrder->portalData;
-        $hasDate = function ($value): bool {
-            $value = trim((string) $value);
-
-            return $value !== '' && $value !== '0000-00-00' && $value !== '1970-01-01';
-        };
+        $isCancelled = (string) ($saleOrder->file_cancel_order ?? '') === '1';
         $portalText = function (string $column) use ($portal): string {
             return strtolower(trim((string) ($portal?->{$column} ?? '')));
         };
 
-        $agreement = $portalText('vendor_consumer_agreement_uploaded');
-        $inspection = $portalText('inspection_status');
-        $redeemDate = $hasDate($saleOrder->subsidy_request_date);
-        $verifiedDate = $hasDate($saleOrder->subsidy_disbursement_verify_date);
-        $disbursedDate = $hasDate($saleOrder->subsidy_disbursement_date);
-        $portalInstallationDate = $hasDate($portal?->solar_plant_installation_date);
-
-        switch ($statusKey) {
-            case 'vendor_selection_pending':
-                return strtolower(trim((string) ($saleOrder->consumer_type ?? ''))) === 'resident'
-                    && (is_null($portal) || $portalText('current_status_of_application') === '');
-            case 'agreement_pending':
-                return ! is_null($portal) && ($agreement === '' || $agreement === 'no');
-            case 'installation_pending':
-                return ! is_null($portal) && $agreement === 'yes' && ! $portalInstallationDate;
-            case 'inspection_pending':
-                return ! is_null($portal) && $portalInstallationDate && $inspection === '';
-            case 'inspection_return':
-                return ! is_null($portal) && strpos($inspection, 'return') !== false;
-            case 'subsidy_not_redeemed':
-                return ! is_null($portal) && $inspection === 'approved' && ! $redeemDate;
-            case 'subsidy_redeemed':
-                return $redeemDate && ! $verifiedDate;
-            case 'subsidy_return':
-                return ! is_null($portal) && $hasDate($portal->subsidy_return_date) && ! $verifiedDate;
-            case 'disbursal_pending':
-                return $verifiedDate && ! $disbursedDate;
-            case 'disbursed':
-                return $disbursedDate;
-            case 'give_up':
-                return (string) ($saleOrder->subsidy_giveup ?? '') === '1';
+        if ($statusKey === 'vendor_selection_pending') {
+            return ! $isCancelled
+                && strtolower(trim((string) ($saleOrder->consumer_type ?? ''))) === 'resident'
+                && (is_null($portal) || $portalText('current_status_of_application') === '');
         }
 
-        return false;
+        if ($statusKey === 'inspection_return') {
+            return ! $isCancelled
+                && ! is_null($portal)
+                && strpos($portalText('inspection_status'), 'return') !== false;
+        }
+
+        $label = strtolower(trim((string) (self::STATUSES[$statusKey] ?? '')));
+
+        if ($label === '') {
+            return false;
+        }
+
+        return $portalText('current_status_of_application') === $label;
     }
 }

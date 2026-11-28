@@ -366,21 +366,21 @@ These are not direct writes. They are calculated from imported values.
 
 ### Portal Status Wise
 
-Statuses are exclusive and first-match-wins: a sales order is counted in the earliest matching row below and skipped for later rows.
+Statuses are exclusive and first-match-wins: a sales order is counted in the earliest matching row below and skipped for later rows. Except for `Vendar Selection (Pending)` and `Inspection (Return)`, each row compares trimmed/lowercased `portal_data.current_status_of_application` with the trimmed/lowercased row label. Cancelled sales orders are included for those label-matched rows; `Vendar Selection (Pending)` and `Inspection (Return)` keep excluding cancelled sales orders.
 
 | Status | Source data |
 |---|---|
 | Vendar Selection (Pending) | `sales_masters.consumer_type` is `Resident` and no `portal_data` row or blank portal status |
-| Upload Agreement (Pending) | `portal_data.vendor_consumer_agreement_uploaded` blank or `no` |
-| Installation (Pending) | Agreement `yes` and `solar_plant_installation_date` empty |
-| Inspection (Pending) | Installation date exists and `inspection_status` blank |
+| Upload Agreement (Pending) | Current status label: `Upload Agreement (Pending)` |
+| Installation (Pending) | Current status label: `Installation (Pending)` |
+| Inspection (Pending) | Current status label: `Inspection (Pending)` |
 | Inspection (Return) | `inspection_status` contains `return` |
-| Subsidy Request (Not Redeemed) | Inspection `approved` and no valid `subsidy_request_date` |
-| Subsidy Request (Redeemed) | Valid `subsidy_request_date` and no verified date |
-| Subsidy Request (Return) | `portal_data.subsidy_return_date` exists and no verified date |
-| Subsidy Disbursal (Pending) | Verified date exists and no disbursement date |
-| Subsidy Disbursal (Disbursed) | Valid `subsidy_disbursement_date` |
-| Subsidy Request (Give Up) | `sales_masters.subsidy_giveup = 1` |
+| Subsidy Request (Not Redeemed) | Current status label: `Subsidy Request (Not Redeemed)` |
+| Subsidy Request (Redeemed) | Current status label: `Subsidy Request (Redeemed)` |
+| Subsidy Request (Return) | Current status label: `Subsidy Request (Return)` |
+| Subsidy Disbursal (Pending) | Current status label: `Subsidy Disbursal (Pending)` |
+| Subsidy Disbursal (Disbursed) | Current status label: `Subsidy Disbursal (Disbursed)` |
+| Subsidy Request (Give Up) | Current status label: `Subsidy Request (Give Up)` |
 
 Source: `app/Services/PortalStatusService.php`
 
